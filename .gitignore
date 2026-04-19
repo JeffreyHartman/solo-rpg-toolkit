@@ -1,0 +1,14 @@
+# Reference material (books, PDFs, large source dumps) — kept locally only
+/reference/
+/pdfs/
+/data/mythic2e.md
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+dist/
+build/
