@@ -1,3 +1,6 @@
+# Git worktrees
+.worktrees/
+
 # Reference material (books, PDFs, large source dumps) — kept locally only
 /reference/
 /pdfs/
