@@ -1,0 +1,23 @@
+[project]
+name = "solo-roll"
+version = "0.1.0"
+description = "Deterministic dice, table lookup, and Mythic chart math for the Solo RPG GM Assistant toolkit"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+solo-roll = "solo_roll.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/solo_roll"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
