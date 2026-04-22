@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from . import DEFAULT_DATA_DIR, __version__
+from .charts import FateChartError, fate_check, load_fate_chart
 from .rng import DiceSource, RandomDice
 from .tables import TableDataError, TableNotFoundError, roll_table
 
@@ -44,6 +45,18 @@ def _cmd_table(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_fate_check(args: argparse.Namespace) -> int:
+    data_dir = _resolve_data_dir(args.data)
+    try:
+        chart = load_fate_chart(data_dir)
+        payload = fate_check(args.likelihood, args.cf, chart, _dice(args))
+    except FateChartError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(json.dumps(payload, indent=2))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="solo-roll")
     parser.add_argument("--version", action="version", version=f"solo-roll {__version__}")
@@ -54,6 +67,12 @@ def main(argv: list[str] | None = None) -> int:
     p_table.add_argument("name", help="Table name, e.g. action1 or elements/plottwist")
     _add_common_args(p_table)
     p_table.set_defaults(func=_cmd_table)
+
+    p_fate = subparsers.add_parser("fate-check", help="Mythic fate check")
+    p_fate.add_argument("--likelihood", required=True)
+    p_fate.add_argument("--cf", type=int, required=True)
+    _add_common_args(p_fate)
+    p_fate.set_defaults(func=_cmd_fate_check)
 
     args = parser.parse_args(argv)
     if args.command is None:
