@@ -2,6 +2,38 @@
 
 Modular skills for running solo tabletop RPGs in Claude Code. Each skill is self-contained — use what you want, ignore what you don't. Layer them: system (Ironsworn, PF2e, etc.) + oracle layer (Mythic GME) + note-taker.
 
+## Install the `solo-roll` CLI
+
+`solo-roll` is the Python CLI that backs the dice-and-tables layer used by every skill in this repo. Install it once via `pipx`:
+
+```bash
+cd ~/git/solo-rpg-toolkit   # or wherever you cloned this
+pipx install --editable .
+solo-roll table action1
+```
+
+If the last command prints JSON, you're set. Editable install means edits to `src/solo_roll/` take effect immediately — no reinstall while iterating.
+
+### Subcommands
+
+- `solo-roll table <name>` — roll a single table (flat or nested, e.g. `elements/plottwist`)
+- `solo-roll meaning-pair` — roll Mythic Meaning Tables (action + descriptor) in one call
+- `solo-roll fate-check --likelihood <key> --cf <1..9>` — full Mythic fate check
+- `solo-roll quickset <id>` — run a quickset chain (`npc_profile`, `location_profile`, `creature_profile`)
+
+Every subcommand accepts `--seed N` (reproducibility) and `--data DIR` (override data directory).
+
+### Data layout
+
+```
+data/tables/<name>.json               # flat d-tables (action1, descriptor1, ...)
+data/tables/elements/<name>.json      # specialized tables (plot twist, creature, etc.)
+data/charts/mythic-fate.json          # Mythic 2e fate chart
+data/quicksets/<id>.json              # multi-step chains
+```
+
+Add new tables by dropping a JSON file into `data/tables/` — no rebuild, no reinstall. See any existing file for the schema.
+
 ## What's in here
 
 ```
