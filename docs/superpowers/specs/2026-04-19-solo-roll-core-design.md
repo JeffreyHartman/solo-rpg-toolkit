@@ -101,7 +101,7 @@ Original `.txt` files are deleted after conversion; they remain in git history i
 
 Invariant: `len(entries) == dice_faces` (d100 → 100, d20 → 20, etc.). The loader validates on read and errors loud on mismatch (exit code 2).
 
-Roll: `roll = dice_source.next(1, faces)`; `result = entries[roll - 1]`. Both `roll` (index) and `result` (word) are returned so the skill can narrate "rolled 42 → Betray".
+Roll: `roll = dice_source.roll(1, faces)`; `result = entries[roll - 1]`. Both `roll` (index) and `result` (word) are returned so the skill can narrate "rolled 42 → Betray".
 
 ### Ranged/weighted table
 
@@ -303,7 +303,7 @@ Output:
 
 ## Module layout
 
-- `solo_roll.rng` — `DiceSource` protocol (`next(low, high) -> int`). Default impl wraps `random.Random`. Tests inject a scripted source.
+- `solo_roll.rng` — `DiceSource` protocol (`roll(low, high) -> int`). Default impl wraps `random.Random`. Tests inject a scripted source.
 - `solo_roll.tables` — JSON loader, schema validation, `roll_table(name, dice_source) -> dict`.
 - `solo_roll.charts` — fate chart loader, threshold math functions (pure), `fate_check(likelihood, cf, dice_source) -> dict`.
 - `solo_roll.quicksets` — quickset loader, `run_quickset(id, dice_source) -> dict`.

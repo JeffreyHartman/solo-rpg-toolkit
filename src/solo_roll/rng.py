@@ -1,6 +1,8 @@
 import random
 from typing import Protocol
 
+__all__ = ["DiceSource", "RandomDice", "ScriptedDice"]
+
 
 class DiceSource(Protocol):
     def roll(self, low: int, high: int) -> int: ...
@@ -25,9 +27,9 @@ class ScriptedDice:
                 f"ScriptedDice exhausted after {self._index} rolls"
             )
         value = self._values[self._index]
-        self._index += 1
         if not (low <= value <= high):
             raise ValueError(
                 f"ScriptedDice value {value} out of bounds [{low}, {high}]"
             )
+        self._index += 1
         return value

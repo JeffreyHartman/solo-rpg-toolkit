@@ -36,3 +36,9 @@ def test_random_dice_reproducible_with_same_seed():
     b = RandomDice(seed=42)
     for _ in range(20):
         assert a.roll(1, 100) == b.roll(1, 100)
+
+
+def test_scripted_dice_fixture_returns_working_instance(scripted_dice):
+    dice = scripted_dice([4, 5])
+    assert dice.roll(1, 6) == 4
+    assert dice.roll(1, 6) == 5
