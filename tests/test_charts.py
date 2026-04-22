@@ -1,6 +1,11 @@
 import pytest
-
+from pathlib import Path
+from solo_roll import DEFAULT_DATA_DIR
 from solo_roll.charts import (
+    FateChartError,
+    KnownLikelihood,
+    fate_check,
+    load_fate_chart,
     classify_outcome,
     is_random_event,
     read_d100,
@@ -100,3 +105,101 @@ def test_is_random_event_non_doubles_never_fires():
 def test_is_random_event_double_zero_does_not_fire_unless_cf_allows():
     # 0 == 0 is doubles. 0 <= any CF (>=1) so it fires at any CF.
     assert is_random_event(0, 0, cf=1) is True
+
+
+def test_fate_chart_loads_with_nine_likelihoods_and_nine_cfs():
+    chart = load_fate_chart(DEFAULT_DATA_DIR)
+    assert len(chart.likelihoods) == 9
+    for key in chart.likelihoods:
+        assert len(chart.thresholds[key]) == 9
+        for value in chart.thresholds[key]:
+            assert 1 <= value <= 99
+
+
+def test_fate_chart_likelihoods_match_known_set():
+    chart = load_fate_chart(DEFAULT_DATA_DIR)
+    expected = {
+        "has_to_be", "near_sure_thing", "very_likely", "likely",
+        "50_50", "unlikely", "very_unlikely", "near_impossible", "no_way",
+    }
+    assert set(chart.likelihoods) == expected
+
+
+def test_fate_chart_thresholds_monotonic_in_cf():
+    chart = load_fate_chart(DEFAULT_DATA_DIR)
+    for key, row in chart.thresholds.items():
+        for i in range(1, len(row)):
+            assert row[i] >= row[i - 1], f"{key} not monotonic at CF {i+1}: {row}"
+
+
+def test_fate_check_returns_complete_payload(scripted_dice):
+    chart = load_fate_chart(DEFAULT_DATA_DIR)
+    dice = scripted_dice([4, 3])  # 43 -> yes at likely/CF5 (threshold 75)
+    payload = fate_check("likely", cf=5, chart=chart, dice=dice)
+    assert payload["likelihood"] == "likely"
+    assert payload["cf"] == 5
+    assert payload["yes_threshold"] == 75
+    assert payload["exceptional_yes_cap"] == 15
+    assert payload["exceptional_no_floor"] == 95
+    assert payload["dice"] == [4, 3]
+    assert payload["roll"] == 43
+    assert payload["outcome"] == "yes"
+    assert payload["exceptional"] is False
+    assert payload["random_event_triggered"] is False
+
+
+def test_fate_check_doubles_under_cf_triggers_event(scripted_dice):
+    chart = load_fate_chart(DEFAULT_DATA_DIR)
+    dice = scripted_dice([4, 4])  # doubles, 4 <= CF 5
+    payload = fate_check("likely", cf=5, chart=chart, dice=dice)
+    assert payload["random_event_triggered"] is True
+
+
+def test_fate_check_doubles_above_cf_does_not_trigger_event(scripted_dice):
+    chart = load_fate_chart(DEFAULT_DATA_DIR)
+    dice = scripted_dice([7, 7])
+    payload = fate_check("likely", cf=3, chart=chart, dice=dice)
+    assert payload["random_event_triggered"] is False
+
+
+def test_fate_check_exceptional_yes(scripted_dice):
+    chart = load_fate_chart(DEFAULT_DATA_DIR)
+    dice = scripted_dice([0, 5])  # roll 5, <= exc_yes_cap 15 at likely/CF5
+    payload = fate_check("likely", cf=5, chart=chart, dice=dice)
+    assert payload["outcome"] == "exceptional_yes"
+    assert payload["exceptional"] is True
+
+
+def test_fate_check_exceptional_no(scripted_dice):
+    chart = load_fate_chart(DEFAULT_DATA_DIR)
+    dice = scripted_dice([9, 7])  # roll 97, >= exc_no_floor 95 at likely/CF5
+    payload = fate_check("likely", cf=5, chart=chart, dice=dice)
+    assert payload["outcome"] == "exceptional_no"
+    assert payload["exceptional"] is True
+
+
+def test_fate_check_double_zero_rolls_100(scripted_dice):
+    chart = load_fate_chart(DEFAULT_DATA_DIR)
+    dice = scripted_dice([0, 0])  # rolls 100 -> no or exceptional_no
+    payload = fate_check("likely", cf=5, chart=chart, dice=dice)
+    assert payload["roll"] == 100
+    assert payload["outcome"] in ("no", "exceptional_no")
+
+
+def test_fate_check_unknown_likelihood_raises(scripted_dice):
+    chart = load_fate_chart(DEFAULT_DATA_DIR)
+    with pytest.raises(FateChartError):
+        fate_check("definitely_not_a_key", cf=5, chart=chart, dice=scripted_dice([4, 3]))
+
+
+def test_fate_check_cf_out_of_range_raises(scripted_dice):
+    chart = load_fate_chart(DEFAULT_DATA_DIR)
+    with pytest.raises(FateChartError):
+        fate_check("likely", cf=0, chart=chart, dice=scripted_dice([4, 3]))
+    with pytest.raises(FateChartError):
+        fate_check("likely", cf=10, chart=chart, dice=scripted_dice([4, 3]))
+
+
+def test_known_likelihoods_is_frozen_set():
+    assert isinstance(KnownLikelihood, frozenset)
+    assert "likely" in KnownLikelihood
