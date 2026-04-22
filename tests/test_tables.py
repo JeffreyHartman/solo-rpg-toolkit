@@ -11,8 +11,6 @@ from solo_roll.tables import (
 )
 
 
-DICE_MAP = {"d4": 4, "d6": 6, "d8": 8, "d10": 10, "d12": 12, "d20": 20, "d100": 100}
-
 
 def _write_json(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -150,6 +148,59 @@ def test_roll_table_flat_edge_positions(data_dir: Path, scripted_dice):
     assert roll_table("sample", data_dir, scripted_dice([4]))["result"] == "d"
 
 
-def test_dice_map_is_complete():
-    for key, faces in DICE_MAP.items():
+def test_dice_faces_is_complete():
+    from solo_roll.tables import DICE_FACES
+    expected_dice = {"d4", "d6", "d8", "d10", "d12", "d20", "d100"}
+    assert set(DICE_FACES.keys()) == expected_dice
+    for key, faces in DICE_FACES.items():
         assert int(key[1:]) == faces
+
+
+def test_ranged_table_missing_result_raises(data_dir: Path):
+    _write_json(
+        data_dir / "tables" / "noResult.json",
+        {
+            "name": "noResult",
+            "dice": "d4",
+            "ranges": [{"min": 1, "max": 4}],  # missing result
+        },
+    )
+    with pytest.raises(TableDataError):
+        load_table("noResult", data_dir)
+
+
+def test_non_dict_json_raises(data_dir: Path):
+    (data_dir / "tables" / "array.json").write_text("[1, 2, 3]")
+    with pytest.raises(TableDataError):
+        load_table("array", data_dir)
+
+
+def test_table_missing_name_raises(data_dir: Path):
+    _write_json(
+        data_dir / "tables" / "noName.json",
+        {"dice": "d4", "entries": ["a", "b", "c", "d"]},  # no "name"
+    )
+    with pytest.raises(TableDataError):
+        load_table("noName", data_dir)
+
+
+def test_roll_table_ranged_returns_correct_result(data_dir: Path, scripted_dice):
+    _write_json(
+        data_dir / "tables" / "ranged.json",
+        {
+            "name": "ranged",
+            "dice": "d10",
+            "ranges": [
+                {"min": 1, "max": 3, "result": "low"},
+                {"min": 4, "max": 7, "result": "mid"},
+                {"min": 8, "max": 10, "result": "high"},
+            ],
+        },
+    )
+    # Roll 5 should land in "mid" band
+    result = roll_table("ranged", data_dir, scripted_dice([5]))
+    assert result["roll"] == 5
+    assert result["result"] == "mid"
+    # Roll 1 = "low", roll 10 = "high"
+    assert roll_table("ranged", data_dir, scripted_dice([1]))["result"] == "low"
+    assert roll_table("ranged", data_dir, scripted_dice([10]))["result"] == "high"

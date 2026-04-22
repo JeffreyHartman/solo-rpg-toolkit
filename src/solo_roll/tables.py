@@ -35,11 +35,17 @@ def load_table(name: str, data_dir: Path) -> dict[str, Any]:
     except json.JSONDecodeError as exc:
         raise TableDataError(f"Invalid JSON in {path}: {exc}") from exc
 
+    if not isinstance(payload, dict):
+        raise TableDataError(f"{path}: expected a JSON object, got {type(payload).__name__}")
+
     _validate(payload, path)
     return payload
 
 
 def _validate(payload: dict[str, Any], path: Path) -> None:
+    if not isinstance(payload.get("name"), str):
+        raise TableDataError(f"{path}: 'name' must be a non-empty string")
+
     dice = payload.get("dice")
     if dice not in DICE_FACES:
         raise TableDataError(f"{path}: unknown dice '{dice}'")
@@ -70,6 +76,8 @@ def _validate(payload: dict[str, Any], path: Path) -> None:
         high = band.get("max")
         if not isinstance(low, int) or not isinstance(high, int):
             raise TableDataError(f"{path}: range min/max must be ints")
+        if "result" not in band or not isinstance(band["result"], str):
+            raise TableDataError(f"{path}: range band missing or non-string 'result'")
         if low > high or low < 1 or high > faces:
             raise TableDataError(f"{path}: range {low}-{high} invalid for {dice}")
         for value in range(low, high + 1):
