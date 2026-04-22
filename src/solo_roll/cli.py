@@ -6,6 +6,7 @@ from pathlib import Path
 
 from . import DEFAULT_DATA_DIR, __version__
 from .charts import FateChartError, fate_check, load_fate_chart
+from .quicksets import QuicksetDataError, QuicksetNotFoundError, run_quickset
 from .rng import DiceSource, RandomDice
 from .tables import TableDataError, TableNotFoundError, roll_table
 
@@ -83,6 +84,20 @@ def _cmd_meaning_pair(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_quickset(args: argparse.Namespace) -> int:
+    data_dir = _resolve_data_dir(args.data)
+    try:
+        payload = run_quickset(args.id, data_dir, _dice(args))
+    except QuicksetNotFoundError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    except QuicksetDataError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    print(json.dumps(payload, indent=2))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="solo-roll")
     parser.add_argument("--version", action="version", version=f"solo-roll {__version__}")
@@ -105,6 +120,11 @@ def main(argv: list[str] | None = None) -> int:
                         help="Comma-separated pair of table names (default action1,descriptor1)")
     _add_common_args(p_pair)
     p_pair.set_defaults(func=_cmd_meaning_pair)
+
+    p_qs = subparsers.add_parser("quickset", help="Run a quickset chain")
+    p_qs.add_argument("id", help="Quickset id, e.g. npc_profile")
+    _add_common_args(p_qs)
+    p_qs.set_defaults(func=_cmd_quickset)
 
     args = parser.parse_args(argv)
     if args.command is None:

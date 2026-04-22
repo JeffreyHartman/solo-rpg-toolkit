@@ -99,3 +99,20 @@ def test_meaning_pair_custom_tables_flag():
 def test_meaning_pair_bad_tables_flag_exits_1():
     result = _run("meaning-pair", "--tables", "only_one")
     assert result.returncode == 1
+
+
+def test_quickset_npc_profile_runs_end_to_end():
+    result = _run("quickset", "npc_profile", "--seed", "0")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["id"] == "npc_profile"
+    assert payload["name"] == "NPC Profile"
+    assert len(payload["steps"]) == 8
+    for step in payload["steps"]:
+        assert {"label", "table", "roll", "result"} <= step.keys()
+        assert 1 <= step["roll"] <= 100
+
+
+def test_quickset_unknown_id_exits_1():
+    result = _run("quickset", "not_a_real_quickset")
+    assert result.returncode == 1
