@@ -1,0 +1,11 @@
+{
+  "id": "creature_profile",
+  "name": "Creature Profile",
+  "description": "Generates details for a creature or monster",
+  "steps": [
+    {"label": "Type",        "table": "elements/creature"},
+    {"label": "Abilities",   "table": "elements/creatureabilities"},
+    {"label": "Description", "table": "elements/characterdescription"},
+    {"label": "Behavior",    "table": "elements/animalaction"}
+  ]
+}

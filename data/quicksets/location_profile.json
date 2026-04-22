@@ -1,0 +1,12 @@
+{
+  "id": "location_profile",
+  "name": "Location Profile",
+  "description": "Generates details for a location or place of interest",
+  "steps": [
+    {"label": "Type",        "table": "elements/location"},
+    {"label": "Description", "table": "descriptor1"},
+    {"label": "Atmosphere",  "table": "elements/adventuretone"},
+    {"label": "Feature",     "table": "descriptor1"},
+    {"label": "Detail",      "table": "descriptor2"}
+  ]
+}

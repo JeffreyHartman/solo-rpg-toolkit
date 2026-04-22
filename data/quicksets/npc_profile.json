@@ -1,0 +1,15 @@
+{
+  "id": "npc_profile",
+  "name": "NPC Profile",
+  "description": "Complete NPC dossier with identity, personality, and background",
+  "steps": [
+    {"label": "Identity",    "table": "elements/characteridentity"},
+    {"label": "Description", "table": "elements/characterdescription"},
+    {"label": "Appearance",  "table": "elements/characterappearance"},
+    {"label": "Background",  "table": "elements/characterbackground"},
+    {"label": "Personality", "table": "elements/characterpersonality"},
+    {"label": "Motivation",  "table": "elements/charactermotivation"},
+    {"label": "Skills",      "table": "elements/characterskills"},
+    {"label": "Trait",       "table": "elements/charactertrait"}
+  ]
+}
