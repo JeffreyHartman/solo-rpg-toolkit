@@ -204,3 +204,14 @@ def test_roll_table_ranged_returns_correct_result(data_dir: Path, scripted_dice)
     # Roll 1 = "low", roll 10 = "high"
     assert roll_table("ranged", data_dir, scripted_dice([1]))["result"] == "low"
     assert roll_table("ranged", data_dir, scripted_dice([10]))["result"] == "high"
+
+
+def test_all_shipped_tables_load_from_real_data():
+    from solo_roll import DEFAULT_DATA_DIR
+    tables_root = DEFAULT_DATA_DIR / "tables"
+    json_files = sorted(tables_root.rglob("*.json"))
+    assert len(json_files) >= 49, f"expected at least 49 shipped tables, found {len(json_files)}"
+    for path in json_files:
+        rel_name = path.relative_to(tables_root).with_suffix("").as_posix()
+        table = load_table(rel_name, DEFAULT_DATA_DIR)
+        assert "entries" in table or "ranges" in table
