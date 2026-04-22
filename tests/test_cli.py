@@ -75,3 +75,27 @@ def test_fate_check_reproducible_with_seed():
     b = _run("fate-check", "--likelihood", "likely", "--cf", "5", "--seed", "123")
     assert a.returncode == 0 and b.returncode == 0
     assert a.stdout == b.stdout
+
+
+def test_meaning_pair_defaults_action1_descriptor1():
+    result = _run("meaning-pair", "--seed", "0")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert set(payload.keys()) == {"action", "description"}
+    assert payload["action"]["table"] == "action1"
+    assert payload["description"]["table"] == "descriptor1"
+    for side in ("action", "description"):
+        assert set(payload[side].keys()) >= {"table", "roll", "result"}
+
+
+def test_meaning_pair_custom_tables_flag():
+    result = _run("meaning-pair", "--tables", "action2,descriptor2", "--seed", "0")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["action"]["table"] == "action2"
+    assert payload["description"]["table"] == "descriptor2"
+
+
+def test_meaning_pair_bad_tables_flag_exits_1():
+    result = _run("meaning-pair", "--tables", "only_one")
+    assert result.returncode == 1

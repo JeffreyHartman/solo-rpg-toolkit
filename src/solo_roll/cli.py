@@ -57,6 +57,32 @@ def _cmd_fate_check(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_meaning_pair(args: argparse.Namespace) -> int:
+    data_dir = _resolve_data_dir(args.data)
+    tables_arg = args.tables
+    parts = [t.strip() for t in tables_arg.split(",") if t.strip()]
+    if len(parts) != 2:
+        print(f"error: --tables expects two comma-separated names, got {tables_arg!r}", file=sys.stderr)
+        return 1
+    action_name, desc_name = parts
+    dice = _dice(args)
+    try:
+        action = roll_table(action_name, data_dir, dice)
+        description = roll_table(desc_name, data_dir, dice)
+    except TableNotFoundError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    except TableDataError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    payload = {
+        "action":      {"table": action["table"],      "roll": action["roll"],      "result": action["result"]},
+        "description": {"table": description["table"], "roll": description["roll"], "result": description["result"]},
+    }
+    print(json.dumps(payload, indent=2))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="solo-roll")
     parser.add_argument("--version", action="version", version=f"solo-roll {__version__}")
@@ -73,6 +99,12 @@ def main(argv: list[str] | None = None) -> int:
     p_fate.add_argument("--cf", type=int, required=True)
     _add_common_args(p_fate)
     p_fate.set_defaults(func=_cmd_fate_check)
+
+    p_pair = subparsers.add_parser("meaning-pair", help="Roll Mythic Meaning Tables (action + descriptor)")
+    p_pair.add_argument("--tables", default="action1,descriptor1",
+                        help="Comma-separated pair of table names (default action1,descriptor1)")
+    _add_common_args(p_pair)
+    p_pair.set_defaults(func=_cmd_meaning_pair)
 
     args = parser.parse_args(argv)
     if args.command is None:
