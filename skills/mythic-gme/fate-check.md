@@ -1,43 +1,52 @@
-# Fate Check Chart
+# Fate Check Reference
 
-Roll 2d10 read as d100 (00-99). Cross-reference **Likelihood** (row) with current **Chaos Factor** (column) to find the thresholds.
+> Fate checks are run via `solo-roll fate-check` — this file is a human-readable reference. The CLI handles all math.
 
-- Number shown = "Yes" threshold (roll ≤ this is Yes).
-- Exceptional Yes = roll ≤ (Yes threshold ÷ 5), rounded down.
-- Exceptional No = roll ≥ (100 - ((100 - Yes threshold) ÷ 5)), rounded up.
-- Doubles (e.g. 3/3, 7/7) where both dice ≤ Chaos Factor → **Random Event** also fires.
+## Command
 
-> **Note**: The values below match Mythic 2e's fate chart logic but you should cross-check against your copy of the book — I've reproduced them to function; they are not guaranteed identical to every cell in the official chart. If you want exact fidelity, overwrite this file with your book's values.
+```bash
+solo-roll fate-check --likelihood <key> --cf <N>
+```
 
-## Fate Chart (Yes threshold)
+## Likelihood keys
 
-| Likelihood           | CF1 | CF2 | CF3 | CF4 | CF5 | CF6 | CF7 | CF8 | CF9 |
-|----------------------|----:|----:|----:|----:|----:|----:|----:|----:|----:|
-| Has to be            |  85 |  90 |  92 |  94 |  95 |  96 |  97 |  98 |  99 |
-| Near sure thing      |  75 |  82 |  85 |  88 |  90 |  92 |  94 |  96 |  98 |
-| Very likely          |  65 |  72 |  76 |  80 |  85 |  88 |  92 |  94 |  96 |
-| Likely               |  50 |  58 |  65 |  72 |  75 |  82 |  85 |  88 |  92 |
-| 50/50                |  25 |  35 |  45 |  50 |  50 |  55 |  65 |  75 |  85 |
-| Unlikely             |  10 |  15 |  20 |  25 |  25 |  32 |  40 |  45 |  50 |
-| Very unlikely        |   5 |   8 |  12 |  15 |  15 |  18 |  25 |  30 |  35 |
-| Near impossible      |   3 |   5 |   7 |  10 |  10 |  12 |  15 |  20 |  25 |
-| No way               |   1 |   2 |   3 |   5 |   5 |   7 |  10 |  15 |  20 |
+| Natural language | `--likelihood` key |
+|---|---|
+| Certain / Has to be | `certain` |
+| Nearly Certain | `nearly_certain` |
+| Very Likely | `very_likely` |
+| Likely | `likely` |
+| 50/50 | `50_50` |
+| Unlikely | `unlikely` |
+| Very Unlikely | `very_unlikely` |
+| Nearly Impossible | `nearly_impossible` |
+| Impossible / No way | `impossible` |
 
-## Quick-read process
+## Yes thresholds (reference)
 
-Example: **Likelihood = Likely, CF = 5, rolled 2d10 showing 4 and 3 → 43**
+The table below shows the `yes_threshold` value for each likelihood × CF combination. Roll a d100 (via `dice` field in CLI output): ≤ yes_threshold = Yes; > yes_threshold = No.
 
-- Yes threshold at CF 5, Likely = 75.
-- Exceptional Yes threshold = 75 / 5 = 15.
-- Exceptional No threshold = 100 - ((100 - 75) / 5) = 100 - 5 = 95, so rolls ≥ 95 are Exceptional No.
-- 43 ≤ 75, but > 15 → **Yes** (not exceptional).
-- Dice were 4 and 3 (not doubles) → no random event.
+| Likelihood | CF1 | CF2 | CF3 | CF4 | CF5 | CF6 | CF7 | CF8 | CF9 |
+|---|---|---|---|---|---|---|---|---|---|
+| certain | 50 | 65 | 75 | 85 | 90 | 95 | 99 | 99 | 99 |
+| nearly_certain | 35 | 50 | 65 | 75 | 85 | 90 | 95 | 99 | 99 |
+| very_likely | 25 | 35 | 50 | 65 | 75 | 85 | 90 | 95 | 99 |
+| likely | 15 | 25 | 35 | 50 | 65 | 75 | 85 | 90 | 95 |
+| 50_50 | 10 | 15 | 25 | 35 | 50 | 65 | 75 | 85 | 90 |
+| unlikely | 5 | 10 | 15 | 25 | 35 | 50 | 65 | 75 | 85 |
+| very_unlikely | 1 | 5 | 10 | 15 | 25 | 35 | 50 | 65 | 75 |
+| nearly_impossible | 1 | 1 | 5 | 10 | 15 | 25 | 35 | 50 | 65 |
+| impossible | 1 | 1 | 1 | 5 | 10 | 15 | 25 | 35 | 50 |
 
-Example: **Likelihood = 50/50, CF = 7, rolled 5 and 5 → 55**
+Source: Mythic GME 2e.
 
-- Yes threshold = 65. 55 ≤ 65 → **Yes**.
-- Dice are doubles (5/5). 5 ≤ CF 7 → **Random event also fires.**
+## Exceptional outcomes
 
-## When in doubt about likelihood
+- **Exceptional Yes**: roll ≤ yes_threshold ÷ 5 (floor)
+- **Exceptional No**: roll ≥ 101 − ⌈(100 − yes_threshold) ÷ 5⌉
 
-Lean toward 50/50 unless there's real reason to shift. Over-tuning likelihood to match what you want defeats the purpose. If you'd be happy with either answer, go 50/50.
+The CLI computes these automatically and returns `exceptional: true/false` in the output.
+
+## Random event
+
+Fires when both dice match AND each die ≤ CF. The CLI returns `random_event_triggered: true` when this occurs.

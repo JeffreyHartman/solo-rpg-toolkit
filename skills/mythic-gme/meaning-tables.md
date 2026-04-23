@@ -1,36 +1,39 @@
 # Meaning Tables
 
-Two d100 tables — **Action** and **Description** — rolled together to produce an evocative word pair that the agent interprets in context.
+Two tables — **Action** and **Description** — rolled together to produce a word pair the agent interprets in context.
 
-> **This file is intentionally not populated.** The Meaning Tables (Actions Table 1 and Descriptions Table 1 in the Mythic GME 2e book, plus the specialized Meaning Tables) are copyrighted content. Populate them from your copy of the book here, or point this skill at your own files.
+## Command
 
-## Interim fallback: use Ironsworn oracles
-
-If the `ironsworn` skill is also loaded and these tables are not yet populated, the agent should use Ironsworn's **Action + Theme** oracle as a functional substitute (see `ironsworn/oracles.md`). It's not a perfect one-for-one with Mythic's Meaning Tables, but it serves the same role — a random word pair the narrator interprets into meaning.
-
-## Format for populating
-
-```
-## Action (d100)
-1. [Word]
-2. [Word]
-...
-100. [Word]
-
-## Description (d100)
-1. [Word]
-2. [Word]
-...
-100. [Word]
+```bash
+solo-roll meaning-pair
 ```
 
-## Specialized Meaning Tables
+Returns:
+```json
+{
+  "action":      {"table": "action1", "roll": 42, "result": "Betray"},
+  "description": {"table": "descriptor1", "roll": 67, "result": "Ancient"}
+}
+```
 
-Mythic 2e includes additional themed meaning tables (Adventure, Combat, Alien, Fantasy, etc.) for specialized flavor. If you want them here, add them as `meaning-tables-combat.md`, `meaning-tables-fantasy.md`, etc. and reference them in `SKILL.md` so the agent knows when to use which.
+Interpret the pair (`action` + `description`) in current fictional context. First natural reading wins. Re-interpret broadly before re-rolling — Mythic explicitly encourages stretching. Re-rolls are rare.
 
-## How the agent should use these
+## Default tables
 
-1. Roll 1d100 on Action, 1d100 on Description.
-2. State both words out loud: *"Action: Advance. Description: Old."*
-3. Interpret the pair in the current fictional context. First natural reading wins.
-4. If the pair is genuinely nonsensical in context, re-interpret broadly before re-rolling — Mythic explicitly encourages stretching interpretation. Re-rolls are allowed but should be rare.
+`solo-roll meaning-pair` uses the `action1` and `descriptor1` tables by default. These are d100 word lists included with this toolkit (100 action words, 100 descriptor words). They're compatible with Mythic GME's meaning system.
+
+## Using Mythic 2e's own tables
+
+If you have the Mythic GME 2e book, you can populate two files from it:
+- `data/tables/mythic/actions.json` — Meaning Tables: Actions (100 entries)
+- `data/tables/mythic/descriptions.json` — Meaning Tables: Descriptions (100 entries)
+
+Use the same JSON schema as `data/tables/action1.json`. Then call:
+
+```bash
+solo-roll meaning-pair --tables mythic/actions,mythic/descriptions
+```
+
+## Specialized tables
+
+Mythic 2e includes themed meaning tables (Adventure, Combat, Alien, Fantasy, etc.). Add them as `data/tables/mythic/meaning-combat.json`, etc. and call with `--tables mythic/meaning-combat,mythic/meaning-combat-desc`.

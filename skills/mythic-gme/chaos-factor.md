@@ -45,3 +45,5 @@ Record CF in `dm-notes/mythic-state.md`:
 ```
 
 Keeping this history visible in the DM notes also makes CF shifts feel earned rather than whimsical — the agent can look at the last few scenes and sanity-check itself.
+
+Pass the current CF value as `--cf N` to `solo-roll fate-check` for every fate check.
