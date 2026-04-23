@@ -1,98 +1,191 @@
 ---
 name: mythic-gme
-description: Use for Mythic Game Master Emulator mechanics — fate checks (yes/no oracle weighted by Chaos Factor), scene tests (did the scene proceed as expected, get altered, or get interrupted), event focus rolls, and Chaos Factor tracking. Activate WHENEVER the player asks a yes/no question during play, a new scene is about to begin, a random event is triggered, or the agent needs structured unpredictability to avoid defaulting to the most predictable narrative path. Pairs well with any RPG system skill (Ironsworn, PF2e, etc.) — Mythic sits on top as the pacing/oracle layer.
+description: Oracle mechanics for yes/no questions, scene tests, random events, and chaos factor tracking. Use whenever the player asks a yes/no question, frames a new scene, or a random event needs resolving. All dice are rolled via the `solo-roll` CLI — never generate numbers yourself.
 ---
 
-# Mythic Game Master Emulator (2e) Skill
+# Mythic GME 2e Skill
 
-Mythic is by Tana Pigeon / Word Mill Games. This skill encodes the *mechanics and procedural flow* of running Mythic 2e. **Specific lookup tables (Meaning Tables, full Event Focus percentages, etc.) are copyrighted content from the Mythic 2e book — populate `meaning-tables.md` and `event-focus.md` from your own copy.** The scaffolding here will work immediately; the tables marked `[POPULATE FROM BOOK]` are where you plug in the real data.
+This skill wires the Mythic Game Master Emulator into your solo RPG session. Every die roll goes through `solo-roll` — no LLM-invented numbers.
 
-## Why this layer exists
+## Using the CLI
 
-LLMs, left alone, write the most predictable story available. Mythic breaks that by forcing the narrative to react to *external* randomness rather than whatever the model's next-token prediction wants. When you use this skill faithfully, you will repeatedly produce developments the agent would *never* have invented on its own — and then have to justify them. That friction is the whole point.
+All random operations use `solo-roll`. Run each command as a Bash tool call and parse the JSON output.
 
-## Chaos Factor
+**Never generate dice numbers yourself.** If you're tempted to say "I'll roll a 7", use the CLI instead.
 
-The Chaos Factor (CF) is the world's current volatility, 1 (very stable, predictable) to 9 (utter chaos). It starts at **5** by default.
+---
 
-- **After a scene where the player is in control / things went their way**: CF -1 (minimum 1).
-- **After a scene where the player lost control / things went against them**: CF +1 (maximum 9).
-- Track CF in `dm-notes/mythic-state.md` session to session.
+## Chaos Factor (CF)
 
-The CF modifies fate checks, scene tests, and event frequency.
+CF is a 1–9 dial tracking narrative volatility. Starts at **5**.
 
-## Scene Test (run at the start of every scene)
+At scene end, ask: did the player come out more in control or less?
+- More in control (plans worked, threat neutralized): **CF − 1** (min 1)
+- Less in control (resource lost, complication unresolved): **CF + 1** (max 9)
+- Genuine mixed result: no change
 
-When the player proposes / agrees to a new scene:
-1. Ask yourself: *What does the player reasonably expect this scene to be?* Write it down in one sentence in dm-notes.
-2. Roll 1d10.
-   - If the roll is **≤ current CF**, the scene is NOT as expected.
-     - If the roll is **even**: **Altered scene** — one element of the expected setup is different. (Who's there, what they want, where it is, what just happened.) Resolve by Meaning Table roll if you need help: "what's different?"
-     - If the roll is **odd**: **Interrupt scene** — the expected scene doesn't happen; something intrudes instead. Roll a **Random Event** (see below) to see what.
-   - If the roll is **> CF**, the scene proceeds as expected. Narrate.
+Track CF in `dm-notes/mythic-state.md`. Pass it as `--cf N` to every CLI fate check.
 
-## Fate Check (yes/no questions)
+See `chaos-factor.md` for CF feel guide and examples.
 
-Whenever the player asks a yes/no question about the world, or the agent has a question that needs a binary answer, use a Fate Check instead of guessing.
+---
 
-### Steps
-1. Pick a **likelihood** for "yes" before rolling. The standard ladder:
-   - Has to be / No way
-   - Near sure thing / Impossible
-   - Very likely / Very unlikely
-   - Likely / Unlikely
-   - 50/50
-2. Roll 2d10. Read them as percentile (e.g. a 3 and a 7 → 37). Also note each individual die.
-3. Look up the likelihood row against the current CF in `fate-check.md` to get two thresholds: an **Exceptional Yes cap** and a **Yes cap**.
-4. Result:
-   - Roll ≤ Exceptional Yes cap → **Exceptional Yes** (very strongly yes, with emphasis)
-   - Roll ≤ Yes cap → **Yes**
-   - Roll > Yes cap but not in Exceptional No range → **No**
-   - Roll in Exceptional No range → **Exceptional No** (very strongly no, with emphasis)
-5. **Random Event check** (doubles): if both d10s came up the same value AND that value is ≤ CF, a random event fires in addition to the Yes/No answer. (Example: CF 6, you rolled 4/4 → event fires. CF 3, you rolled 7/7 → no event.)
+## Scene Test
 
-Announce rolls and reasoning to the player: *"Fate check, Likely, CF 5 — rolled 2d10: 4 and 4. That's 44 — Yes. And doubles under CF means a random event fires. Let me roll focus…"*
+Run at the start of every Expected Scene.
 
-## Random Event (when triggered)
-
-A random event is a disruption — something happens that the narrative wasn't aiming at.
-
-1. Roll 1d100 on the **Event Focus** table (see `event-focus.md`) to get what *kind* of event.
-2. Roll on the **Meaning Tables** (Action + Description, see `meaning-tables.md`) to get texture.
-3. Interpret the combination in the current context. The focus tells you "who/what is this about"; the meaning pair tells you the *shape* of the event. Bend interpretation toward the existing fiction — don't force a left turn if a subtle shift makes more sense.
-
-Examples of interpretation:
-- Focus "NPC Action" + Meaning "Betray / Secret" → An NPC the player trusts acts on a hidden agenda that's now partly visible.
-- Focus "Remote Event" + Meaning "Advance / Enemy" → Somewhere the player isn't, an enemy faction moves forward on their plans. The player may learn of this via rumor or evidence.
-- Focus "New NPC" + Meaning "Seek / Information" → A new character arrives looking for something (or someone).
-
-## Detail Check (describing things)
-
-When the player asks for a descriptor the agent doesn't have pre-set ("what does the smuggler's face look like?" "what's unusual about this shrine?"), roll the Meaning Tables (Action + Description) and interpret.
-
-## Saving state between sessions
-
-The agent should write and update `dm-notes/mythic-state.md`:
+```bash
+solo-roll roll d10
 ```
+
+Output: `{"dice": "d10", "roll": N}`
+
+| Roll | Result |
+|------|--------|
+| roll > CF | **Expected Scene** — proceed as planned |
+| roll ≤ CF, odd (1,3,5,7,9) | **Altered Scene** — something changes; reframe the opening |
+| roll ≤ CF, even (2,4,6,8) | **Interrupt Scene** — full Random Event fires instead |
+
+For an **Interrupt Scene**, run the full [Random Event](#random-event) procedure below.
+
+For an **Altered Scene**, reframe the scene in the next-most-expected way. Use `solo-roll meaning-pair` if you need inspiration for what changes.
+
+---
+
+## Fate Check
+
+When a yes/no question arises, choose a likelihood that reflects how likely a Yes is, then run:
+
+```bash
+solo-roll fate-check --likelihood <key> --cf <N>
+```
+
+Replace `<N>` with the current Chaos Factor.
+
+### Likelihood keys
+
+| Player says… | Use `--likelihood` |
+|---|---|
+| Certain / Has to be | `certain` |
+| Nearly Certain | `nearly_certain` |
+| Very Likely | `very_likely` |
+| Likely | `likely` |
+| 50/50 | `50_50` |
+| Unlikely | `unlikely` |
+| Very Unlikely | `very_unlikely` |
+| Nearly Impossible | `nearly_impossible` |
+| Impossible / No way | `impossible` |
+
+### Output fields
+
+```json
+{
+  "likelihood": "likely",
+  "cf": 5,
+  "yes_threshold": 65,
+  "exceptional_yes_cap": 13,
+  "exceptional_no_floor": 94,
+  "dice": [4, 3],
+  "roll": 43,
+  "outcome": "yes",
+  "exceptional": false,
+  "random_event_triggered": false
+}
+```
+
+- **outcome**: `exceptional_yes` | `yes` | `no` | `exceptional_no`
+- **exceptional**: `true` when outcome is exceptional_yes or exceptional_no
+- **random_event_triggered**: `true` when both dice match AND each die ≤ CF → run [Random Event](#random-event)
+
+### Announcing results
+
+After the roll:
+1. State the outcome and whether it was exceptional
+2. If `random_event_triggered: true`, run the Random Event procedure
+3. Interpret in fictional context
+
+---
+
+## Random Event
+
+Fires when:
+- A fate check returns `random_event_triggered: true`
+- A scene test produces an Interrupt Scene
+
+**Step 1 — Event Focus:**
+
+```bash
+solo-roll table mythic/event-focus
+```
+
+Output: `{"result": "NPC Action"}` (one of 12 categories)
+
+**Step 2 — Event Meaning:**
+
+```bash
+solo-roll meaning-pair
+```
+
+Output: `{"action": {"result": "Betray"}, "description": {"result": "Ancient"}}`
+
+**Step 3 — Interpret:**
+
+Combine focus + word pair in current fictional context. First natural reading wins. The focus tells you WHAT kind of event; the word pair tells you HOW or WHAT specifically.
+
+Example: Focus = "NPC Action", Action = "Betray", Description = "Ancient" → an NPC you trusted is revealed to have ties to the old enemy faction.
+
+See `event-focus.md` for descriptions of each focus category.
+
+---
+
+## Detail Check / Meaning Pair
+
+When you need descriptive detail, flavor, or an answer to a non-binary question:
+
+```bash
+solo-roll meaning-pair
+```
+
+Interpret the word pair (`action` + `description`) in context. You don't need a full random event — just use the pair as a creative prompt.
+
+---
+
+## State Tracking
+
+Keep `dm-notes/mythic-state.md` updated:
+
+```markdown
 # Mythic State
-- Chaos Factor: 5
-- Current scene: [expected setup, one sentence]
-- Last scene outcome: [in control / out of control]
-- Notable threads (Mythic "Threads List"): 
-  - ...
-- Notable NPCs (Mythic "Characters List"):
-  - ...
+## Chaos Factor: 5
+
+## Threads List
+- Find the missing merchant
+- Expose the corrupt guard captain
+
+## Characters List
+- Kesta Ulfhild (smith, Stonebeck)
+- Captain Rorik (city guard)
+
+## Scene History
+- Scene 1: CF 5 → 4 (player escaped cleanly)
+- Scene 2: CF 4 → 5 (ambush cost supplies)
 ```
 
-Mythic's Threads and Characters lists are canonical — when they exist, you can also roll on them during scene tests and events (e.g. Event Focus "Thread / Character" → pick from these lists randomly).
+At session start: read this file to restore CF and active threads/characters.
+
+---
 
 ## When NOT to use Mythic
 
-- Inside-a-scene micro-mechanics where the system skill (Ironsworn, etc.) already has a move — let that system resolve it.
-- When the player explicitly narrates a scene themselves (authorial control). Mythic is for *uncertainty*, not for overriding the player's fiction.
+- Inside system-specific moves (Ironsworn progress tracks, PF2e skill checks) — use the system's own mechanics
+- Player-authored scenes where no randomness is needed
+- Narrative beats the player explicitly declares as certain
+
+---
 
 ## Reference files
-- `fate-check.md` — the fate chart with likelihood × CF thresholds
-- `event-focus.md` — d100 categories for random events *(structure — populate from book)*
-- `meaning-tables.md` — Action + Description d100 tables *(structure — populate from book)*
-- `chaos-factor.md` — CF tracking rules and examples
+
+- `chaos-factor.md` — CF adjustment rules and feel guide
+- `fate-check.md` — Reference table of all yes_threshold values (human-readable; CLI handles the math)
+- `event-focus.md` — Event focus categories with descriptions
+- `meaning-tables.md` — How the meaning-pair tables work and how to customize them
