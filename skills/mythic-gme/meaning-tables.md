@@ -11,8 +11,8 @@ solo-roll meaning-pair
 Returns:
 ```json
 {
-  "action":      {"table": "action1", "roll": 42, "result": "Betray"},
-  "description": {"table": "descriptor1", "roll": 67, "result": "Ancient"}
+  "action":      {"table": "action1", "roll": 87, "result": "Succeed"},
+  "description": {"table": "descriptor1", "roll": 100, "result": "Yieldingly"}
 }
 ```
 

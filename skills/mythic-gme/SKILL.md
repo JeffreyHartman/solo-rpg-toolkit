@@ -126,7 +126,7 @@ Output: `{"result": "NPC Action"}` (one of 12 categories)
 solo-roll meaning-pair
 ```
 
-Output: `{"action": {"result": "Betray"}, "description": {"result": "Ancient"}}`
+Output: `{"action": {"table": "action1", "roll": 87, "result": "Succeed"}, "description": {"table": "descriptor1", "roll": 100, "result": "Yieldingly"}}`
 
 **Step 3 — Interpret:**
 

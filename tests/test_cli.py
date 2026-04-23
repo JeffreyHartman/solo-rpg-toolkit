@@ -150,3 +150,11 @@ def test_roll_invalid_dice_exits_1():
 def test_roll_d1_exits_1():
     out = _run("roll", "d1")
     assert out.returncode == 1
+
+
+def test_roll_reproducible_with_seed():
+    r1 = _run("roll", "d10", "--seed", "42")
+    r2 = _run("roll", "d10", "--seed", "42")
+    assert r1.returncode == 0
+    assert r2.returncode == 0
+    assert json.loads(r1.stdout)["roll"] == json.loads(r2.stdout)["roll"]

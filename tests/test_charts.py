@@ -164,7 +164,7 @@ def test_fate_check_doubles_above_cf_does_not_trigger_event(scripted_dice):
 
 def test_fate_check_exceptional_yes(scripted_dice):
     chart = load_fate_chart(DEFAULT_DATA_DIR)
-    dice = scripted_dice([0, 5])  # roll 5, <= exc_yes_cap 15 at likely/CF5
+    dice = scripted_dice([0, 5])  # roll 5, <= exc_yes_cap 13 at likely/CF5
     payload = fate_check("likely", cf=5, chart=chart, dice=dice)
     assert payload["outcome"] == "exceptional_yes"
     assert payload["exceptional"] is True
@@ -172,7 +172,7 @@ def test_fate_check_exceptional_yes(scripted_dice):
 
 def test_fate_check_exceptional_no(scripted_dice):
     chart = load_fate_chart(DEFAULT_DATA_DIR)
-    dice = scripted_dice([9, 7])  # roll 97, >= exc_no_floor 95 at likely/CF5
+    dice = scripted_dice([9, 7])  # roll 97, >= exc_no_floor 94 at likely/CF5
     payload = fate_check("likely", cf=5, chart=chart, dice=dice)
     assert payload["outcome"] == "exceptional_no"
     assert payload["exceptional"] is True
