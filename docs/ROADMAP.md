@@ -17,22 +17,22 @@ Sub-projects in priority order. Each is self-contained: design → plan → impl
 - [x] CLI: `solo-roll fate-check --likelihood --cf`
 - [x] CLI: `solo-roll meaning-pair`
 - [x] CLI: `solo-roll quickset <id>`
-- [x] 70 tests, `v0.1.0` tagged, merged to main
+- [x] 75 tests, `v0.1.0` tagged, merged to main
 
 ---
 
 ## Sub-project 2: Mythic GME Skill Rewrite
 Wire the existing `skills/mythic-gme/` skill to call `solo-roll` for all dice and table lookups. No more LLM-generated numbers.
 
-- [ ] Rewrite `SKILL.md` — instruct agent to invoke `solo-roll` subcommands instead of imagining dice
-- [ ] Fate check flow: `solo-roll fate-check --likelihood X --cf N` → interpret JSON result
-- [ ] Meaning pair flow: `solo-roll meaning-pair` → interpret `action` + `description` fields
-- [ ] Scene test: `solo-roll table` (d10 roll against CF) for altered/interrupted scene
-- [ ] Random event: `solo-roll fate-check` doubles detection + `solo-roll table elements/plottwist` (or similar) for event focus
-- [ ] Cross-check `data/charts/mythic-fate.json` values against Mythic 2e PDF
-- [ ] Populate `event-focus.md` from Mythic 2e book (d100 ranges)
-- [ ] Populate `meaning-tables.md` if not already done (or confirm fallback path works)
-- [ ] Update `chaos-factor.md` to reference `dm-notes/mythic-state.md` format
+- [x] Rewrite `SKILL.md` — instruct agent to invoke `solo-roll` subcommands instead of imagining dice
+- [x] Fate check flow: `solo-roll fate-check --likelihood X --cf N` → interpret JSON result
+- [x] Meaning pair flow: `solo-roll meaning-pair` → interpret `action` + `description` fields
+- [x] Scene test: `solo-roll table` (d10 roll against CF) for altered/interrupted scene
+- [x] Random event: `solo-roll fate-check` doubles detection + `solo-roll table elements/plottwist` (or similar) for event focus
+- [x] Cross-check `data/charts/mythic-fate.json` values against Mythic 2e PDF
+- [x] Populate `event-focus.md` from Mythic 2e book (d100 ranges)
+- [x] Populate `meaning-tables.md` if not already done (or confirm fallback path works)
+- [x] Update `chaos-factor.md` to reference `dm-notes/mythic-state.md` format
 - [ ] Integration test: play a 3-scene session, verify all dice sourced from CLI
 
 ---
