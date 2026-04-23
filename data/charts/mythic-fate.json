@@ -2,25 +2,18 @@
   "name": "mythic-fate",
   "source": "Mythic GME 2e",
   "likelihoods": [
-    "has_to_be",
-    "near_sure_thing",
-    "very_likely",
-    "likely",
-    "50_50",
-    "unlikely",
-    "very_unlikely",
-    "near_impossible",
-    "no_way"
+    "certain", "nearly_certain", "very_likely", "likely",
+    "50_50", "unlikely", "very_unlikely", "nearly_impossible", "impossible"
   ],
   "thresholds": {
-    "has_to_be":       [85, 90, 92, 94, 95, 96, 97, 98, 99],
-    "near_sure_thing": [75, 82, 85, 88, 90, 92, 94, 96, 98],
-    "very_likely":     [65, 72, 76, 80, 85, 88, 92, 94, 96],
-    "likely":          [50, 58, 65, 72, 75, 82, 85, 88, 92],
-    "50_50":           [25, 35, 45, 50, 50, 55, 65, 75, 85],
-    "unlikely":        [10, 15, 20, 25, 25, 32, 40, 45, 50],
-    "very_unlikely":   [ 5,  8, 12, 15, 15, 18, 25, 30, 35],
-    "near_impossible": [ 3,  5,  7, 10, 10, 12, 15, 20, 25],
-    "no_way":          [ 1,  2,  3,  5,  5,  7, 10, 15, 20]
+    "certain":           [50, 65, 75, 85, 90, 95, 99, 99, 99],
+    "nearly_certain":    [35, 50, 65, 75, 85, 90, 95, 99, 99],
+    "very_likely":       [25, 35, 50, 65, 75, 85, 90, 95, 99],
+    "likely":            [15, 25, 35, 50, 65, 75, 85, 90, 95],
+    "50_50":             [10, 15, 25, 35, 50, 65, 75, 85, 90],
+    "unlikely":          [ 5, 10, 15, 25, 35, 50, 65, 75, 85],
+    "very_unlikely":     [ 1,  5, 10, 15, 25, 35, 50, 65, 75],
+    "nearly_impossible": [ 1,  1,  5, 10, 15, 25, 35, 50, 65],
+    "impossible":        [ 1,  1,  1,  5, 10, 15, 25, 35, 50]
   }
 }

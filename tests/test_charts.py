@@ -17,19 +17,19 @@ def test_thresholds_formula_mid():
     result = thresholds(yes_threshold=75)
     assert result.yes_threshold == 75
     assert result.exceptional_yes_cap == 15  # 75 // 5
-    assert result.exceptional_no_floor == 95  # 100 - ((100 - 75) // 5) = 100 - 5
+    assert result.exceptional_no_floor == 96  # 101 - ceil((100 - 75) / 5) = 101 - 5
 
 
 def test_thresholds_formula_low():
     result = thresholds(yes_threshold=5)
     assert result.exceptional_yes_cap == 1   # 5 // 5
-    assert result.exceptional_no_floor == 81 # 100 - ((100 - 5) // 5) = 100 - 19
+    assert result.exceptional_no_floor == 82 # 101 - ceil((100 - 5) / 5) = 101 - 19
 
 
 def test_thresholds_formula_high():
     result = thresholds(yes_threshold=95)
     assert result.exceptional_yes_cap == 19  # 95 // 5
-    assert result.exceptional_no_floor == 99 # 100 - ((100 - 95) // 5) = 100 - 1
+    assert result.exceptional_no_floor == 100 # 101 - ceil((100 - 95) / 5) = 101 - 1
 
 
 def test_read_d100_double_zero_is_100():
@@ -82,7 +82,7 @@ def test_classify_outcome_boundary_exact_exceptional_yes_cap_is_exceptional():
 
 def test_classify_outcome_boundary_exact_exceptional_no_floor_is_exceptional():
     t = thresholds(yes_threshold=75)
-    assert classify_outcome(95, t) == ("exceptional_no", True)
+    assert classify_outcome(96, t) == ("exceptional_no", True)
 
 
 def test_is_random_event_doubles_under_cf_fires():
@@ -119,8 +119,8 @@ def test_fate_chart_loads_with_nine_likelihoods_and_nine_cfs():
 def test_fate_chart_likelihoods_match_known_set():
     chart = load_fate_chart(DEFAULT_DATA_DIR)
     expected = {
-        "has_to_be", "near_sure_thing", "very_likely", "likely",
-        "50_50", "unlikely", "very_unlikely", "near_impossible", "no_way",
+        "certain", "nearly_certain", "very_likely", "likely",
+        "50_50", "unlikely", "very_unlikely", "nearly_impossible", "impossible",
     }
     assert set(chart.likelihoods) == expected
 
@@ -134,13 +134,13 @@ def test_fate_chart_thresholds_monotonic_in_cf():
 
 def test_fate_check_returns_complete_payload(scripted_dice):
     chart = load_fate_chart(DEFAULT_DATA_DIR)
-    dice = scripted_dice([4, 3])  # 43 -> yes at likely/CF5 (threshold 75)
+    dice = scripted_dice([4, 3])  # 43 -> yes at likely/CF5 (threshold 65)
     payload = fate_check("likely", cf=5, chart=chart, dice=dice)
     assert payload["likelihood"] == "likely"
     assert payload["cf"] == 5
-    assert payload["yes_threshold"] == 75
-    assert payload["exceptional_yes_cap"] == 15
-    assert payload["exceptional_no_floor"] == 95
+    assert payload["yes_threshold"] == 65
+    assert payload["exceptional_yes_cap"] == 13
+    assert payload["exceptional_no_floor"] == 94
     assert payload["dice"] == [4, 3]
     assert payload["roll"] == 43
     assert payload["outcome"] == "yes"

@@ -1,4 +1,5 @@
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -17,7 +18,7 @@ def thresholds(yes_threshold: int) -> Thresholds:
     if not (1 <= yes_threshold <= 99):
         raise ValueError(f"yes_threshold out of range: {yes_threshold}")
     exc_yes = yes_threshold // 5
-    exc_no = 100 - ((100 - yes_threshold) // 5)
+    exc_no = 101 - math.ceil((100 - yes_threshold) / 5)
     return Thresholds(
         yes_threshold=yes_threshold,
         exceptional_yes_cap=exc_yes,
@@ -50,8 +51,8 @@ def is_random_event(d1: int, d2: int, cf: int) -> bool:
 
 
 KnownLikelihood = frozenset({
-    "has_to_be", "near_sure_thing", "very_likely", "likely",
-    "50_50", "unlikely", "very_unlikely", "near_impossible", "no_way",
+    "certain", "nearly_certain", "very_likely", "likely",
+    "50_50", "unlikely", "very_unlikely", "nearly_impossible", "impossible",
 })
 
 
