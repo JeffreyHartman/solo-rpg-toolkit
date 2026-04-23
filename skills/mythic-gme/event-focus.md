@@ -1,36 +1,56 @@
-# Event Focus (d100)
+# Event Focus
 
-When a random event fires (doubles under CF on a fate check, or you invoke one manually), roll 1d100 to determine the *focus* of the event — what kind of thing is happening.
+When a random event fires (from a fate check returning `random_event_triggered: true` or an Interrupt Scene from the scene test), roll the Event Focus table to determine what type of event it is.
 
-> **This is scaffolding.** Populate the exact d100 ranges from your copy of the Mythic GME 2e book. The categories below match Mythic's event focus taxonomy in name; tune the percentage bands to your book.
+## Roll it
 
-| d100 range | Focus                | Meaning in play |
-|-----------:|----------------------|-----------------|
-|   [POPULATE] | **Remote Event**    | Something happens elsewhere — the player learns of it via messenger, evidence, rumor, or later fallout. Affects the world state more than the immediate scene. |
-|   [POPULATE] | **Ambiguous Event** | An event occurs whose meaning, source, or target is unclear. Player interprets. Often environmental or atmospheric. |
-|   [POPULATE] | **New NPC**         | A new character enters the scene or is introduced into the story. |
-|   [POPULATE] | **NPC Action**      | An existing NPC does something — pick the most thematically interesting one from your Characters List, or roll to pick. |
-|   [POPULATE] | **NPC Negative**    | An NPC suffers or something bad happens to them. |
-|   [POPULATE] | **NPC Positive**    | An NPC benefits or something good happens to them. |
-|   [POPULATE] | **Move Toward a Thread** | Progress, evidence, or clues related to one of the active story threads. |
-|   [POPULATE] | **Move Away from a Thread** | An active thread becomes harder, is obscured, or loses ground. |
-|   [POPULATE] | **Close a Thread**  | An active thread resolves or is permanently cut off. |
-|   [POPULATE] | **PC Negative**     | Bad fortune falls on the player character. |
-|   [POPULATE] | **PC Positive**     | Good fortune falls on the player character. |
-|   [POPULATE] | **Current Context** | Something intensifies or shifts the current scene itself. |
+```
+solo-roll table mythic/event-focus
+```
 
-## Using focus results
+Returns JSON: `{"table": "mythic/event-focus", "display_name": "Random Event Focus", "dice": "d100", "roll": 42, "result": "NPC Action"}`
 
-After getting a focus, roll on the Meaning Tables (Action + Description) in `meaning-tables.md` to get texture. Then interpret:
+The `result` field is the event focus. Then roll `solo-roll meaning-pair` to get the specific Action + Description that shapes the event.
 
-1. **Focus tells you what domain the event belongs to.** If you got "NPC Action," you're looking at something an NPC *does*.
-2. **The two meaning words tell you the shape.** Action "Betray" + Description "Old" → an old betrayal resurfaces, OR an NPC betrays an old bond.
-3. **Pick which NPC / thread / direction feels most charged in the current fiction.** You're not randomizing down to the individual — you're using randomness for domain and tone, then making a grounded authorial choice for the specifics.
+## d100 Ranges
 
-## Threads List and Characters List
+| d100 | Focus |
+|------|-------|
+| 1–5 | Remote Event |
+| 6–10 | Ambiguous Event |
+| 11–20 | New NPC |
+| 21–40 | NPC Action |
+| 41–45 | NPC Negative |
+| 46–50 | NPC Positive |
+| 51–55 | Move Toward A Thread |
+| 56–65 | Move Away From A Thread |
+| 66–70 | Close A Thread |
+| 71–80 | PC Negative |
+| 81–85 | PC Positive |
+| 86–100 | Current Context |
 
-Mythic expects you to keep running lists of:
-- **Threads** — active story problems, quests, unresolved tensions.
-- **Characters** — NPCs in play (including ones the player hasn't met but who are active in the world).
+## What each focus means
 
-When focus says "Move Toward a Thread" or "NPC Action," roll among the list (or just pick the most narratively appropriate). Keep both lists in `dm-notes/mythic-state.md` or under `dm-notes/threads/` and `dm-notes/npcs/`.
+**Remote Event** — Something happens elsewhere, away from the current scene. Has no direct bearing on the PC right now, but may be relevant later. Think of it as world-building or foreshadowing.
+
+**Ambiguous Event** — Something vague and unclear happens. The meaning-pair gives shape to it, but the exact nature may not become clear until later.
+
+**New NPC** — A new character enters the story. Roll meaning-pair for their initial impression, then name them.
+
+**NPC Action** — An existing NPC from your Characters List does something. Pick the most active or relevant one, or roll randomly from the list.
+
+**NPC Negative** — Something bad happens to an NPC. Not necessarily caused by the PC — the world is acting on them.
+
+**NPC Positive** — Something good happens to an NPC.
+
+**Move Toward A Thread** — Progress on one of your active Threads. Which one? The most pressing, or roll randomly from the Threads List.
+
+**Move Away From A Thread** — A Thread becomes harder, more obscured, or more complicated.
+
+**Close A Thread** — A Thread resolves — for good or ill. It may close in an unexpected way.
+
+**PC Negative** — Bad fortune for the player character. Not from an NPC action — the world itself is pushing back.
+
+**PC Positive** — Good fortune for the player character.
+
+**Current Context** — The scene itself intensifies or shifts. Something about the current situation changes.

@@ -1,0 +1,20 @@
+{
+  "name": "mythic/event-focus",
+  "display_name": "Random Event Focus",
+  "dice": "d100",
+  "source": "Mythic GME 2e",
+  "ranges": [
+    {"min": 1,  "max": 5,   "result": "Remote Event"},
+    {"min": 6,  "max": 10,  "result": "Ambiguous Event"},
+    {"min": 11, "max": 20,  "result": "New NPC"},
+    {"min": 21, "max": 40,  "result": "NPC Action"},
+    {"min": 41, "max": 45,  "result": "NPC Negative"},
+    {"min": 46, "max": 50,  "result": "NPC Positive"},
+    {"min": 51, "max": 55,  "result": "Move Toward A Thread"},
+    {"min": 56, "max": 65,  "result": "Move Away From A Thread"},
+    {"min": 66, "max": 70,  "result": "Close A Thread"},
+    {"min": 71, "max": 80,  "result": "PC Negative"},
+    {"min": 81, "max": 85,  "result": "PC Positive"},
+    {"min": 86, "max": 100, "result": "Current Context"}
+  ]
+}
