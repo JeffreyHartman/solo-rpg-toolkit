@@ -98,6 +98,24 @@ def _cmd_quickset(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_roll(args: argparse.Namespace) -> int:
+    dice_str = args.dice.lower()
+    if not dice_str.startswith("d"):
+        print(f"error: invalid dice '{args.dice}' — expected format dN (e.g. d10, d6)", file=sys.stderr)
+        return 1
+    try:
+        sides = int(dice_str[1:])
+    except ValueError:
+        print(f"error: invalid dice '{args.dice}' — expected format dN (e.g. d10, d6)", file=sys.stderr)
+        return 1
+    if sides < 2:
+        print(f"error: dice must have at least 2 sides, got {sides}", file=sys.stderr)
+        return 1
+    result = _dice(args).roll(1, sides)
+    print(json.dumps({"dice": dice_str, "roll": result}, indent=2))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="solo-roll")
     parser.add_argument("--version", action="version", version=f"solo-roll {__version__}")
@@ -125,6 +143,11 @@ def main(argv: list[str] | None = None) -> int:
     p_qs.add_argument("id", help="Quickset id, e.g. npc_profile")
     _add_common_args(p_qs)
     p_qs.set_defaults(func=_cmd_quickset)
+
+    p_roll = subparsers.add_parser("roll", help="Roll a die (e.g. d10, d6, d100)")
+    p_roll.add_argument("dice", help="Dice notation, e.g. d10")
+    _add_common_args(p_roll)
+    p_roll.set_defaults(func=_cmd_roll)
 
     args = parser.parse_args(argv)
     if args.command is None:

@@ -116,3 +116,37 @@ def test_quickset_npc_profile_runs_end_to_end():
 def test_quickset_unknown_id_exits_1():
     result = _run("quickset", "not_a_real_quickset")
     assert result.returncode == 1
+
+
+def test_roll_d10_in_range():
+    out = _run("roll", "d10")
+    assert out.returncode == 0
+    data = json.loads(out.stdout)
+    assert data["dice"] == "d10"
+    assert 1 <= data["roll"] <= 10
+
+
+def test_roll_d6_in_range():
+    out = _run("roll", "d6")
+    assert out.returncode == 0
+    data = json.loads(out.stdout)
+    assert data["dice"] == "d6"
+    assert 1 <= data["roll"] <= 6
+
+
+def test_roll_d100_in_range():
+    out = _run("roll", "d100")
+    assert out.returncode == 0
+    data = json.loads(out.stdout)
+    assert data["dice"] == "d100"
+    assert 1 <= data["roll"] <= 100
+
+
+def test_roll_invalid_dice_exits_1():
+    out = _run("roll", "foo")
+    assert out.returncode == 1
+
+
+def test_roll_d1_exits_1():
+    out = _run("roll", "d1")
+    assert out.returncode == 1
