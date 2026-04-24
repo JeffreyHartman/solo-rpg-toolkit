@@ -193,10 +193,10 @@ def test_ensure_solo_roll_runs_uv_install_if_missing(tmp_path):
 
 
 def test_ensure_solo_roll_errors_if_uv_missing(tmp_path):
+    from solo_roll.campaign import CampaignError
     with patch("solo_roll.campaign.shutil.which", return_value=None):
-        with pytest.raises(SystemExit) as exc:
+        with pytest.raises(CampaignError):
             _ensure_solo_roll(tmp_path)
-        assert exc.value.code == 1
 
 
 # ---------------------------------------------------------------------------

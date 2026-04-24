@@ -8,6 +8,10 @@ import sys
 from pathlib import Path
 
 
+class CampaignError(Exception):
+    """Internal error type for clean exit-1 paths from helpers."""
+
+
 def _resolve_repo_root() -> Path:
     """Return the toolkit repo root (parent of `src/`)."""
     return Path(__file__).resolve().parents[2]
@@ -73,11 +77,7 @@ def _ensure_solo_roll(repo_root: Path) -> None:
     if shutil.which("solo-roll"):
         return
     if not shutil.which("uv"):
-        print(
-            "error: uv not found — install from https://docs.astral.sh/uv/",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+        raise CampaignError("uv not found — install from https://docs.astral.sh/uv/")
     subprocess.run(
         ["uv", "tool", "install", "--editable", str(repo_root)],
         check=True,
@@ -86,12 +86,10 @@ def _ensure_solo_roll(repo_root: Path) -> None:
 
 def _prompt_vault_path() -> Path:
     if not sys.stdin.isatty():
-        print("error: --vault required when not interactive", file=sys.stderr)
-        sys.exit(1)
+        raise CampaignError("--vault required when not interactive")
     raw = input("PLAYER_VAULT_PATH (path to Obsidian vault folder): ").strip()
     if not raw:
-        print("error: vault path cannot be empty", file=sys.stderr)
-        sys.exit(1)
+        raise CampaignError("vault path cannot be empty")
     return Path(raw).expanduser()
 
 
@@ -139,9 +137,8 @@ def main(argv: list[str] | None = None) -> int:
         _install_skills(skills_source, skills_target)
         _ensure_solo_roll(repo_root)
         _create_vault(vault_path)
-    except SystemExit as exc:
-        return int(exc.code) if exc.code is not None else 1
-    except (FileExistsError, IsADirectoryError, OSError) as exc:
+    except (CampaignError, FileExistsError, IsADirectoryError,
+            OSError, subprocess.CalledProcessError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 

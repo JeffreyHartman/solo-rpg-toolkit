@@ -4,11 +4,11 @@ Modular skills for running solo tabletop RPGs in Claude Code. Each skill is self
 
 ## Install the `solo-roll` CLI
 
-`solo-roll` is the Python CLI that backs the dice-and-tables layer used by every skill in this repo. Install it once via `pipx`:
+`solo-roll` is the Python CLI that backs the dice-and-tables layer used by every skill in this repo. Install it once via `uv tool`:
 
 ```bash
 cd ~/git/solo-rpg-toolkit   # or wherever you cloned this
-pipx install --editable .
+uv tool install --editable .
 solo-roll table action1
 ```
 
