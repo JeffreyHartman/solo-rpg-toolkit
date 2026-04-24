@@ -1,7 +1,15 @@
 """solo-campaign: scaffold a new solo RPG campaign folder."""
 
 import argparse
+import shutil
+import subprocess
 import sys
+from pathlib import Path
+
+
+def _resolve_repo_root() -> Path:
+    """Return the toolkit repo root (parent of `src/`)."""
+    return Path(__file__).resolve().parents[2]
 
 
 def main(argv: list[str] | None = None) -> int:
