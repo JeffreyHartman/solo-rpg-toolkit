@@ -40,14 +40,14 @@ Wire the existing `skills/mythic-gme/` skill to call `solo-roll` for all dice an
 ## Sub-project 3: Campaign Bootstrap Script
 One command to scaffold a new campaign folder and install skills.
 
-- [ ] Shell/fish script: `new-campaign <name> <path>`
-- [ ] Copies `example-campaign/` to target path
-- [ ] Installs skills to `~/.claude/skills/` (idempotent)
-- [ ] Runs `uv tool install --editable .` for `solo-roll`
-- [ ] Prompts for `PLAYER_VAULT_PATH` and writes to campaign `CLAUDE.md`
-- [ ] Creates Obsidian vault folder structure at `PLAYER_VAULT_PATH`
-- [ ] Prints "ready — run `claude` in `<path>`"
-- [ ] Works on Linux/macOS; documents Windows PowerShell equivalent in README
+- [x] Shell/fish script: `new-campaign <name> <path>`
+- [x] Copies `example-campaign/` to target path
+- [x] Installs skills to `~/.claude/skills/` (idempotent)
+- [x] Runs `uv tool install --editable .` for `solo-roll`
+- [x] Prompts for `PLAYER_VAULT_PATH` and writes to campaign `CLAUDE.md`
+- [x] Creates Obsidian vault folder structure at `PLAYER_VAULT_PATH`
+- [x] Prints "ready — run `claude` in `<path>`"
+- [x] Works on Linux/macOS; documents Windows PowerShell equivalent in README
 
 ---
 

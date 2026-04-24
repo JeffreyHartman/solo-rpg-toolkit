@@ -34,6 +34,28 @@ data/quicksets/<id>.json              # multi-step chains
 
 Add new tables by dropping a JSON file into `data/tables/` — no rebuild, no reinstall. See any existing file for the schema.
 
+## Bootstrap a campaign with `solo-campaign`
+
+Once `solo-roll` is installed (above — `solo-campaign` ships in the same package), one command scaffolds a fresh campaign:
+
+```bash
+solo-campaign "Bleak Winter" ~/rpg/bleak-winter --vault ~/Obsidian/Solo
+```
+
+What it does:
+- Copies `example-campaign/` to `~/rpg/bleak-winter/` and substitutes the campaign name + vault path into the new `CLAUDE.md`
+- Symlinks each skill (`ironsworn`, `mythic-gme`, `solo-journaler`) into `~/.claude/skills/` — edits in your repo propagate immediately
+- Verifies `solo-roll` is on PATH; runs `uv tool install --editable .` from the repo if not
+- Creates `~/Obsidian/Solo/{Session Log,People,Places,Threads,Lore}` if missing
+
+If you omit `--vault`, the script prompts for the vault path interactively. Use `--skills-dir <path>` (or the `CLAUDE_SKILLS_DIR` env var) to override the default `~/.claude/skills/` location.
+
+The script fails fast if the target campaign directory already exists — it never overwrites.
+
+### Windows
+
+`solo-campaign` is Linux/macOS-first. On Windows, use the manual setup at the bottom of this README (Copy-Item commands), then edit the new `CLAUDE.md` to set `PLAYER_VAULT_PATH`.
+
 ## What's in here
 
 ```
