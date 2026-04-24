@@ -1,6 +1,7 @@
 """solo-campaign: scaffold a new solo RPG campaign folder."""
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
@@ -83,16 +84,68 @@ def _ensure_solo_roll(repo_root: Path) -> None:
     )
 
 
+def _prompt_vault_path() -> Path:
+    if not sys.stdin.isatty():
+        print("error: --vault required when not interactive", file=sys.stderr)
+        sys.exit(1)
+    raw = input("PLAYER_VAULT_PATH (path to Obsidian vault folder): ").strip()
+    if not raw:
+        print("error: vault path cannot be empty", file=sys.stderr)
+        sys.exit(1)
+    return Path(raw).expanduser()
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="solo-campaign",
-                                     description="Scaffold a new solo RPG campaign folder.")
+    parser = argparse.ArgumentParser(
+        prog="solo-campaign",
+        description="Scaffold a new solo RPG campaign folder.",
+    )
     parser.add_argument("name", help="Display name for the campaign")
     parser.add_argument("path", help="Target campaign directory (must not exist)")
     parser.add_argument("--vault", type=str, default=None,
                         help="Player Obsidian vault path")
     parser.add_argument("--skills-dir", type=str, default=None,
                         help="Override ~/.claude/skills/ (env: CLAUDE_SKILLS_DIR)")
-    parser.parse_args(argv)
+    args = parser.parse_args(argv)
+
+    repo_root = _resolve_repo_root()
+    template_dir = repo_root / "example-campaign"
+    skills_source = repo_root / "skills"
+
+    if not template_dir.is_dir():
+        print(
+            f"error: toolkit install corrupt — example-campaign not found at {template_dir}",
+            file=sys.stderr,
+        )
+        return 1
+
+    target = Path(args.path).expanduser()
+    if target.exists():
+        print(f"error: {target} already exists", file=sys.stderr)
+        return 1
+
+    skills_dir_arg = args.skills_dir or os.environ.get("CLAUDE_SKILLS_DIR")
+    skills_target = (
+        Path(skills_dir_arg).expanduser() if skills_dir_arg
+        else Path.home() / ".claude" / "skills"
+    )
+
+    try:
+        vault_path = (
+            Path(args.vault).expanduser() if args.vault
+            else _prompt_vault_path()
+        )
+        _create_campaign(args.name, target, vault_path, template_dir)
+        _install_skills(skills_source, skills_target)
+        _ensure_solo_roll(repo_root)
+        _create_vault(vault_path)
+    except SystemExit as exc:
+        return int(exc.code) if exc.code is not None else 1
+    except (FileExistsError, IsADirectoryError, OSError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    print(f"ready — run `claude` in {target}")
     return 0
 
 

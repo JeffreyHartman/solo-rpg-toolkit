@@ -197,3 +197,82 @@ def test_ensure_solo_roll_errors_if_uv_missing(tmp_path):
         with pytest.raises(SystemExit) as exc:
             _ensure_solo_roll(tmp_path)
         assert exc.value.code == 1
+
+
+# ---------------------------------------------------------------------------
+# Task 7: main() integration tests
+# ---------------------------------------------------------------------------
+
+import os
+
+from solo_roll.campaign import main
+
+
+def test_main_happy_path(tmp_path, monkeypatch, capsys):
+    """End-to-end: create campaign, install skills, create vault, print success."""
+    monkeypatch.setattr(
+        "solo_roll.campaign.shutil.which",
+        lambda cmd: "/usr/bin/solo-roll" if cmd == "solo-roll" else None,
+    )
+
+    target = tmp_path / "my-campaign"
+    vault = tmp_path / "obsidian" / "solo"
+    skills_dir = tmp_path / "claude_skills"
+
+    rc = main([
+        "Bleak Winter",
+        str(target),
+        "--vault", str(vault),
+        "--skills-dir", str(skills_dir),
+    ])
+
+    assert rc == 0
+    assert (target / "CLAUDE.md").is_file()
+    assert "Bleak Winter" in (target / "CLAUDE.md").read_text()
+    assert str(vault) in (target / "CLAUDE.md").read_text()
+    assert vault.is_dir()
+    assert (vault / "Session Log").is_dir()
+    assert any(p.is_symlink() for p in skills_dir.iterdir())
+
+    out = capsys.readouterr().out
+    assert "ready" in out
+    assert str(target) in out
+
+
+def test_main_target_exists_returns_1(tmp_path, capsys):
+    existing = tmp_path / "existing"
+    existing.mkdir()
+    rc = main([
+        "X", str(existing),
+        "--vault", str(tmp_path / "v"),
+        "--skills-dir", str(tmp_path / "s"),
+    ])
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert "already exists" in err
+
+
+def test_main_no_vault_non_tty_returns_1(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
+    rc = main([
+        "X", str(tmp_path / "campaign"),
+        "--skills-dir", str(tmp_path / "s"),
+    ])
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert "vault" in err.lower()
+
+
+def test_main_skills_dir_from_env(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "solo_roll.campaign.shutil.which",
+        lambda cmd: "/usr/bin/solo-roll" if cmd == "solo-roll" else None,
+    )
+    skills_dir = tmp_path / "env_skills"
+    monkeypatch.setenv("CLAUDE_SKILLS_DIR", str(skills_dir))
+    rc = main([
+        "X", str(tmp_path / "campaign"),
+        "--vault", str(tmp_path / "v"),
+    ])
+    assert rc == 0
+    assert skills_dir.is_dir()
