@@ -141,3 +141,13 @@ def test_format_document_appends_unknown_truths_alphabetically() -> None:
 def test_format_document_idempotent() -> None:
     truths = {"iron": _truth("Iron", 1), "old_world": _truth("The Old World", 0)}
     assert dt.format_document(truths) == dt.format_document(truths)
+
+
+def test_truth_order_is_complete_and_unique() -> None:
+    assert len(dt.TRUTH_ORDER) == 11
+    assert len(set(dt.TRUTH_ORDER)) == 11
+    expected = {
+        "old_world", "iron", "legacies", "communities", "leaders",
+        "defense", "mysticism", "religion", "firstborn", "beasts", "horrors",
+    }
+    assert set(dt.TRUTH_ORDER) == expected
