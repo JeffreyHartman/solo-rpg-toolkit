@@ -129,7 +129,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         truths = load_truths(args.datasworn)
-    except ValueError as exc:
+    except (ValueError, json.JSONDecodeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 

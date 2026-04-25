@@ -183,3 +183,13 @@ def test_main_creates_output_parent_dir(tmp_path: Path) -> None:
     rc = dt.main(["--datasworn", str(src), "--out", str(out)])
     assert rc == 0
     assert out.exists()
+
+
+def test_main_errors_on_invalid_json(tmp_path: Path, capsys) -> None:
+    bad = tmp_path / "bad.json"
+    bad.write_text("{invalid", encoding="utf-8")
+    out = tmp_path / "out.md"
+    rc = dt.main(["--datasworn", str(bad), "--out", str(out)])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "error:" in err
