@@ -36,3 +36,26 @@ def format_option(option: dict, letter: str) -> str:
     if quest:
         body += f"\n**Quest seed:** {quest}\n"
     return header + body
+
+
+def _option_letter(index: int) -> str:
+    """0 -> A, 1 -> B, ..., 25 -> Z. Errors past 26."""
+    if index >= 26:
+        raise ValueError(f"option index {index} exceeds A-Z labelling")
+    return chr(ord("A") + index)
+
+
+def format_truth(truth_id: str, truth: dict) -> str:
+    """Format a full truth section with heading, attribution, and options."""
+    name = truth["name"]
+    datasworn_id = truth.get("_id", f"classic/truths/{truth_id}")
+    parts = [
+        f"## {name}\n",
+        f"\n**Source:** Ironsworn Rulebook (Shawn Tomkin, CC-BY-4.0). "
+        f"Datasworn id `{datasworn_id}`.\n",
+        "\n",
+    ]
+    for i, option in enumerate(truth["options"]):
+        parts.append(format_option(option, _option_letter(i)))
+        parts.append("\n")
+    return "".join(parts).rstrip() + "\n"

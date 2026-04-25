@@ -61,3 +61,37 @@ def test_format_option_omits_quest_seed_when_absent() -> None:
     out = dt.format_option(opt, "C")
     assert "Quest seed" not in out
     assert out.endswith("No seed here.\n")
+
+
+def test_format_truth_emits_heading_and_attribution() -> None:
+    truth = {
+        "_id": "classic/truths/iron",
+        "name": "Iron",
+        "options": [
+            {"min": 1, "max": 50, "description": "First."},
+            {"min": 51, "max": 100, "description": "Second."},
+        ],
+    }
+    out = dt.format_truth("iron", truth)
+    assert out.startswith("## Iron\n")
+    assert "Datasworn id `classic/truths/iron`" in out
+    assert "### Option A (1\u201350)" in out
+    assert "### Option B (51\u2013100)" in out
+
+
+def test_format_truth_letters_increment_for_more_options() -> None:
+    truth = {
+        "_id": "classic/truths/example",
+        "name": "Example",
+        "options": [
+            {"min": 1, "max": 25, "description": "One."},
+            {"min": 26, "max": 50, "description": "Two."},
+            {"min": 51, "max": 75, "description": "Three."},
+            {"min": 76, "max": 100, "description": "Four."},
+        ],
+    }
+    out = dt.format_truth("example", truth)
+    assert "### Option A " in out
+    assert "### Option B " in out
+    assert "### Option C " in out
+    assert "### Option D " in out
