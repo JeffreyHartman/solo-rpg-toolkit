@@ -10,7 +10,9 @@ Idempotent — rerunning produces identical output.
 """
 from __future__ import annotations
 
+import argparse
 import json
+import sys
 from pathlib import Path
 
 
@@ -104,3 +106,38 @@ def format_document(truths: dict[str, dict]) -> str:
         sections.append("\n")
         sections.append(format_truth(tid, truths[tid]))
     return "".join(sections)
+
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_DATASWORN = REPO_ROOT / "reference" / "datasworn-ironsworn-classic" / "json" / "classic.json"
+DEFAULT_OUT = REPO_ROOT / "skills" / "ironsworn-truths" / "truths.md"
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Generate skills/ironsworn-truths/truths.md from datasworn JSON."
+    )
+    parser.add_argument("--datasworn", type=Path, default=DEFAULT_DATASWORN,
+                        help=f"Input datasworn JSON path (default: {DEFAULT_DATASWORN})")
+    parser.add_argument("--out", type=Path, default=DEFAULT_OUT,
+                        help=f"Output markdown path (default: {DEFAULT_OUT})")
+    args = parser.parse_args(argv)
+
+    if not args.datasworn.exists():
+        print(f"error: input file not found: {args.datasworn}", file=sys.stderr)
+        return 2
+
+    try:
+        truths = load_truths(args.datasworn)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(format_document(truths), encoding="utf-8")
+    print(f"wrote {args.out} ({len(truths)} truths)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

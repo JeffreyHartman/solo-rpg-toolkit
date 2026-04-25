@@ -151,3 +151,35 @@ def test_truth_order_is_complete_and_unique() -> None:
         "defense", "mysticism", "religion", "firstborn", "beasts", "horrors",
     }
     assert set(dt.TRUTH_ORDER) == expected
+
+
+def test_main_writes_output_file(tmp_path: Path) -> None:
+    src = _write_json(tmp_path, {
+        "truths": {"iron": {"_id": "classic/truths/iron", "name": "Iron",
+                            "options": [{"min": 1, "max": 100, "description": "X"}]}}
+    })
+    out = tmp_path / "truths.md"
+    rc = dt.main(["--datasworn", str(src), "--out", str(out)])
+    assert rc == 0
+    text = out.read_text(encoding="utf-8")
+    assert "## Iron" in text
+    assert text.startswith("# Ironsworn Setting Truths")
+
+
+def test_main_errors_on_missing_input(tmp_path: Path, capsys) -> None:
+    out = tmp_path / "truths.md"
+    rc = dt.main(["--datasworn", str(tmp_path / "nope.json"), "--out", str(out)])
+    assert rc != 0
+    err = capsys.readouterr().err
+    assert "nope.json" in err
+
+
+def test_main_creates_output_parent_dir(tmp_path: Path) -> None:
+    src = _write_json(tmp_path, {
+        "truths": {"iron": {"_id": "classic/truths/iron", "name": "Iron",
+                            "options": [{"min": 1, "max": 100, "description": "X"}]}}
+    })
+    out = tmp_path / "nested" / "truths.md"
+    rc = dt.main(["--datasworn", str(src), "--out", str(out)])
+    assert rc == 0
+    assert out.exists()
