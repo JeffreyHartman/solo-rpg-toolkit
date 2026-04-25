@@ -2,6 +2,28 @@
 
 Modular skills for running solo tabletop RPGs in Claude Code. Each skill is self-contained — use what you want, ignore what you don't. Layer them: system (Ironsworn, PF2e, etc.) + oracle layer (Mythic GME) + note-taker.
 
+## Quickstart
+
+Three steps from clone to playing. Requires [`uv`](https://docs.astral.sh/uv/) and [`claude`](https://claude.com/claude-code).
+
+```bash
+# 1. Clone and install the CLIs
+git clone https://github.com/<you>/solo-rpg-toolkit.git ~/git/solo-rpg-toolkit
+cd ~/git/solo-rpg-toolkit && uv tool install --editable .
+
+# 2. Scaffold a campaign (copies template, symlinks skills, creates vault dirs)
+solo-campaign "My Campaign" ~/rpg/my-campaign --vault ~/Obsidian/Solo
+
+# 3. Play
+cd ~/rpg/my-campaign && claude
+```
+
+First message to the agent:
+
+> *"Let's start a new Ironsworn campaign with Mythic GME on top. Walk me through character creation, then frame the opening scene."*
+
+Read on for what each piece does, how to extend tables, and Windows manual setup.
+
 ## Install the `solo-roll` CLI
 
 `solo-roll` is the Python CLI that backs the dice-and-tables layer used by every skill in this repo. Install it once via `uv tool`:
