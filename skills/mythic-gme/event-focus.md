@@ -1,16 +1,6 @@
-# Event Focus
+# Event Focus — Reference
 
-When a random event fires (from a fate check returning `random_event_triggered: true` or an Interrupt Scene from the scene test), roll the Event Focus table to determine what type of event it is.
-
-## Roll it
-
-```
-solo-roll table mythic/event-focus
-```
-
-Returns JSON: `{"table": "mythic/event-focus", "display_name": "Random Event Focus", "dice": "d100", "roll": 42, "result": "NPC Action"}`
-
-The `result` field is the event focus. Then roll `solo-roll meaning-pair` to get the specific Action + Description that shapes the event.
+Procedure (when to roll, how to combine with `meaning-pair`) lives in `SKILL.md` under Random Event. This file is the d100 ranges table and the per-focus interpretation guide.
 
 ## d100 Ranges
 
@@ -31,9 +21,9 @@ The `result` field is the event focus. Then roll `solo-roll meaning-pair` to get
 
 ## What each focus means
 
-**Remote Event** — Something happens elsewhere, away from the current scene. Has no direct bearing on the PC right now, but may be relevant later. Think of it as world-building or foreshadowing.
+**Remote Event** — Something happens elsewhere, away from the current scene. No direct bearing on the PC right now, but may matter later. World-building or foreshadowing.
 
-**Ambiguous Event** — Something vague and unclear happens. The meaning-pair gives shape to it, but the exact nature may not become clear until later.
+**Ambiguous Event** — Something vague and unclear happens. The meaning-pair gives shape to it; exact nature may not become clear until later.
 
 **New NPC** — A new character enters the story. Roll meaning-pair for their initial impression, then name them.
 
@@ -43,11 +33,11 @@ The `result` field is the event focus. Then roll `solo-roll meaning-pair` to get
 
 **NPC Positive** — Something good happens to an NPC.
 
-**Move Toward A Thread** — Progress on one of your active Threads. Which one? The most pressing, or roll randomly from the Threads List.
+**Move Toward A Thread** — Progress on one of your active Threads. Pick the most pressing, or roll randomly from the Threads List.
 
 **Move Away From A Thread** — A Thread becomes harder, more obscured, or more complicated.
 
-**Close A Thread** — A Thread resolves — for good or ill. It may close in an unexpected way.
+**Close A Thread** — A Thread resolves — for good or ill. May close in an unexpected way.
 
 **PC Negative** — Bad fortune for the player character. Not from an NPC action — the world itself is pushing back.
 

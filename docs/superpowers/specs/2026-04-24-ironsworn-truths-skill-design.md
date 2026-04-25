@@ -90,7 +90,7 @@ Body sections:
 5. **Path resolution** — read `<campaign>/CLAUDE.md` for `PLAYER_VAULT_PATH` (the convention solo-campaign already established). Truths land at `<vault>/Lore/Truths/`.
 6. **Re-entry** — running the skill again on a locked truth offers "edit", "replace", or "view". Edit preserves the lock; replace clears the file and restarts that truth's loop.
 
-### `skills/ironsworn-truths/truths.md`
+### `skills/ironsworn-truelookths/truths.md`
 
 A single markdown reference file generated from datasworn. For each of the 11 truths:
 
