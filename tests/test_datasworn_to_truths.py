@@ -95,3 +95,49 @@ def test_format_truth_letters_increment_for_more_options() -> None:
     assert "### Option B " in out
     assert "### Option C " in out
     assert "### Option D " in out
+
+
+def _truth(name: str, idx: int) -> dict:
+    return {
+        "_id": f"classic/truths/{name.lower().replace(' ', '_')}",
+        "name": name,
+        "options": [
+            {"min": 1, "max": 100, "description": f"Only option for {name}."},
+        ],
+    }
+
+
+def test_format_document_book_order() -> None:
+    truths = {
+        "iron": _truth("Iron", 1),
+        "old_world": _truth("The Old World", 0),
+    }
+    out = dt.format_document(truths)
+    old_pos = out.index("## The Old World")
+    iron_pos = out.index("## Iron")
+    assert old_pos < iron_pos
+
+
+def test_format_document_includes_attribution_header() -> None:
+    out = dt.format_document({"iron": _truth("Iron", 0)})
+    assert out.startswith("# Ironsworn Setting Truths")
+    assert "CC-BY-4.0" in out
+    assert "https://ironswornrpg.com" in out
+
+
+def test_format_document_appends_unknown_truths_alphabetically() -> None:
+    truths = {
+        "zeta": _truth("Zeta", 99),
+        "alpha": _truth("Alpha", 98),
+        "iron": _truth("Iron", 1),
+    }
+    out = dt.format_document(truths)
+    iron_pos = out.index("## Iron")
+    alpha_pos = out.index("## Alpha")
+    zeta_pos = out.index("## Zeta")
+    assert iron_pos < alpha_pos < zeta_pos
+
+
+def test_format_document_idempotent() -> None:
+    truths = {"iron": _truth("Iron", 1), "old_world": _truth("The Old World", 0)}
+    assert dt.format_document(truths) == dt.format_document(truths)
