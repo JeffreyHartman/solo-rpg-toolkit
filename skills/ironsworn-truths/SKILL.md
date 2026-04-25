@@ -65,7 +65,7 @@ For each truth the player wants to work on:
 ---
 locked: true
 truth: <slug>           # e.g. old-world, iron, legacies — matches the filename without `.md`
-source: classic/truths/<truth_id>
+source: classic/truths/<datasworn_id>   # e.g. classic/truths/old_world (underscores, not hyphens — matches the upstream Datasworn id)
 chosen_option: <A|B|C|custom>
 ---
 

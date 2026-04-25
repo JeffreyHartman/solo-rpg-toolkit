@@ -193,3 +193,30 @@ def test_main_errors_on_invalid_json(tmp_path: Path, capsys) -> None:
     assert rc == 2
     err = capsys.readouterr().err
     assert "error:" in err
+
+
+def test_known_range_fix_applies_to_mysticism_option_b() -> None:
+    truth = {
+        "_id": "classic/truths/mysticism",
+        "name": "Mysticism",
+        "options": [
+            {"min": 1, "max": 33, "description": "A."},
+            {"min": 68, "max": 100, "description": "B."},
+            {"min": 68, "max": 100, "description": "C."},
+        ],
+    }
+    out = dt.format_truth("mysticism", truth)
+    assert "### Option B (34\u201367)" in out
+    assert "### Option C (68\u2013100)" in out
+
+
+def test_known_range_fix_skips_other_truths() -> None:
+    truth = {
+        "_id": "classic/truths/iron",
+        "name": "Iron",
+        "options": [
+            {"min": 68, "max": 100, "description": "B-like."},
+        ],
+    }
+    out = dt.format_truth("iron", truth)
+    assert "### Option A (68\u2013100)" in out

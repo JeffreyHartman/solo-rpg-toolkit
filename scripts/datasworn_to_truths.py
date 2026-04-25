@@ -29,6 +29,25 @@ def load_truths(path: Path) -> dict[str, dict]:
 
 EN_DASH = "\u2013"
 
+# Known data bugs in upstream @datasworn/ironsworn-classic that we patch on the fly.
+# Each entry is (truth_id, option_index, field, corrected_value).
+# When upstream fixes these, remove the entries and regenerate truths.md.
+KNOWN_RANGE_FIXES: tuple[tuple[str, int, str, int], ...] = (
+    # mysticism Option B: source has min=68 which collides with Option C and leaves
+    # rolls 34-67 unrooted; intended ranges are 1-33 / 34-67 / 68-100.
+    ("mysticism", 1, "min", 34),
+    ("mysticism", 1, "max", 67),
+)
+
+
+def _apply_known_fixes(truth_id: str, options: list[dict]) -> list[dict]:
+    """Return a copy of `options` with KNOWN_RANGE_FIXES applied for this truth."""
+    patched = [dict(opt) for opt in options]
+    for fix_id, idx, field, value in KNOWN_RANGE_FIXES:
+        if fix_id == truth_id and 0 <= idx < len(patched):
+            patched[idx][field] = value
+    return patched
+
 
 def format_option(option: dict, letter: str) -> str:
     """Format one weighted option as a `### Option X (min–max)` block."""
@@ -41,7 +60,7 @@ def format_option(option: dict, letter: str) -> str:
 
 
 def _option_letter(index: int) -> str:
-    """0 -> A, 1 -> B, ..., 25 -> Z. Errors past 26."""
+    """0 -> A, 1 -> B, ..., 25 -> Z. Raises at index 26 and above."""
     if index >= 26:
         raise ValueError(f"option index {index} exceeds A-Z labelling")
     return chr(ord("A") + index)
@@ -57,7 +76,8 @@ def format_truth(truth_id: str, truth: dict) -> str:
         f"Datasworn id `{datasworn_id}`.\n",
         "\n",
     ]
-    for i, option in enumerate(truth["options"]):
+    options = _apply_known_fixes(truth_id, truth["options"])
+    for i, option in enumerate(options):
         parts.append(format_option(option, _option_letter(i)))
         parts.append("\n")
     return "".join(parts).rstrip() + "\n"

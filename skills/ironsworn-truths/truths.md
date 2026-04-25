@@ -152,7 +152,7 @@ Some still find comfort in the old ways. They call on mystics to divine the fort
 
 **Quest seed:** Someone close to you is accused of cursing a settlement, causing fields to go fallow and cattle to become sick. What is the evidence of this? Will you defend this person and uncover the true cause of the settlement’s troubles?
 
-### Option B (68–100)
+### Option B (34–67)
 
 Magic is rare and dangerous, but those few who wield the power are truly gifted.
 
