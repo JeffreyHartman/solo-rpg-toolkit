@@ -2,6 +2,8 @@
 
 Procedure (when to roll, how to combine with `meaning-pair`) lives in `SKILL.md` under Random Event. This file is the d100 ranges table and the per-focus interpretation guide.
 
+When interpreting `meaning-pair` output for any focus below, follow the [Interpretation discipline](SKILL.md#interpretation-discipline): one pair, both words, dissonance is a feature, discards are explicit and named.
+
 ## d100 Ranges
 
 | d100 | Focus |

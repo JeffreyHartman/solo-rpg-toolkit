@@ -148,6 +148,35 @@ solo-roll meaning-pair
 
 Interpret the word pair (`action` + `description`) in context. You don't need a full random event — just use the pair as a creative prompt.
 
+**See [Interpretation discipline](#interpretation-discipline) below — it applies to every `meaning-pair` roll, including event meaning, altered-scene inspiration, and detail checks.**
+
+---
+
+## Interpretation discipline
+
+Every `solo-roll meaning-pair` invocation — whether for a Random Event, Altered Scene, Detail Check, or any caller skill — follows the same procedure. The point of rolling is to surface answers the LLM would not have written on its own. Skipping this discipline silently turns the dice into stage dressing.
+
+### The procedure
+
+1. **Roll ONE pair.** Never roll a second pair before attempting to interpret the first.
+2. **Announce the result verbatim.** Quote both words from the JSON output exactly: `"action: Conceal, description: Interestingly"`. The player sees what was rolled.
+3. **Interpret both words as written.** Treat dissonance as a feature: "a grateful threat" is more interesting than "a threat." A first reading that uses both words — even awkwardly — beats a polished reading that uses one.
+4. **If the pair is workable, commit.** Narrate it concretely. Done.
+5. **If the pair is genuinely forced**, you have two options:
+   - **Roll a second pair to add texture.** Then use the *combination* of all four words. Do not select your two favorites. If a fourth word doesn't land, you discard explicitly (see below).
+   - **Discard a word.** Last resort. Must be transparent: name the word, name the reason. Example: *"Dropping 'Gratefully' — I can't find a read that fits the somber tone the player set up. Using 'Transform' alone."*
+
+### Forbidden patterns
+
+- ❌ Rolling 2+ pairs upfront, then picking words that fit a pre-decided narrative. This is the central failure this section exists to prevent.
+- ❌ Silent discards. If a word doesn't appear in the interpretation, the player must see *why*.
+- ❌ Re-rolling until you get something "cool." Dissonance is the point.
+- ❌ Treating descriptors as optional flavor. A descriptor is half the roll.
+
+### Why this matters
+
+Without this discipline, the dice produce evidence of randomness while the actual narrative path is whatever the LLM would have written anyway. The player loses the surprise that solo play depends on.
+
 ---
 
 ## State Tracking
