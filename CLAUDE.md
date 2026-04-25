@@ -8,7 +8,7 @@ If a user wants to **play** a session, they run `solo-campaign <name> <path>` to
 
 A Python package plus Claude Code skills for solo tabletop RPGs:
 - `solo-roll` — dice + table lookups + Mythic GME 2e fate chart math
-- `solo-campaign` — scaffolds a fresh campaign folder, symlinks skills, creates Obsidian vault subdirs
+- `solo-campaign` — scaffolds a fresh campaign folder, symlinks selected skills into `<campaign>/.claude/skills/` (project-local), creates Obsidian vault subdirs
 - Skills under `skills/` — `ironsworn` (rules/moves/oracles), `mythic-gme` (fate/scene/event), `solo-journaler` (dual-vault notes)
 
 Both CLIs ship from one package (`solo-roll` on PyPI naming, two `[project.scripts]` entries).

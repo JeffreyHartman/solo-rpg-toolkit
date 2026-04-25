@@ -15,11 +15,9 @@ PLAYER_VAULT_PATH: /CHANGE/ME/path/to/Obsidian/Vault/Solo Campaign
 ## Active skills
 
 This campaign uses:
-- `ironsworn` — system rules, moves, oracles
-- `mythic-gme` — chaos factor, fate checks, scene tests, event focus
-- `solo-journaler` — dual-vault note separation
+[Active Skills]
 
-Reference the relevant SKILL.md files at session start.
+Skills are symlinked into `.claude/skills/` of this campaign folder, so they're scoped to this campaign only. Reference the relevant SKILL.md files at session start.
 
 ## House rules
 

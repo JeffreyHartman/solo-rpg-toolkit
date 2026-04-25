@@ -65,14 +65,31 @@ solo-campaign "Bleak Winter" ~/rpg/bleak-winter --vault ~/Obsidian/Solo
 ```
 
 What it does:
-- Copies `example-campaign/` to `~/rpg/bleak-winter/` and substitutes the campaign name + vault path into the new `CLAUDE.md`
-- Symlinks each skill (`ironsworn`, `mythic-gme`, `solo-journaler`) into `~/.claude/skills/` — edits in your repo propagate immediately
+- Copies `example-campaign/` to `~/rpg/bleak-winter/` and substitutes the campaign name, vault path, and active skills list into the new `CLAUDE.md`
+- Symlinks each skill into `~/rpg/bleak-winter/.claude/skills/` — **project-local**, scoped to this campaign only. Edits in your repo propagate immediately.
 - Verifies `solo-roll` is on PATH; runs `uv tool install --editable .` from the repo if not
 - Creates `~/Obsidian/Solo/{Session Log,People,Places,Threads,Lore}` if missing
 
-If you omit `--vault`, the script prompts for the vault path interactively. Use `--skills-dir <path>` (or the `CLAUDE_SKILLS_DIR` env var) to override the default `~/.claude/skills/` location.
+If you omit `--vault`, the script prompts for the vault path interactively.
 
 The script fails fast if the target campaign directory already exists — it never overwrites.
+
+### Picking skills per campaign
+
+Skills install **per-campaign** (project-local at `<campaign>/.claude/skills/`), so each campaign sees only the skills it needs. No cross-system trigger collisions when you switch from Ironsworn to PF2e, etc.
+
+By default `solo-campaign` installs every skill under `skills/`. Use `--skills` to pick a subset:
+
+```bash
+# Only Ironsworn + journaler (no Mythic GME oracle layer)
+solo-campaign "Lite Run" ~/rpg/lite --vault ~/Obsidian/Solo \
+  --skills ironsworn,solo-journaler
+
+# Pure freeform — no system skills triggering at all
+solo-campaign "Freeform" ~/rpg/free --vault ~/Obsidian/Solo --skills none
+```
+
+Unknown skill names fail fast with the list of available names.
 
 ### Windows
 
@@ -91,46 +108,26 @@ example-campaign/      # Copy/rename this per campaign
 └── dm-notes/          # Agent's private notes (CF, hidden NPC truths, etc.)
 ```
 
-## Install (one-time)
+## Manual install (Windows / no `solo-campaign`)
 
-Claude Code looks for skills in `~/.claude/skills/` (user-level, available everywhere) or `.claude/skills/` (project-level, scoped to one folder).
+`solo-campaign` handles install for you on Linux/macOS. Skip this section unless you're on Windows or scripting it yourself.
 
-For these to be available across all your solo campaigns, go user-level:
-
-```bash
-# macOS / Linux / WSL
-mkdir -p ~/.claude/skills
-cp -r skills/ironsworn ~/.claude/skills/
-cp -r skills/mythic-gme ~/.claude/skills/
-cp -r skills/solo-journaler ~/.claude/skills/
-```
+Claude Code looks for skills in `~/.claude/skills/` (user-level, every project) or `.claude/skills/` (project-level, scoped to that folder). For solo RPGs, **project-level is recommended** — keeps Ironsworn rules from triggering when you mention an "iron sword" in your PF2e campaign.
 
 ```powershell
-# Windows PowerShell
-New-Item -ItemType Directory -Force -Path $HOME\.claude\skills | Out-Null
-Copy-Item -Recurse skills\ironsworn $HOME\.claude\skills\
-Copy-Item -Recurse skills\mythic-gme $HOME\.claude\skills\
-Copy-Item -Recurse skills\solo-journaler $HOME\.claude\skills\
+# Windows PowerShell — symlink desired skills into <campaign>/.claude/skills/
+$campaign = "C:\path\to\your\campaign"
+New-Item -ItemType Directory -Force -Path "$campaign\.claude\skills" | Out-Null
+New-Item -ItemType SymbolicLink -Path "$campaign\.claude\skills\ironsworn"      -Target "$PWD\skills\ironsworn"
+New-Item -ItemType SymbolicLink -Path "$campaign\.claude\skills\mythic-gme"     -Target "$PWD\skills\mythic-gme"
+New-Item -ItemType SymbolicLink -Path "$campaign\.claude\skills\solo-journaler" -Target "$PWD\skills\solo-journaler"
 ```
 
-If you'd rather keep them project-local (useful while iterating — edit the skill and restart `claude`): put them at `.claude/skills/` inside the campaign folder instead.
+(Symlink creation on Windows requires Developer Mode or admin shell. `Copy-Item -Recurse` works as fallback but won't auto-update on repo edits.)
 
-## Per-campaign setup
+## Optional: populate Mythic 2e tables
 
-1. Copy `example-campaign/` to wherever you want the campaign to live. Rename it.
-   ```bash
-   cp -r example-campaign ~/rpg/ironsworn-bleak-winter
-   cd ~/rpg/ironsworn-bleak-winter
-   ```
-2. Open `CLAUDE.md` and edit:
-   - `PLAYER_VAULT_PATH` → path to a folder inside your Obsidian vault for character-side notes. Create the folder if it doesn't exist.
-3. *(Optional but recommended)* Open `skills/mythic-gme/meaning-tables.md` and populate the d100 Action and Description tables from your copy of the Mythic GME 2e book. Until you do, the toolkit will fall back to Ironsworn's Action/Theme oracle, which works fine but is slightly different in flavor. Same for `event-focus.md` — fill in the d100 percentage ranges from your book.
-4. Launch Claude Code in the campaign folder:
-   ```bash
-   cd ~/rpg/ironsworn-bleak-winter
-   claude
-   ```
-5. First message: "Let's start a new Ironsworn campaign with Mythic GME on top. Walk me through character creation, then frame the opening scene."
+After `solo-campaign` runs, the meaning tables and event focus file in `skills/mythic-gme/` ship as scaffolding only — Tana Pigeon's word lists are copyrighted. Open `skills/mythic-gme/meaning-tables.md` and `event-focus.md` and fill in the d100 ranges from your copy of the Mythic GME 2e book. Until then the toolkit falls back to the included Ironsworn-derived `action1`/`descriptor1` tables, which work fine but flavor differently.
 
 ## Tonight's first session — quick flow
 
@@ -147,7 +144,7 @@ Once you're in Claude Code with the campaign folder open:
 Each skill is a self-contained folder with a `SKILL.md` (with frontmatter `name` and `description`) and supporting markdown files. To share one:
 
 1. Zip the skill directory.
-2. Recipients drop it into their `~/.claude/skills/` and they're good.
+2. Recipients drop it into a campaign's `.claude/skills/` (project-local) or `~/.claude/skills/` (every project, more trigger collisions).
 
 Ideas for new skills (modular, can be combined):
 - `une-npc-generator` — Universal NPC Emulator

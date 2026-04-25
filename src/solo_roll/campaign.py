@@ -1,7 +1,6 @@
 """solo-campaign: scaffold a new solo RPG campaign folder."""
 
 import argparse
-import os
 import shutil
 import subprocess
 import sys
@@ -17,11 +16,36 @@ def _resolve_repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
+def _list_available_skills(skills_source: Path) -> list[str]:
+    """Return sorted names of skill directories present under skills_source."""
+    return sorted(p.name for p in skills_source.iterdir() if p.is_dir())
+
+
+def _format_active_skills(selected: list[str]) -> str:
+    """Render the [Active Skills] block for the campaign CLAUDE.md."""
+    if not selected:
+        return "_(no skills installed — campaign runs unassisted)_"
+    descriptions = {
+        "ironsworn": "system rules, moves, oracles",
+        "mythic-gme": "chaos factor, fate checks, scene tests, event focus",
+        "solo-journaler": "dual-vault note separation",
+    }
+    lines = []
+    for name in selected:
+        desc = descriptions.get(name)
+        if desc:
+            lines.append(f"- `{name}` — {desc}")
+        else:
+            lines.append(f"- `{name}`")
+    return "\n".join(lines)
+
+
 def _create_campaign(
     name: str,
     target: Path,
     vault_path: Path,
     template_dir: Path,
+    selected_skills: list[str],
 ) -> None:
     """Copy template_dir to target, substituting placeholders in CLAUDE.md."""
     if target.exists():
@@ -35,21 +59,39 @@ def _create_campaign(
             "/CHANGE/ME/path/to/Obsidian/Vault/Solo Campaign",
             str(vault_path),
         )
+        text = text.replace("[Active Skills]", _format_active_skills(selected_skills))
         claude_md.write_text(text)
 
 
-def _install_skills(skills_source: Path, skills_target: Path) -> list[Path]:
-    """Symlink every skill directory under skills_source into skills_target.
+def _install_skills(
+    skills_source: Path,
+    skills_target: Path,
+    selected: list[str] | None = None,
+) -> list[Path]:
+    """Symlink skill directories under skills_source into skills_target.
 
+    If `selected` is None, install all skill subdirs of skills_source.
+    Otherwise install only those names; raises CampaignError on unknown name.
     Creates skills_target if missing. Replaces existing symlinks at <target>/<name>.
     Raises IsADirectoryError if <target>/<name> is a real directory.
     """
+    available = _list_available_skills(skills_source)
+    if selected is None:
+        chosen = available
+    else:
+        unknown = [name for name in selected if name not in available]
+        if unknown:
+            raise CampaignError(
+                f"unknown skill(s): {', '.join(unknown)}. "
+                f"available: {', '.join(available)}"
+            )
+        chosen = list(selected)
+
     skills_target.mkdir(parents=True, exist_ok=True)
     created: list[Path] = []
-    for skill_dir in sorted(skills_source.iterdir()):
-        if not skill_dir.is_dir():
-            continue
-        link = skills_target / skill_dir.name
+    for name in chosen:
+        skill_dir = skills_source / name
+        link = skills_target / name
         if link.is_symlink():
             link.unlink()
         elif link.exists():
@@ -93,6 +135,27 @@ def _prompt_vault_path() -> Path:
     return Path(raw).expanduser()
 
 
+def _parse_skills_arg(raw: str | None, available: list[str]) -> list[str] | None:
+    """Translate --skills CLI arg into a selection list.
+
+    None  → install all (default)
+    "none" → install nothing
+    "a,b" → install only those names (validated against available)
+    """
+    if raw is None:
+        return None
+    if raw.strip().lower() == "none":
+        return []
+    parts = [p.strip() for p in raw.split(",") if p.strip()]
+    unknown = [p for p in parts if p not in available]
+    if unknown:
+        raise CampaignError(
+            f"unknown skill(s): {', '.join(unknown)}. "
+            f"available: {', '.join(available)}"
+        )
+    return parts
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="solo-campaign",
@@ -102,8 +165,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("path", help="Target campaign directory (must not exist)")
     parser.add_argument("--vault", type=str, default=None,
                         help="Player Obsidian vault path")
-    parser.add_argument("--skills-dir", type=str, default=None,
-                        help="Override ~/.claude/skills/ (env: CLAUDE_SKILLS_DIR)")
+    parser.add_argument(
+        "--skills", type=str, default=None, dest="skills",
+        help="Comma-separated skill names to install "
+             "(default: all). Use 'none' to install no skills.",
+    )
     args = parser.parse_args(argv)
 
     repo_root = _resolve_repo_root()
@@ -122,19 +188,18 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {target} already exists", file=sys.stderr)
         return 1
 
-    skills_dir_arg = args.skills_dir or os.environ.get("CLAUDE_SKILLS_DIR")
-    skills_target = (
-        Path(skills_dir_arg).expanduser() if skills_dir_arg
-        else Path.home() / ".claude" / "skills"
-    )
+    skills_target = target / ".claude" / "skills"
 
     try:
+        available = _list_available_skills(skills_source)
+        selected = _parse_skills_arg(args.skills, available)
         vault_path = (
             Path(args.vault).expanduser() if args.vault
             else _prompt_vault_path()
         )
-        _create_campaign(args.name, target, vault_path, template_dir)
-        _install_skills(skills_source, skills_target)
+        installed_names = selected if selected is not None else available
+        _create_campaign(args.name, target, vault_path, template_dir, installed_names)
+        _install_skills(skills_source, skills_target, selected)
         _ensure_solo_roll(repo_root)
         _create_vault(vault_path)
     except (CampaignError, FileExistsError, IsADirectoryError,
