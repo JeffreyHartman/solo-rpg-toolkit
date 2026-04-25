@@ -23,3 +23,16 @@ def load_truths(path: Path) -> dict[str, dict]:
     if not truths:
         raise ValueError(f"{path}: 'truths' is empty")
     return truths
+
+
+EN_DASH = "\u2013"
+
+
+def format_option(option: dict, letter: str) -> str:
+    """Format one weighted option as a `### Option X (min–max)` block."""
+    header = f"### Option {letter} ({option['min']}{EN_DASH}{option['max']})\n"
+    body = f"\n{option['description']}\n"
+    quest = option.get("quest_starter")
+    if quest:
+        body += f"\n**Quest seed:** {quest}\n"
+    return header + body
