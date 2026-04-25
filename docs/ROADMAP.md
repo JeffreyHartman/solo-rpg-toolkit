@@ -54,12 +54,12 @@ One command to scaffold a new campaign folder and install skills.
 ## Sub-project 3.5: Datasworn Ingestion (Ironsworn Truths)
 First feature in a multi-step ingestion of the `@datasworn/ironsworn-classic` JSON dataset (`reference/datasworn-ironsworn-classic/`, CC-BY-4.0). Future features (oracles, moves, assets) are separate specs.
 
-- [ ] Reusable converter `scripts/datasworn_to_truths.py` (pure stdlib, pytest-tested)
-- [ ] Generated `skills/ironsworn-truths/truths.md` reference file
-- [ ] New skill `skills/ironsworn-truths/SKILL.md` — multi-turn truth-locking workflow
-- [ ] Soft hook from `skills/ironsworn/SKILL.md` ("truths not locked — want to set them up?")
-- [ ] Spec: `docs/superpowers/specs/2026-04-24-ironsworn-truths-skill-design.md`
-- [ ] Plan: `docs/superpowers/plans/2026-04-25-ironsworn-truths-skill.md`
+- [x] Reusable converter `scripts/datasworn_to_truths.py` (pure stdlib, pytest-tested)
+- [x] Generated `skills/ironsworn-truths/truths.md` reference file
+- [x] New skill `skills/ironsworn-truths/SKILL.md` — multi-turn truth-locking workflow
+- [x] Soft hook from `skills/ironsworn/SKILL.md` ("truths not locked — want to set them up?")
+- [x] Spec: `docs/superpowers/specs/2026-04-24-ironsworn-truths-skill-design.md`
+- [x] Plan: `docs/superpowers/plans/2026-04-25-ironsworn-truths-skill.md`
 
 ---
 

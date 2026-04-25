@@ -327,7 +327,7 @@ def test_main_happy_path_installs_skills_project_local(tmp_path, monkeypatch, ca
     skills_dir = target / ".claude" / "skills"
     assert skills_dir.is_dir()
     skill_names = {p.name for p in skills_dir.iterdir() if p.is_symlink()}
-    assert skill_names == {"ironsworn", "mythic-gme", "solo-journaler"}
+    assert skill_names == {"ironsworn", "ironsworn-truths", "mythic-gme", "solo-journaler"}
 
     out = capsys.readouterr().out
     assert "ready" in out
