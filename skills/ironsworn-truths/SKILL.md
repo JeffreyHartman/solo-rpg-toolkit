@@ -64,7 +64,7 @@ For each truth the player wants to work on:
 ```markdown
 ---
 locked: true
-truth: <truth_id>
+truth: <slug>           # e.g. old-world, iron, legacies — matches the filename without `.md`
 source: classic/truths/<truth_id>
 chosen_option: <A|B|C|custom>
 ---
@@ -109,7 +109,7 @@ Maintain a single fenced block at the end of `<campaign>/CLAUDE.md`. The block a
 ```
 
 **Update procedure** on every lock:
-1. Re-read all 11 truth files in the vault. For each locked file, derive a one-line summary (≤ 100 chars) by taking the first sentence of the locked answer or asking the player if it doesn't fit.
+1. Re-read all 11 truth files in the vault. For each locked file, derive a one-line summary (≤ 100 chars): take the text before the first period or the first paragraph break, whichever comes first. If neither produces a summary that fits ≤ 100 chars, ask the player: "Give me a one-line summary of this truth for the campaign CLAUDE.md."
 2. Search `<campaign>/CLAUDE.md` for `<!-- BEGIN: ironsworn-truths-summary -->` ... `<!-- END: ironsworn-truths-summary -->`. Replace the entire block (including fences) with the regenerated version. If the start fence is absent, append the block at the end of the file.
 
 The block's purpose: every future session loads campaign `CLAUDE.md`, so locked summaries are always in the LLM's context without re-reading the vault.
@@ -126,7 +126,7 @@ If the player picks a truth that is already `locked: true`:
 
 ## Mythic 2e graceful coupling
 
-If `mythic-gme` skill is loaded (look for it in the skills list or any prior mention this session), include this option in the per-truth menu:
+If `mythic-gme` skill is loaded — detected by either (a) `mythic-gme` appearing in the active skills list shown to you by the harness, (b) a prior invocation of `solo-roll meaning-pair` or `solo-roll fate-check` in this session, or (c) the campaign `CLAUDE.md` listing it as an active skill — include this option in the per-truth menu:
 
 > **Mythic meaning pair** — invoke `solo-roll meaning-pair` for a two-word inspiration prompt; treat the pair as a seed and offer a riff.
 
