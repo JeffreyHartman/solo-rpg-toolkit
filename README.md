@@ -93,7 +93,7 @@ Unknown skill names fail fast with the list of available names.
 
 ### Windows
 
-`solo-campaign` is Linux/macOS-first. On Windows, use the manual setup at the bottom of this README (Copy-Item commands), then edit the new `CLAUDE.md` to set `PLAYER_VAULT_PATH`.
+`solo-campaign` is Linux/macOS-first. On Windows, use the manual install section below (PowerShell symlink commands), then copy `example-campaign/` to your campaign location and edit the new `CLAUDE.md` to set `PLAYER_VAULT_PATH` and the active skills list.
 
 ## What's in here
 
@@ -125,9 +125,9 @@ New-Item -ItemType SymbolicLink -Path "$campaign\.claude\skills\solo-journaler" 
 
 (Symlink creation on Windows requires Developer Mode or admin shell. `Copy-Item -Recurse` works as fallback but won't auto-update on repo edits.)
 
-## Optional: populate Mythic 2e tables
+## Optional: populate Mythic 2e meaning tables
 
-After `solo-campaign` runs, the meaning tables and event focus file in `skills/mythic-gme/` ship as scaffolding only — Tana Pigeon's word lists are copyrighted. Open `skills/mythic-gme/meaning-tables.md` and `event-focus.md` and fill in the d100 ranges from your copy of the Mythic GME 2e book. Until then the toolkit falls back to the included Ironsworn-derived `action1`/`descriptor1` tables, which work fine but flavor differently.
+The fate chart and event focus are pre-populated from the Mythic 2e book. The **meaning tables** (Action + Description word lists) are scaffolding only — those lists are copyrighted to Tana Pigeon / Word Mill Games. Drop your own `data/tables/mythic/actions.json` and `descriptions.json` from your book to use them; otherwise the toolkit falls back to the included `action1`/`descriptor1` tables, which work fine but flavor slightly differently.
 
 ## Tonight's first session — quick flow
 
@@ -158,9 +158,11 @@ The trigger is always the `description` field in frontmatter — write it so Cla
 
 ## Notes on what's in `mythic-gme/`
 
-The **fate chart** is reproduced functionally (values match the mechanical logic of Mythic 2e). Double-check against your book if you want exact fidelity.
+The **fate chart** values (`data/charts/mythic-fate.json`) match the Mythic 2e book exactly — yes thresholds and exceptional yes/no caps are computed by the same formulas the book uses.
 
-The **meaning tables** and detailed **event focus percentages** are intentionally left as placeholders. Those word lists are the creative content of Mythic 2e and belong to Tana Pigeon / Word Mill Games. Copy them from your book for personal use.
+The **event focus** d100 ranges (`data/tables/mythic/event-focus.json`) also match the book.
+
+The **meaning tables** are intentionally left as placeholders. Those word lists are the creative content of Mythic 2e and belong to Tana Pigeon / Word Mill Games — populate `data/tables/mythic/actions.json` and `descriptions.json` from your book for personal use, then call `solo-roll meaning-pair --tables mythic/actions,mythic/descriptions`. Until you do, the toolkit falls back to the included `action1`/`descriptor1` tables.
 
 ## License
 
