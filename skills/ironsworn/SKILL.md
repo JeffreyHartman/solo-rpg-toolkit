@@ -47,6 +47,17 @@ If you see `mythic-gme` in the active skills, prefer it for:
 
 Keep using Ironsworn oracles for: Action/Theme prompts, names, region/location features, and all move resolutions. The two systems layer well — Mythic drives pacing and scene dynamics, Ironsworn drives moment-to-moment action and color.
 
+## Setting truths at session zero
+
+Ironsworn campaigns are anchored by 11 setting truths (Old World, Iron, Legacies, Communities, Leaders, Defense, Mysticism, Religion, Firstborn, Beasts, Horrors). Before the first scene of a brand-new campaign, check whether truths are locked:
+
+1. Resolve `PLAYER_VAULT_PATH` from `<campaign>/CLAUDE.md`.
+2. List `<PLAYER_VAULT_PATH>/Lore/Truths/`. If the directory is missing or no files have frontmatter `locked: true`, the campaign has not been bootstrapped.
+3. If unbootstrapped, ask the player once: "Setting truths are not yet locked. Want to set them up first? Load the `ironsworn-truths` skill and we'll walk through them. (Or skip if you already have a setting in mind — we can lock truths later.)"
+4. Do **not** auto-load `ironsworn-truths`. The player decides.
+
+If the campaign `CLAUDE.md` already contains a `## Setting Truths` summary block (between the `<!-- BEGIN: ironsworn-truths-summary -->` fences), the locked answers are loaded into your context at session start — refer to them when generating setting content. For deep references (a quest seed the player wants to adopt as a vow), read the full file from `<PLAYER_VAULT_PATH>/Lore/Truths/<slug>.md`.
+
 ## When solo-journaler skill is also loaded
 
 Follow its rules for separating player-facing notes (player's Obsidian vault) from DM notes (this campaign's `dm-notes/`). Never write secret/unrevealed info to the player vault.
