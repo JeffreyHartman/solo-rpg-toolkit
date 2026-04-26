@@ -1,6 +1,7 @@
 {
   "name": "charactermotivation",
   "display_name": "Character Motivation",
+  "description": "Goal/drive words (revenge, redemption, survival). Answers 'what do they want?'.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

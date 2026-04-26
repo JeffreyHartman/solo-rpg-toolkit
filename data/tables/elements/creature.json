@@ -1,6 +1,7 @@
 {
   "name": "creature",
   "display_name": "Creature Description",
+  "description": "Single-word creature traits (Loud, Ancient, Many-eyed). Combine with creatureabilities for monster generation.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

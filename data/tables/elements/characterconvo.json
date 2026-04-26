@@ -1,6 +1,7 @@
 {
   "name": "characterconvo",
   "display_name": "Character Conversation",
+  "description": "Conversational tone or topic (probing, evasive, boastful).",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

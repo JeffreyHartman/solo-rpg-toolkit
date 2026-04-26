@@ -1,6 +1,7 @@
 {
   "name": "characteridentity",
   "display_name": "Character Identity",
+  "description": "Role/identity terms (mentor, rival, fugitive). Useful for naming an NPC's function in the story.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

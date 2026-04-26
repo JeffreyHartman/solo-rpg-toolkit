@@ -1,6 +1,7 @@
 {
   "name": "characterskills",
   "display_name": "Character Skill",
+  "description": "Notable abilities or competencies the character is known for.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

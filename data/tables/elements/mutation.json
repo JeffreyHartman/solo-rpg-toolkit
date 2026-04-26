@@ -1,6 +1,7 @@
 {
   "name": "mutation",
   "display_name": "Mutation Description",
+  "description": "Physical, mental, or supernatural mutations — useful for corrupted creatures or post-cataclysm survivors.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

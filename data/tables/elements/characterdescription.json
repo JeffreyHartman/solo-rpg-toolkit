@@ -1,6 +1,7 @@
 {
   "name": "characterdescription",
   "display_name": "Character Description",
+  "description": "General character descriptors — broad personality and trait words.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

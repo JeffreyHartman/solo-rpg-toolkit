@@ -1,6 +1,7 @@
 {
   "name": "charactertrait",
   "display_name": "Character Traits and Flaws",
+  "description": "Quirks, habits, or distinguishing mannerisms — small details that make an NPC memorable.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

@@ -1,6 +1,7 @@
 {
   "name": "characters",
   "display_name": "Character",
+  "description": "Character archetype/role hooks for quick NPC seeds (Mythic 2e style).",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

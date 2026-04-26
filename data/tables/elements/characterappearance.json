@@ -1,6 +1,7 @@
 {
   "name": "characterappearance",
   "display_name": "Character Appearance",
+  "description": "Visible physical traits (build, posture, distinguishing marks). Combine with characterpersonality for an NPC sketch.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

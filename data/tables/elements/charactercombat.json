@@ -1,6 +1,7 @@
 {
   "name": "charactercombat",
   "display_name": "Character Action, Combat",
+  "description": "Combat style or fighting state (cautious, frenzied, defensive).",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

@@ -1,6 +1,7 @@
 {
   "name": "characteract",
   "display_name": "Character Action, General",
+  "description": "Single-action verbs for what a character is doing in the moment.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

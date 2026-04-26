@@ -1,6 +1,7 @@
 {
   "name": "characterpersonality",
   "display_name": "Character Personality",
+  "description": "Personality trait words (stoic, capricious, generous). Combine with characterappearance for full NPC color.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

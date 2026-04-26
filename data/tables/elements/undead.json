@@ -1,6 +1,7 @@
 {
   "name": "undead",
   "display_name": "Undead",
+  "description": "Undead types and traits (revenant, husk, shrieker). Pair with creatureabilities for variant horrors.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

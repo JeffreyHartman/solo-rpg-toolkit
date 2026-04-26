@@ -1,6 +1,7 @@
 {
   "name": "alien",
   "display_name": "Alien Species",
+  "description": "Alien species traits and encounter color for sci-fi or weird-fiction beats.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

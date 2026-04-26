@@ -1,6 +1,7 @@
 {
   "name": "characterbackground",
   "display_name": "Character Background",
+  "description": "Backstory hooks (origin, formative event, social standing) for fleshing out an NPC.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [
