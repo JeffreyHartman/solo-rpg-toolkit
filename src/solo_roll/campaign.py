@@ -29,7 +29,7 @@ def _format_active_skills(selected: list[str]) -> str:
     descriptions = {
         "ironsworn": "system rules, moves, oracles",
         "mythic-gme": "chaos factor, fate checks, scene tests, event focus",
-        "solo-journaler": "dual-vault note separation",
+        "solo-journaler": "session journaling, vault note management",
     }
     lines = []
     for name in selected:
@@ -44,7 +44,6 @@ def _format_active_skills(selected: list[str]) -> str:
 def _create_campaign(
     name: str,
     target: Path,
-    vault_path: Path,
     template_dir: Path,
     selected_skills: list[str],
 ) -> None:
@@ -56,10 +55,6 @@ def _create_campaign(
     if claude_md.is_file():
         text = claude_md.read_text()
         text = text.replace("[Campaign Name]", name)
-        text = text.replace(
-            "/CHANGE/ME/path/to/Obsidian/Vault/Solo Campaign",
-            str(vault_path),
-        )
         text = text.replace("[Active Skills]", _format_active_skills(selected_skills))
         claude_md.write_text(text)
 
@@ -115,6 +110,24 @@ def _create_vault(vault_path: Path) -> None:
         (vault_path / sub).mkdir(exist_ok=True)
 
 
+def _create_mythic_state(campaign_path: Path) -> None:
+    """Bootstrap mythic-state.md at campaign root with CF 5 and empty lists."""
+    (campaign_path / "mythic-state.md").write_text(
+        "# Mythic State\n\n"
+        "## Chaos Factor\n**Current: 5**\n\n"
+        "## Current scene\n*(Set at start of each scene: \"Expected setup = [one sentence]\")*\n\n"
+        "## Last scene outcome\n*(in control / out of control / mixed — used to adjust CF at scene end)*\n\n"
+        "## Threads List\n"
+        "*(Active story threads — problems, quests, unresolved tensions. Numbered for oracle rolls.)*\n\n"
+        "1. \n\n"
+        "## Characters List\n"
+        "*(NPCs in play, including ones the player hasn't met. Numbered for oracle rolls.)*\n\n"
+        "1. \n\n"
+        "## CF History\n"
+        "*(One line per session: date + CF start → CF end + reason)*\n"
+    )
+
+
 def _write_campaign_settings(campaign_path: Path, installed_names: list[str]) -> None:
     """Write .claude/settings.json with a statusLine if ironsworn is installed."""
     if "ironsworn" not in installed_names:
@@ -140,15 +153,6 @@ def _ensure_solo_roll(repo_root: Path) -> None:
         ["uv", "tool", "install", "--editable", str(repo_root)],
         check=True,
     )
-
-
-def _prompt_vault_path() -> Path:
-    if not sys.stdin.isatty():
-        raise CampaignError("--vault required when not interactive")
-    raw = input("PLAYER_VAULT_PATH (path to Obsidian vault folder): ").strip()
-    if not raw:
-        raise CampaignError("vault path cannot be empty")
-    return Path(raw).expanduser()
 
 
 def _parse_skills_arg(raw: str | None, available: list[str]) -> list[str] | None:
@@ -179,8 +183,6 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("name", help="Display name for the campaign")
     parser.add_argument("path", help="Target campaign directory (must not exist)")
-    parser.add_argument("--vault", type=str, default=None,
-                        help="Player Obsidian vault path")
     parser.add_argument(
         "--skills", type=str, default=None, dest="skills",
         help="Comma-separated skill names to install "
@@ -209,16 +211,14 @@ def main(argv: list[str] | None = None) -> int:
     try:
         available = _list_available_skills(skills_source)
         selected = _parse_skills_arg(args.skills, available)
-        vault_path = (
-            Path(args.vault).expanduser() if args.vault
-            else _prompt_vault_path()
-        )
         installed_names = selected if selected is not None else available
-        _create_campaign(args.name, target, vault_path, template_dir, installed_names)
+        _create_campaign(args.name, target, template_dir, installed_names)
         _install_skills(skills_source, skills_target, selected)
         _write_campaign_settings(target, installed_names)
         _ensure_solo_roll(repo_root)
-        _create_vault(vault_path)
+        _create_vault(target / "playervault")
+        if "mythic-gme" in installed_names:
+            _create_mythic_state(target)
     except (CampaignError, FileExistsError, IsADirectoryError,
             OSError, subprocess.CalledProcessError) as exc:
         print(f"error: {exc}", file=sys.stderr)
