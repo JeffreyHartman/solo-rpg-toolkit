@@ -345,6 +345,9 @@ def test_main_mythic_state_created_when_mythic_gme_in_skills(tmp_path, monkeypat
     assert (target / "mythic-state.md").is_file()
     content = (target / "mythic-state.md").read_text()
     assert "Chaos Factor" in content
+    assert "Current: 5" in content
+    assert "Threads List" in content
+    assert "Characters List" in content
 
 
 def test_main_mythic_state_not_created_without_mythic_gme(tmp_path, monkeypatch):
