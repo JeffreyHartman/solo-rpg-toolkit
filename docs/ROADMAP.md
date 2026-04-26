@@ -72,7 +72,16 @@ Make solo-campaign accept campaign-shape choices instead of always copying the s
  - [ ] Interactive prompt fallback when flags omitted and stdin is a tty
  - [ ] Update README with example invocations
 
- ---
+---
+
+## Sub-project 3.7: Campaign Status Bar
+Show character name + live resources in Claude Code's status bar during Ironsworn play.
+
+- [x] `skills/ironsworn/statusline.sh` — reads Character.md callout lines, outputs colored name + HP/SP/SU/MO
+- [x] `campaign.py` writes `.claude/settings.json` when ironsworn selected (statusLine command → script)
+- [x] Tests: with ironsworn → settings.json written; without → not written
+
+---
 
 ## Sub-project 4: PDF → Markdown Pipeline
 Extract published adventure path content from PDF into structured markdown the agent can run from.
