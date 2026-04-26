@@ -66,7 +66,7 @@ immediately — never defer to session end. Announce the new value inline as you
 | Supply | `> Supply: N/5` |
 | Momentum | `> Momentum: +N` or `> Momentum: -N` |
 | Companion health | `> [Companion Name] Health: N/max` |
-| Vow progress | `> **Vow Name** (Rank, 10 boxes): N/10` |
+| Progress track (vow/fight/journey) | `> **Track Name** (Rank, 10 boxes): N/10` |
 | Debility gained | `> - [ ] Wounded` → `> - [x] Wounded` |
 
 **Bounds:** Read the max from the file (`N/max` format). Clamp after applying delta.
@@ -74,11 +74,11 @@ For momentum, the bound is on the `> _Momentum bounds:` line in the Resources ca
 Never go below −6 or above the stated max.
 
 **Debility effect on momentum:** When you mark a debility `[x]`, reduce max momentum by 1
-and reset by 1 (floor 0 for both). Update the `> _Momentum bounds:` line immediately.
+and reset by 1 (both max and reset have a minimum of 0). Update the `> _Momentum bounds:` line immediately.
 If current momentum now exceeds the new max, reduce it to match.
 
 **Progress tracks:** Rank determines step size when marking progress (Troublesome 3,
-Dangerous 2, Formidable 1, Extreme 0.5, Epic 0.25 — always round to nearest box).
+Dangerous 2, Formidable 1, Extreme 0.5, Epic 0.25 — track partial boxes; a box fills when it reaches 1.0, do not round prematurely).
 `Reach a Milestone` / `Mark Progress` triggers the edit. `Fulfill Your Vow` triggers
 resolve, not just a mark.
 
