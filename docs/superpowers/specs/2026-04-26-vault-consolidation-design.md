@@ -115,7 +115,8 @@ One-time migration of the existing test campaign:
    - Player vault version is canonical — keep it
    - If DM file has non-secret flavor not in player file, fold it in
    - DM file discarded after merge
-5. Delete `dm-notes/` entirely
+5. Fold remaining DM notes into vault — files like `cadoc.md` (campaign cadence, world details, lore that emerged during play) are not GM secrets for discover-as-you-play systems; find best home in vault (Lore/, a `Campaign Notes.md`, or similar). Nothing discarded without being placed.
+6. Delete `dm-notes/` entirely
 6. Update `CLAUDE.md` vault path to `./playervault/`
 7. Delete old vault at `/home/jeff/rgp/claude/ironsworn-test1-playervault/`
 
