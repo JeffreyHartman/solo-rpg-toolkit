@@ -1,7 +1,7 @@
 {
   "name": "smell",
   "display_name": "Smell",
-  "description": "Scent descriptors for setting atmosphere (charred, sweet-rot, ozone).",
+  "description": "Scent descriptors for setting atmosphere (Acrid, Aromatic, Burnt).",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

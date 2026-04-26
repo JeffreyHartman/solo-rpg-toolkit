@@ -1,7 +1,7 @@
 {
   "name": "adventuretone",
   "display_name": "Adventure Tone",
-  "description": "Mood/genre tags for an adventure (grim, whimsical, cosmic). Set up at session start.",
+  "description": "Mood/genre tags for an adventure (Adventurous, Bleak, Bold). Set up at session start.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

@@ -1,7 +1,7 @@
 {
   "name": "god",
   "display_name": "God Description",
-  "description": "Deity domains and aspects (sun-and-storm, broken-vow, hidden-name). Pair with civilization for pantheons.",
+  "description": "Deity domains and aspects (Ancient, Angelic, Bestow). Pair with civilization for pantheons.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

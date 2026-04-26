@@ -1,7 +1,7 @@
 {
   "name": "animalaction",
   "display_name": "Animal Action",
-  "description": "What an animal is doing right now (foraging, watching, fleeing). Use for wilderness encounters.",
+  "description": "What an animal is doing right now (Attack, Assist, Befriend). Use for wilderness encounters.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [
