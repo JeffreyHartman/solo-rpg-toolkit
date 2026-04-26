@@ -1,133 +1,116 @@
 ---
 name: solo-journaler
-description: Use during any solo RPG session to maintain persistent notes across two locations — a player-facing Obsidian vault (what the character knows and has experienced) and a separate DM-notes folder in the campaign directory (what the GM knows but the player does not). Activates whenever new information is introduced in a session — NPCs met, locations visited, vows made, threads opened, secrets revealed, or at the end of a scene when the session log needs updating.
+description: Use during any solo RPG session to maintain notes in the player vault at ./playervault/. Activates when new information is introduced — NPCs met, locations visited, vows made, threads opened, discoveries revealed — and at end of session to write session logs.
 ---
 
 # Solo Journaler Skill
 
-This skill keeps the *player's canon* and the *GM's secrets* separate so solo play doesn't collapse into omniscience. You (the agent) know things the character doesn't. That knowledge belongs in `dm-notes/`. The player's Obsidian vault gets only things the character has experienced or been told.
+Single source of truth: `./playervault/` relative to campaign root. Open this folder in Obsidian between sessions.
 
-## Vault configuration
-
-The campaign's `CLAUDE.md` declares a `PLAYER_VAULT_PATH`. Read it at session start:
+## Vault structure
 
 ```
-PLAYER_VAULT_PATH: /home/user/Obsidian/MyVault/Ironsworn Campaign
-```
-
-If it's missing or the path doesn't exist, ask the player to set it before writing anything player-facing.
-
-## The split
-
-### Player vault (only things the character knows)
-
-Goes in `$PLAYER_VAULT_PATH/`. Structure:
-
-```
-<player vault>/
+./playervault/
 ├── Character.md            # current character sheet state
-├── Session Log/            # one file per session, dated
-│   └── 2026-04-19.md
+├── Session Log/            # one file per session, ISO dated
+│   └── 2026-04-26.md
 ├── People/                 # NPCs the character has met
-│   └── Aland the Smith.md
+│   └── Kesta Ulfhild.md
 ├── Places/                 # places the character has been or been told of
 │   └── Stonebeck.md
-├── Threads/                # active vows, promises, mysteries the character is aware of
-│   └── Find my sister.md
+├── Threads/                # active vows, mysteries the character is tracking
+│   └── Find the Sister.md
 └── Lore/                   # worldbuilding the character has learned
-    └── The Old Road.md
+    └── Truths/
 ```
 
-**What goes here**: anything the character has seen, done, heard, been told, or reasonably knows. Write in first person or close-third — this is the player's own journal. Include speculation the character is making, but label it as speculation.
+## Mechanical state (not in vault)
 
-**What does NOT go here**: any fact the player doesn't know yet. No "Aland is secretly a cultist" unless the character has seen evidence. No "the treasure is actually cursed" unless it's been revealed. No chaos factor, no random event mechanics, no spoilers.
-
-### DM notes (everything else)
-
-Goes in `dm-notes/` at the campaign root. Structure:
-
-```
-<campaign root>/
-└── dm-notes/
-    ├── mythic-state.md         # CF, scene tracker, threads list, characters list
-    ├── npcs/
-    │   └── Aland the Smith.md   # full truth about the NPC
-    ├── locations/
-    │   └── Stonebeck.md         # hidden features, factions, etc.
-    ├── threads/
-    │   └── The Sister's Trail.md # both what's known and what's hidden
-    └── sessions/
-        └── 2026-04-19.md        # GM-side session log with rolls, reasoning, plans
-```
-
-**What goes here**: everything — including what's in the player vault. DM notes are a superset. Put the whole truth about each NPC, the chaos factor log, the reasoning behind oracle interpretations, tentative ideas for where plot threads might go, and anything the player hasn't earned yet through play.
+- `./mythic-state.md` — chaos factor, threads list, characters list (Mythic GME only; absent otherwise)
+- `./sessions/YYYY-MM-DD.md` — mechanical session log: rolls, oracle results, CF shifts, reasoning
 
 ## Writing rules
 
 ### At the start of a session
-1. Read the most recent session log from both `dm-notes/sessions/` and the player vault's `Session Log/`.
-2. Read `dm-notes/mythic-state.md` to restore Chaos Factor and active threads.
-3. Briefly recap for the player: "Last session you ended at X with Y unresolved."
+
+1. Read `./sessions/` for the most recent mechanical log.
+2. Read `./mythic-state.md` if Mythic is active.
+3. Read `./playervault/Character.md` for current character state.
+4. Recap for the player: where things stand, what hooks are open.
 
 ### During the session
-- When the player meets a new NPC: create the NPC file in *both* vaults (player-facing version has only what was observed; DM version has the full truth).
-- When an oracle roll reveals a secret to the player: update the player vault file to include the revelation; update the DM file to record when it was revealed.
-- When an oracle roll reveals something *only the agent* now knows: update only the DM file.
-- Keep a running "this session" note in `dm-notes/sessions/YYYY-MM-DD.md` as a scratchpad.
+
+When something note-worthy happens, write it inline — tell the player briefly, then continue:
+
+> *"Adding Kesta to your People folder."*
+
+Minimal skeleton during play. Flesh out at session end.
+
+- New NPC met → create `./playervault/People/<Name>.md`
+- New location → create `./playervault/Places/<Name>.md`
+- Vow made or mystery opened → create `./playervault/Threads/<Name>.md`
+- World lore established → add to `./playervault/Lore/`
 
 ### At the end of a session
-1. Finalize `dm-notes/sessions/YYYY-MM-DD.md` with: rolls made, key decisions, chaos factor shifts, threads opened/closed, NPCs introduced.
-2. Write the parallel player-facing entry in `<player vault>/Session Log/YYYY-MM-DD.md` — this is the character's journal. Use their voice if known; otherwise close narration. Omit mechanics.
-3. Update Chaos Factor in `dm-notes/mythic-state.md` if Mythic is loaded.
-4. Update any NPC / location / thread files that changed.
+
+1. Write `./sessions/YYYY-MM-DD.md` with: rolls made, oracle results, CF shifts, threads opened/closed, NPCs introduced, reasoning behind oracle interpretations.
+2. Write `./playervault/Session Log/YYYY-MM-DD.md` — character journal, first person or close narration. No mechanics, no meta.
+3. Update `./mythic-state.md` with new Chaos Factor (if Mythic active).
+4. Update any People/Places/Threads files that changed this session.
+5. Update `./playervault/Character.md` for non-stat changes (bonds forged, assets advanced, experience spent). Stats update live during play.
+
+## What goes in the vault
+
+Write what the **character** has seen, done, heard, or been told. Include the character's own speculation — labeled as such. Write in first person or close third.
+
+Do NOT write oracle mechanics, roll results, chaos factor, or GM reasoning in vault files. Those belong in `./sessions/`.
 
 ## Linking conventions
 
-In the player vault, use Obsidian wikilinks: `[[Aland the Smith]]`, `[[Stonebeck]]`. This makes the vault navigable in Obsidian for the player to browse between sessions.
-
-In DM notes, use relative paths or wikilinks — whatever is consistent within the campaign.
+Use Obsidian wikilinks in the vault: `[[Kesta Ulfhild]]`, `[[Stonebeck]]`, `[[Find the Sister]]`. Makes the vault navigable in Obsidian.
 
 ## Filename conventions
 
-- Use title case for proper nouns: `Aland the Smith.md`, `The Old Road.md`
-- Use ISO date for session logs: `2026-04-19.md`
-- Lower-kebab-case is fine for DM-side concept files that aren't proper nouns: `mythic-state.md`
+- Title case for proper nouns: `Kesta Ulfhild.md`, `The Old Road.md`
+- ISO date for session logs: `2026-04-26.md`
+- Lower-kebab for mechanical files: `mythic-state.md`, `2026-04-26.md`
 
-## What about mid-session note operations?
+## Example NPC file
 
-When introducing something that deserves a file, do it inline — briefly tell the player you're jotting it down, then continue:
+`./playervault/People/Kesta Ulfhild.md`:
 
-> *"An older woman in furs looks up from her whetstone as you enter. Rolling name oracle… Kesta Ulfhild. Adding her to your People folder."*
-
-Don't pause for five minutes to perfectly author files. Minimal skeleton during play, flesh out at session end.
-
-## Example minimal NPC file at first meeting
-
-**Player vault** (`People/Kesta Ulfhild.md`):
 ```markdown
 # Kesta Ulfhild
-- **Met**: 2026-04-19, at the smithy in [[Stonebeck]]
+
+- **Met**: 2026-04-26, at the smithy in [[Stonebeck]]
 - **Appearance**: Older woman in furs, sharpening a blade when we arrived.
 - **Demeanor**: Wary but not hostile. Watched our hands more than our faces.
-- **Notes**: She knew my sister's name before I said it.
+
+## Known to [character name]
+
+Knew my sister's name before I said it.
+
+## Threads
+
+- [[The Sister's Trail]]
+
+## Last seen
+
+[[Stonebeck]], morning of Session 1.
 ```
 
-**DM notes** (`npcs/Kesta Ulfhild.md`):
+## Example session log (vault side)
+
+`./playervault/Session Log/2026-04-26.md`:
+
 ```markdown
-# Kesta Ulfhild
-## Public (in player vault)
-- Older woman, smith in Stonebeck
-- Knew the sister's name unprompted
+# Session — 2026-04-26
 
-## Hidden
-- She was part of the raiding party seven years ago that took the sister. She's been waiting for someone to come looking.
-- Has a broken iron token matching the one the PC carries.
-- Chaos: if pushed to reveal, she will lie first and test the PC's response.
+Arrived at [[Ashveil]] after a hard road. [[Ossian]] had walked out of [[The Eastern Wood]] on torn feet; [[Fen]] found him and was already tending him when I came down the track.
 
-## Rolls that produced her
-- Name: Ironsworn name oracle → Kesta Ulfhild
-- Personality: Action/Theme → Preserve/Secret
-- Fate check "does she know about the sister?": Likely, CF 5, rolled 12 → Yes
+Whatever took the missing people from Ashveil — it mimics voices. It knows mine now. That's not something you forget.
+
+[[Mara]] was steady when I told her about [[Cian]]. She extracted a promise: I tell her everything, not just what the Ring hears. Fair.
+
+Cian is back, but he's not right.
 ```
-
-Keep them linked by name. The contract is: whenever the player-facing file gains info, check the DM file to see what's now revealed vs. still hidden and update accordingly.

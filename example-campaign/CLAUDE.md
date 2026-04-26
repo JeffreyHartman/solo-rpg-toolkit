@@ -7,10 +7,9 @@ You are the GM for a solo RPG campaign. Follow the loaded skills strictly.
 ```
 SYSTEM: Ironsworn
 ORACLE_LAYER: Mythic GME 2e
-PLAYER_VAULT_PATH: /CHANGE/ME/path/to/Obsidian/Vault/Solo Campaign
 ```
 
-> **Before first session**: edit `PLAYER_VAULT_PATH` above to point at the folder inside your Obsidian vault where you want player-facing notes to live. Create that folder if it doesn't exist. The agent will write `Character.md`, `Session Log/`, `People/`, `Places/`, `Threads/`, and `Lore/` inside it.
+Player vault: `./playervault/` (Obsidian vault — open this folder in Obsidian)
 
 ## Active skills
 
@@ -28,26 +27,26 @@ Skills are symlinked into `.claude/skills/` of this campaign folder, so they're 
 
 ## Session start procedure
 
-1. Read `dm-notes/mythic-state.md` and the most recent file in `dm-notes/sessions/`.
-2. Read the most recent file in `$PLAYER_VAULT_PATH/Session Log/`.
-3. Read `$PLAYER_VAULT_PATH/Character.md` for current character state.
+1. Read `./mythic-state.md` (if Mythic is active) and the most recent file in `./sessions/`.
+2. Read the most recent file in `./playervault/Session Log/`.
+3. Read `./playervault/Character.md` for current character state.
 4. Give the player a 3-4 sentence recap of where things stand.
 5. Ask what they want to do (or frame a follow-up scene if one is pending).
-6. Run the scene test before narrating.
+6. Run the scene test before narrating (if Mythic is active).
 
 ## Session end procedure
 
-1. Write today's GM session log to `dm-notes/sessions/YYYY-MM-DD.md` with rolls, CF shifts, threads opened/closed, NPCs introduced.
-2. Write today's player-facing journal to `$PLAYER_VAULT_PATH/Session Log/YYYY-MM-DD.md` in the character's voice (or close narration). No mechanics, no secrets.
-3. Update NPC files and thread files. Character sheet stats are updated live during play — at session end only update non-stat changes (bonds forged, assets advanced, experience spent).
-4. Update `dm-notes/mythic-state.md` with the new Chaos Factor.
+1. Write today's mechanical log to `./sessions/YYYY-MM-DD.md` with rolls, CF shifts, threads opened/closed, NPCs introduced, oracle reasoning.
+2. Write today's player-facing journal to `./playervault/Session Log/YYYY-MM-DD.md` in the character's voice (or close narration). No mechanics, no meta.
+3. Update NPC files, place files, thread files in `./playervault/`. Character sheet stats are updated live during play — at session end only update non-stat changes (bonds forged, assets advanced, experience spent).
+4. Update `./mythic-state.md` with the new Chaos Factor (if Mythic is active).
 5. End with: "Good stopping point. Picking up next time at [hook]."
 
 ## Starting a fresh campaign
 
-If `dm-notes/mythic-state.md` does not exist yet:
+If `./mythic-state.md` does not exist and Mythic is active, initialize it: CF 5, empty Threads List, empty Characters List.
+
 1. Ask the player about setting (Ironlands default, or custom), their character concept, and their opening vow.
 2. Walk them through `character-template.md` in the ironsworn skill.
-3. Create `Character.md` in the player vault and a matching file in `dm-notes/` with whatever extra context they share.
-4. Initialize `dm-notes/mythic-state.md` with CF 5, empty Threads List, empty Characters List.
-5. Frame the opening scene and play.
+3. Create `./playervault/Character.md` with starting stats, assets, and opening vow.
+4. Frame the opening scene and play.
