@@ -41,12 +41,13 @@ For each truth the player wants to work on:
 
    **Why verbatim:** the option text is the canonical Ironsworn truth (Shawn Tomkin, CC-BY-4.0) and the player is choosing between *those exact options*. Paraphrase silently changes what they are picking. A "grateful threat" rewritten as "a threat" is the same failure mode as silently dropping a meaning-pair word — convenient for the LLM, lossy for the player.
 
-2. Offer five paths:
+2. Offer the player these paths:
    - **A / B / C** — pick a stock option as written.
    - **Roll d100** — invoke `solo-roll roll 1d100` and announce which option the result lands in.
    - **Fresh options** — generate three new options grounded in Ironsworn's tone (low fantasy, iron-age, harsh, mythic). Show them with the same shape as the stock options.
    - **Riff on player idea** — the player offers a seed (e.g., "iron is alive and resentful"); you reflect it back as a polished one-paragraph option and an optional quest seed.
    - **Freeform** — the player writes their own answer in prose; you only help with phrasing.
+   - **Mythic meaning pair (player-directed)** — *only when `mythic-gme` is loaded*. See "[Mythic 2e graceful coupling](#mythic-2e-graceful-coupling)" below for the full procedure (player picks target: fresh truth, quest seed, or both).
 
 3. **Iterate until lock.** Do not write to disk after one turn. The player may want several rounds of refinement, mixing fresh-options with riffs. Keep the conversation in this loop until they say something equivalent to "lock it."
 

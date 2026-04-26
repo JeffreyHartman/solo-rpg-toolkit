@@ -1,7 +1,7 @@
 {
   "name": "creatureabilities",
   "display_name": "Creature Abilities",
-  "description": "Special powers or unnatural traits (Element, Flight, Mimicry). Pairs with creature for monster builds.",
+  "description": "Special powers or unnatural traits (Ambush, Bite, Communicate). Pairs with creature for monster builds.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [
