@@ -8,7 +8,7 @@ from . import DEFAULT_DATA_DIR, __version__
 from .charts import FateChartError, fate_check, load_fate_chart
 from .quicksets import QuicksetDataError, QuicksetNotFoundError, run_quickset
 from .rng import DiceSource, RandomDice
-from .tables import TableDataError, TableNotFoundError, roll_table
+from .tables import TableDataError, TableNotFoundError, load_table, roll_table
 
 
 def _resolve_data_dir(cli_arg: str | None) -> Path:
@@ -116,6 +116,66 @@ def _cmd_roll(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_list(args: argparse.Namespace) -> int:
+    data_dir = _resolve_data_dir(args.data)
+    if not data_dir.exists():
+        print(f"error: data dir not found: {data_dir}", file=sys.stderr)
+        return 1
+    tables_root = data_dir / "tables"
+    entries: list[dict] = []
+    if tables_root.exists():
+        prefix = args.prefix.rstrip("/") if args.prefix else None
+        for path in sorted(tables_root.rglob("*.json")):
+            rel_name = path.relative_to(tables_root).with_suffix("").as_posix()
+            if prefix is not None and rel_name != prefix and not rel_name.startswith(prefix + "/"):
+                continue
+            try:
+                table = load_table(rel_name, data_dir)
+            except (TableNotFoundError, TableDataError) as exc:
+                print(f"warning: skipped {path}: {exc}", file=sys.stderr)
+                continue
+            if "entries" in table:
+                count = len(table["entries"])
+            else:
+                count = sum(b["max"] - b["min"] + 1 for b in table["ranges"])
+            entries.append({
+                "name": rel_name,
+                "display_name": table.get("display_name", table["name"]),
+                "dice": table["dice"],
+                "description": table.get("description"),
+                "entry_count": count,
+            })
+    if args.json:
+        print(json.dumps({"tables": entries}, indent=2))
+        return 0
+    _render_list_text(entries)
+    return 0
+
+
+def _render_list_text(entries: list[dict]) -> None:
+    if not entries:
+        return
+    groups: dict[str, list[dict]] = {}
+    for e in entries:
+        group = e["name"].rsplit("/", 1)[0] if "/" in e["name"] else "(top-level)"
+        groups.setdefault(group, []).append(e)
+    ordered: list[str] = []
+    if "(top-level)" in groups:
+        ordered.append("(top-level)")
+    ordered.extend(sorted(g for g in groups if g != "(top-level)"))
+    for group in ordered:
+        header = group if group == "(top-level)" else f"{group}/"
+        print(header)
+        members = groups[group]
+        name_w = max(len(e["name"].rsplit("/", 1)[-1]) for e in members)
+        display_w = max(len(e["display_name"]) for e in members)
+        for e in members:
+            short = e["name"].rsplit("/", 1)[-1]
+            desc = e["description"] if e["description"] else "—"
+            print(f"  {short:<{name_w}}  {e['dice']:<4}  {e['entry_count']:>3} entries  {e['display_name']:<{display_w}}  — {desc}")
+        print()
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="solo-roll")
     parser.add_argument("--version", action="version", version=f"solo-roll {__version__}")
@@ -148,6 +208,14 @@ def main(argv: list[str] | None = None) -> int:
     p_roll.add_argument("dice", help="Dice notation, e.g. d10")
     _add_common_args(p_roll)
     p_roll.set_defaults(func=_cmd_roll)
+
+    p_list = subparsers.add_parser("list", help="List available tables grouped by directory")
+    p_list.add_argument("prefix", nargs="?", default=None,
+                        help="Optional prefix to filter (e.g. 'elements' or 'mythic')")
+    p_list.add_argument("--json", action="store_true",
+                        help="Emit machine-readable JSON instead of grouped text")
+    p_list.add_argument("--data", type=str, default=None)
+    p_list.set_defaults(func=_cmd_list)
 
     args = parser.parse_args(argv)
     if args.command is None:

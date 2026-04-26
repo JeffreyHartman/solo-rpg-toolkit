@@ -158,3 +158,92 @@ def test_roll_reproducible_with_seed():
     assert r1.returncode == 0
     assert r2.returncode == 0
     assert json.loads(r1.stdout)["roll"] == json.loads(r2.stdout)["roll"]
+
+
+def test_list_no_args_groups_top_level_and_directories():
+    result = _run("list")
+    assert result.returncode == 0, result.stderr
+    out = result.stdout
+    # Top-level group rendered first, with bare label
+    assert "(top-level)" in out
+    # Directory groups have trailing slash
+    assert "elements/" in out
+    assert "mythic/" in out
+    # Several known tables appear
+    assert "action1" in out
+    assert "creature" in out
+    assert "event-focus" in out
+
+
+def test_list_prefix_filters_to_directory():
+    result = _run("list", "elements")
+    assert result.returncode == 0, result.stderr
+    out = result.stdout
+    assert "elements/" in out
+    assert "creature" in out
+    # Top-level and mythic excluded
+    assert "(top-level)" not in out
+    assert "mythic/" not in out
+    assert "action1" not in out
+
+
+def test_list_prefix_with_trailing_slash_equivalent():
+    a = _run("list", "elements")
+    b = _run("list", "elements/")
+    assert a.returncode == 0 and b.returncode == 0
+    assert a.stdout == b.stdout
+
+
+def test_list_json_output_shape():
+    result = _run("list", "--json")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert "tables" in payload
+    assert isinstance(payload["tables"], list)
+    assert len(payload["tables"]) >= 49
+    for entry in payload["tables"]:
+        assert set(entry.keys()) == {"name", "display_name", "dice", "description", "entry_count"}
+        assert isinstance(entry["name"], str)
+        assert isinstance(entry["dice"], str)
+        assert isinstance(entry["entry_count"], int) and entry["entry_count"] > 0
+    # All shipped tables have a description (post-Task 6)
+    assert all(isinstance(e["description"], str) and e["description"] for e in payload["tables"])
+
+
+def test_list_prefix_no_match_returns_empty():
+    result = _run("list", "nonexistent_prefix")
+    assert result.returncode == 0
+    # Empty output (or empty group) — just no actual table lines
+    assert "creature" not in result.stdout
+    assert "action1" not in result.stdout
+
+
+def test_list_custom_data_dir_with_synthetic_tables(tmp_path):
+    # Custom data dir holding two tables; --data overrides default.
+    tables = tmp_path / "data" / "tables"
+    tables.mkdir(parents=True)
+    (tables / "alpha.json").write_text(json.dumps({
+        "name": "alpha", "display_name": "Alpha", "dice": "d4",
+        "description": "First sample.", "entries": ["a", "b", "c", "d"],
+    }))
+    nested = tables / "themed"
+    nested.mkdir()
+    (nested / "beta.json").write_text(json.dumps({
+        "name": "beta", "display_name": "Beta", "dice": "d6",
+        "entries": ["1", "2", "3", "4", "5", "6"],
+    }))
+    result = _run("list", "--data", str(tmp_path / "data"), "--json")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    names = {t["name"] for t in payload["tables"]}
+    assert names == {"alpha", "themed/beta"}
+    descs = {t["name"]: t["description"] for t in payload["tables"]}
+    assert descs["alpha"] == "First sample."
+    assert descs["themed/beta"] is None  # absent in source → null in output
+
+
+def test_list_missing_data_dir_exits_1(tmp_path):
+    bogus = tmp_path / "nope"
+    result = _run("list", "--data", str(bogus))
+    assert result.returncode == 1
+    assert "data dir not found" in result.stderr.lower()
