@@ -57,51 +57,41 @@ def fake_template(tmp_path):
     template.mkdir()
     (template / "CLAUDE.md").write_text(
         "# Solo RPG Campaign — [Campaign Name]\n\n"
-        "PLAYER_VAULT_PATH: /CHANGE/ME/path/to/Obsidian/Vault/Solo Campaign\n\n"
         "Skills:\n[Active Skills]\n"
     )
-    (template / "dm-notes").mkdir()
-    (template / "dm-notes" / "mythic-state.md").write_text("# Mythic State\nCF: 5\n")
+    vault = template / "playervault"
+    vault.mkdir()
+    for sub in ("Session Log", "People", "Places", "Threads", "Lore"):
+        (vault / sub).mkdir()
+    (template / "sessions").mkdir()
     return template
 
 
 def test_create_campaign_copies_template(tmp_path, fake_template):
     target = tmp_path / "my-campaign"
-    _create_campaign("My Campaign", target, Path("/vault/solo"), fake_template, [])
+    _create_campaign("My Campaign", target, fake_template, [])
     assert (target / "CLAUDE.md").is_file()
-    assert (target / "dm-notes" / "mythic-state.md").is_file()
+    assert (target / "playervault").is_dir()
 
 
 def test_create_campaign_substitutes_name(tmp_path, fake_template):
     target = tmp_path / "my-campaign"
-    _create_campaign("Bleak Winter", target, Path("/vault/solo"), fake_template, [])
+    _create_campaign("Bleak Winter", target, fake_template, [])
     text = (target / "CLAUDE.md").read_text()
     assert "Bleak Winter" in text
     assert "[Campaign Name]" not in text
-
-
-def test_create_campaign_substitutes_vault_path(tmp_path, fake_template):
-    target = tmp_path / "my-campaign"
-    _create_campaign(
-        "Bleak Winter", target, Path("/home/me/Obsidian/Solo"), fake_template, []
-    )
-    text = (target / "CLAUDE.md").read_text()
-    assert "/home/me/Obsidian/Solo" in text
-    assert "/CHANGE/ME/path/to/Obsidian/Vault/Solo Campaign" not in text
 
 
 def test_create_campaign_target_exists_raises(tmp_path, fake_template):
     target = tmp_path / "existing"
     target.mkdir()
     with pytest.raises(FileExistsError):
-        _create_campaign("X", target, Path("/v"), fake_template, [])
+        _create_campaign("X", target, fake_template, [])
 
 
 def test_create_campaign_substitutes_active_skills(tmp_path, fake_template):
     target = tmp_path / "c"
-    _create_campaign(
-        "X", target, Path("/v"), fake_template, ["ironsworn", "mythic-gme"]
-    )
+    _create_campaign("X", target, fake_template, ["ironsworn", "mythic-gme"])
     text = (target / "CLAUDE.md").read_text()
     assert "[Active Skills]" not in text
     assert "`ironsworn`" in text
@@ -111,7 +101,7 @@ def test_create_campaign_substitutes_active_skills(tmp_path, fake_template):
 
 def test_create_campaign_active_skills_empty_renders_no_skills_note(tmp_path, fake_template):
     target = tmp_path / "c"
-    _create_campaign("X", target, Path("/v"), fake_template, [])
+    _create_campaign("X", target, fake_template, [])
     text = (target / "CLAUDE.md").read_text()
     assert "[Active Skills]" not in text
     assert "no skills installed" in text
@@ -311,20 +301,15 @@ def test_main_happy_path_installs_skills_project_local(tmp_path, monkeypatch, ca
     )
 
     target = tmp_path / "my-campaign"
-    vault = tmp_path / "obsidian" / "solo"
 
-    rc = main([
-        "Bleak Winter",
-        str(target),
-        "--vault", str(vault),
-    ])
+    rc = main(["Bleak Winter", str(target)])
 
     assert rc == 0
     assert (target / "CLAUDE.md").is_file()
     assert "Bleak Winter" in (target / "CLAUDE.md").read_text()
-    assert str(vault) in (target / "CLAUDE.md").read_text()
-    assert vault.is_dir()
-    assert (vault / "Session Log").is_dir()
+    assert (target / "playervault").is_dir()
+    assert (target / "playervault" / "Session Log").is_dir()
+    assert (target / "sessions").is_dir()
     skills_dir = target / ".claude" / "skills"
     assert skills_dir.is_dir()
     skill_names = {p.name for p in skills_dir.iterdir() if p.is_symlink()}
@@ -335,17 +320,62 @@ def test_main_happy_path_installs_skills_project_local(tmp_path, monkeypatch, ca
     assert str(target) in out
 
 
+def test_main_creates_playervault_inside_campaign(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "solo_roll.campaign.shutil.which",
+        lambda cmd: "/usr/bin/solo-roll" if cmd == "solo-roll" else None,
+    )
+    target = tmp_path / "c"
+    rc = main(["X", str(target)])
+    assert rc == 0
+    vault = target / "playervault"
+    assert vault.is_dir()
+    for sub in ("Session Log", "People", "Places", "Threads", "Lore"):
+        assert (vault / sub).is_dir(), f"missing playervault/{sub}"
+
+
+def test_main_mythic_state_created_when_mythic_gme_in_skills(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "solo_roll.campaign.shutil.which",
+        lambda cmd: "/usr/bin/solo-roll" if cmd == "solo-roll" else None,
+    )
+    target = tmp_path / "c"
+    rc = main(["X", str(target), "--skills", "mythic-gme"])
+    assert rc == 0
+    assert (target / "mythic-state.md").is_file()
+    content = (target / "mythic-state.md").read_text()
+    assert "Chaos Factor" in content
+
+
+def test_main_mythic_state_not_created_without_mythic_gme(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "solo_roll.campaign.shutil.which",
+        lambda cmd: "/usr/bin/solo-roll" if cmd == "solo-roll" else None,
+    )
+    target = tmp_path / "c"
+    rc = main(["X", str(target), "--skills", "ironsworn"])
+    assert rc == 0
+    assert not (target / "mythic-state.md").exists()
+
+
+def test_main_sessions_dir_created(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "solo_roll.campaign.shutil.which",
+        lambda cmd: "/usr/bin/solo-roll" if cmd == "solo-roll" else None,
+    )
+    target = tmp_path / "c"
+    rc = main(["X", str(target)])
+    assert rc == 0
+    assert (target / "sessions").is_dir()
+
+
 def test_main_skills_subset_only_installs_chosen(tmp_path, monkeypatch):
     monkeypatch.setattr(
         "solo_roll.campaign.shutil.which",
         lambda cmd: "/usr/bin/solo-roll" if cmd == "solo-roll" else None,
     )
     target = tmp_path / "c"
-    rc = main([
-        "X", str(target),
-        "--vault", str(tmp_path / "v"),
-        "--skills", "mythic-gme,solo-journaler",
-    ])
+    rc = main(["X", str(target), "--skills", "mythic-gme,solo-journaler"])
     assert rc == 0
     skills_dir = target / ".claude" / "skills"
     names = {p.name for p in skills_dir.iterdir() if p.is_symlink()}
@@ -361,11 +391,7 @@ def test_main_skills_none_installs_nothing(tmp_path, monkeypatch):
         lambda cmd: "/usr/bin/solo-roll" if cmd == "solo-roll" else None,
     )
     target = tmp_path / "c"
-    rc = main([
-        "X", str(target),
-        "--vault", str(tmp_path / "v"),
-        "--skills", "none",
-    ])
+    rc = main(["X", str(target), "--skills", "none"])
     assert rc == 0
     skills_dir = target / ".claude" / "skills"
     assert skills_dir.is_dir()
@@ -378,11 +404,7 @@ def test_main_skills_unknown_returns_1(tmp_path, monkeypatch, capsys):
         lambda cmd: "/usr/bin/solo-roll" if cmd == "solo-roll" else None,
     )
     target = tmp_path / "c"
-    rc = main([
-        "X", str(target),
-        "--vault", str(tmp_path / "v"),
-        "--skills", "ironsworn,bogus",
-    ])
+    rc = main(["X", str(target), "--skills", "ironsworn,bogus"])
     assert rc == 1
     assert not target.exists()
     err = capsys.readouterr().err
@@ -393,23 +415,10 @@ def test_main_skills_unknown_returns_1(tmp_path, monkeypatch, capsys):
 def test_main_target_exists_returns_1(tmp_path, capsys):
     existing = tmp_path / "existing"
     existing.mkdir()
-    rc = main([
-        "X", str(existing),
-        "--vault", str(tmp_path / "v"),
-    ])
+    rc = main(["X", str(existing)])
     assert rc == 1
     err = capsys.readouterr().err
     assert "already exists" in err
-
-
-def test_main_no_vault_non_tty_returns_1(tmp_path, monkeypatch, capsys):
-    monkeypatch.setattr("sys.stdin.isatty", lambda: False)
-    rc = main([
-        "X", str(tmp_path / "campaign"),
-    ])
-    assert rc == 1
-    err = capsys.readouterr().err
-    assert "vault" in err.lower()
 
 
 def test_campaign_settings_written_when_ironsworn_selected(tmp_path, monkeypatch):
@@ -418,7 +427,7 @@ def test_campaign_settings_written_when_ironsworn_selected(tmp_path, monkeypatch
         lambda cmd: "/usr/bin/solo-roll" if cmd == "solo-roll" else None,
     )
     target = tmp_path / "c"
-    rc = main(["X", str(target), "--vault", str(tmp_path / "v")])
+    rc = main(["X", str(target)])
     assert rc == 0
     settings_file = target / ".claude" / "settings.json"
     assert settings_file.exists()
@@ -433,6 +442,7 @@ def test_campaign_settings_not_written_without_ironsworn(tmp_path, monkeypatch):
         lambda cmd: "/usr/bin/solo-roll" if cmd == "solo-roll" else None,
     )
     target = tmp_path / "c"
-    rc = main(["X", str(target), "--vault", str(tmp_path / "v"), "--skills", "none"])
+    rc = main(["X", str(target), "--skills", "none"])
     assert rc == 0
-    assert not (target / ".claude" / "settings.json").exists()
+    settings_file = target / ".claude" / "settings.json"
+    assert not settings_file.exists()
