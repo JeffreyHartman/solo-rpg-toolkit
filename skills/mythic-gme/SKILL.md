@@ -152,6 +152,47 @@ Interpret the word pair (`action` + `description`) in context. You don't need a 
 
 ---
 
+## Available tables
+
+The toolkit ships a library of Mythic 2e themed tables in addition to the default meaning pair.
+
+- **Top-level** (`action1`, `action2`, `descriptor1`, `descriptor2`) — canonical meaning-pair word lists.
+- **`elements/`** — themed lookup tables for creatures, civilizations, locations, magic, omens, and more.
+- **`mythic/`** — GME mechanics tables (event focus, etc.).
+
+**To discover what's available, run `solo-roll list`** (or `solo-roll list <prefix>` to scope, e.g., `solo-roll list elements`). Each entry shows dice, entry count, display name, and a one-line description.
+
+**Useful combinations:**
+
+- `elements/creature` + `elements/creatureabilities` — flesh out a monster or horror.
+- `elements/city` + `elements/civilization` — generate a settlement with culture.
+- `elements/dungeon` + `elements/dungeontrap` — populate a delve with hazards.
+- `elements/characterappearance` + `elements/characterpersonality` — shape an NPC quickly.
+
+These are starting points; combine any tables that fit the moment.
+
+---
+
+## Using arbitrary tables
+
+When the player asks for color or detail beyond a single meaning pair (creature description, location flavor, magic-item quirks), find candidate tables with `solo-roll list [prefix]`, then roll each chosen table:
+
+```bash
+solo-roll table elements/creature
+solo-roll table elements/creatureabilities
+```
+
+**Apply the same Interpretation discipline as meaning-pair:**
+
+- Roll first, interpret after.
+- Announce every result verbatim — quote the words from each JSON output exactly.
+- Every rolled word counts. Don't silently drop a result because it's awkward; dissonance is a feature.
+- If a result is genuinely forced, name the word and the reason explicitly before discarding.
+
+The toolkit's discipline rules are not specific to `meaning-pair`. They apply any time the dice produce words you must integrate into the fiction.
+
+---
+
 ## Interpretation discipline
 
 Every `solo-roll meaning-pair` invocation — whether for a Random Event, Altered Scene, Detail Check, or any caller skill — follows the same procedure. The point of rolling is to surface answers the LLM would not have written on its own. Skipping this discipline silently turns the dice into stage dressing.
