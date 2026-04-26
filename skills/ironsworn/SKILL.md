@@ -39,13 +39,7 @@ The player is handling their own dice. When a move is triggered:
 
 ## When Mythic GME skill is also loaded
 
-If you see `mythic-gme` in the active skills, prefer it for:
-- **Scene setup** — test each new scene for alteration/interrupt using the Chaos Factor before narrating it.
-- **Fate checks** (yes/no with chaos factor weighting) instead of Ironsworn's "Ask the Oracle" yes/no.
-- **Event focus rolls** when a scene needs a twist or the Mythic rules call for an event.
-- **Chaos Factor tracking** session to session.
-
-Keep using Ironsworn oracles for: Action/Theme prompts, names, region/location features, and all move resolutions. The two systems layer well — Mythic drives pacing and scene dynamics, Ironsworn drives moment-to-moment action and color.
+If `mythic-gme` is loaded, do **NOT** substitute its mechanics for Ironsworn's native ones. Mythic mechanics (Scene Test, Fate Check, Event Focus, Chaos Factor) are opt-in tools the player invokes explicitly — for example, "run a scene test", "roll a fate check on whether the guard noticed me", "use Mythic for this event". Default behavior stays Ironsworn-native: Ask the Oracle for yes/no, Ironsworn oracles for inspiration, Ironsworn pacing. Do not surface Mythic mechanics unprompted, and do not pre-empt an Ironsworn move with a Mythic equivalent.
 
 ## Setting truths at session zero
 
@@ -68,7 +62,6 @@ Good solo play needs clear scenes, not continuous sludge. Between scenes, briefl
 1. Summarize where the character is and what's unresolved.
 2. Ask: "What do you want to do next?"
 3. Once the player states intent, frame the next scene (one or two sentences of setup).
-4. If Mythic is loaded, run a Scene Test first.
 
 ## Reference files
 
