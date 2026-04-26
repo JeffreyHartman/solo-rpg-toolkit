@@ -39,7 +39,7 @@ Skills are symlinked into `.claude/skills/` of this campaign folder, so they're 
 
 1. Write today's GM session log to `dm-notes/sessions/YYYY-MM-DD.md` with rolls, CF shifts, threads opened/closed, NPCs introduced.
 2. Write today's player-facing journal to `$PLAYER_VAULT_PATH/Session Log/YYYY-MM-DD.md` in the character's voice (or close narration). No mechanics, no secrets.
-3. Update character sheet, NPC files, thread files.
+3. Update NPC files and thread files. Character sheet stats are updated live during play — at session end only update non-stat changes (bonds forged, assets advanced, experience spent).
 4. Update `dm-notes/mythic-state.md` with the new Chaos Factor.
 5. End with: "Good stopping point. Picking up next time at [hook]."
 
