@@ -1,6 +1,7 @@
 {
   "name": "descriptor1",
   "display_name": "Descriptor (Meaning Table 1)",
+  "description": "Adverb/descriptor word list (Mythic 2e Meaning Table — Descriptions 1). Default 'description' half of solo-roll meaning-pair.",
   "dice": "d100",
   "source": "Mythic GME 2e, Descriptors Table 1",
   "entries": [

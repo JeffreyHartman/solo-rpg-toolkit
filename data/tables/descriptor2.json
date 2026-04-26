@@ -1,6 +1,7 @@
 {
   "name": "descriptor2",
   "display_name": "Descriptor (Meaning Table 2)",
+  "description": "Alternate adverb/descriptor list (Mythic 2e Meaning Table — Descriptions 2). Pair with action2 for a different feel.",
   "dice": "d100",
   "source": "Mythic GME 2e, Descriptors Table 2",
   "entries": [

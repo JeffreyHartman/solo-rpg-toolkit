@@ -1,6 +1,7 @@
 {
   "name": "action2",
   "display_name": "Action (Meaning Table 2)",
+  "description": "Alternate verb word list (Mythic 2e Meaning Table — Actions 2). Drop-in replacement for action1 to vary tone.",
   "dice": "d100",
   "source": "Mythic GME 2e, Actions Table 2",
   "entries": [

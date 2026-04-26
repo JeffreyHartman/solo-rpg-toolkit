@@ -1,6 +1,7 @@
 {
   "name": "action1",
   "display_name": "Action (Meaning Table 1)",
+  "description": "Verb word list (Mythic 2e Meaning Table — Actions 1). Default 'action' half of solo-roll meaning-pair.",
   "dice": "d100",
   "source": "Mythic GME 2e, Actions Table 1",
   "entries": [
