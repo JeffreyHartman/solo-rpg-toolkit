@@ -112,16 +112,14 @@ Play published adventures with Claude as GM. Requires GM secrets (information th
 
 ---
 
-## Sub-project 5: Enhanced Journaling + Obsidian Vault
-Improve the solo-journaler skill and the player-facing vault structure.
+## Sub-project 5: Vault Templates + Progress Track Integration
+Formalize the file structure and progress track conventions that emerged during play.
 
-- [ ] Pre-built Obsidian vault template (folders, index file, CSS snippets)
-- [ ] Session log auto-format: Obsidian-friendly headers, wikilinks, callout blocks
-- [ ] NPC file template with fields: met/location/demeanor/hidden-truth split
-- [ ] Location file template
-- [ ] Thread/vow tracker: syncs with Ironsworn progress tracks
-- [ ] End-of-session summary command: agent writes both logs in one pass
-- [ ] `solo-journaler` skill: enhance vault templates, session log auto-format, example outputs
+- [ ] Starter template files in `example-campaign/playervault/`: `People/_template.md`, `Places/_template.md`, `Threads/_template.md`
+- [ ] `Threads/_template.md`: include `▢▢▢▢▢▢▢▢▢▢` progress track row; rank/marks-per-mark table from Ironsworn rules
+- [ ] Ironsworn skill: document progress track fill rules (Troublesome/Dangerous/Formidable/Extreme/Epic marks per progress)
+- [ ] Mechanical session log format: drop "Secrets / DM notes" holdover; rename to "Oracle reasoning" (inferences from rolls and oracle results)
+- [ ] `solo-journaler` SKILL.md: add Thread and Location file examples to match existing NPC example
 
 ---
 
