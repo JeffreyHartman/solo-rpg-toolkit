@@ -1,6 +1,7 @@
 {
   "name": "vision",
   "display_name": "Vision/Dream",
+  "description": "Vision/dream content fragments — for prophetic dreams, scrying results, or hallucinations.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

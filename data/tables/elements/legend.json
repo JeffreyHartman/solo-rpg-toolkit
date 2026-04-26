@@ -1,6 +1,7 @@
 {
   "name": "legend",
   "display_name": "Legend",
+  "description": "Legend hooks (ancient battle, lost ruler, vanished people). Useful for lore drops and quest seeds.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

@@ -1,6 +1,7 @@
 {
   "name": "sound",
   "display_name": "Sound",
+  "description": "Sound descriptors for setting atmosphere (whispering, distant-thunder, scraping).",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

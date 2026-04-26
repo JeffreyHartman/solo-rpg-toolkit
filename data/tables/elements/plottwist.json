@@ -1,6 +1,7 @@
 {
   "name": "plottwist",
   "display_name": "Plot Twist",
+  "description": "Plot twist seeds (Mythic 2e Plot Twist table) — when the story needs a sharp turn.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

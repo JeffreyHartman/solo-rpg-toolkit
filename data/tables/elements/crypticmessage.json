@@ -1,6 +1,7 @@
 {
   "name": "crypticmessage",
   "display_name": "Cryptic Message",
+  "description": "Riddle and omen fragments — for prophecies, dreams, coded notes, or oracular utterances.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

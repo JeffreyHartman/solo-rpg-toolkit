@@ -1,6 +1,7 @@
 {
   "name": "names",
   "display_name": "Name",
+  "description": "Name fragments to assemble or pick whole. Pulls names without committing to one culture.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

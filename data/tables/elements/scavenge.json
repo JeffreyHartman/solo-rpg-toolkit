@@ -1,6 +1,7 @@
 {
   "name": "scavenge",
   "display_name": "Scavenging Result",
+  "description": "Scavenging results — what you find rummaging through ruins, packs, or rubble.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

@@ -1,6 +1,7 @@
 {
   "name": "starship",
   "display_name": "Starship",
+  "description": "Starship features and quirks for sci-fi vessels (combine with civilization for fleet identity).",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

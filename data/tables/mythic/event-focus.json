@@ -1,6 +1,7 @@
 {
   "name": "mythic/event-focus",
   "display_name": "Random Event Focus",
+  "description": "Mythic 2e Event Focus — 12-category lookup that classifies a Random Event. Always rolled before meaning-pair when an event fires.",
   "dice": "d100",
   "source": "Mythic GME 2e",
   "ranges": [
