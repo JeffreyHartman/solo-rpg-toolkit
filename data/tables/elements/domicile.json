@@ -1,6 +1,7 @@
 {
   "name": "domicile",
   "display_name": "Domicile Description",
+  "description": "Home and dwelling features (humble, defensible, abandoned).",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

@@ -1,6 +1,7 @@
 {
   "name": "army",
   "display_name": "Army Descriptor",
+  "description": "Army composition, tactics, or morale state. Useful for war scenes or large-scale opposition.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

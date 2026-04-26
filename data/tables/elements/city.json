@@ -1,6 +1,7 @@
 {
   "name": "city",
   "display_name": "City Description",
+  "description": "City features and street-level color (markets, walls, districts). Pair with civilization for cultural texture.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

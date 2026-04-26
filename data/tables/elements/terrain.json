@@ -1,6 +1,7 @@
 {
   "name": "terrain",
   "display_name": "Terrain",
+  "description": "Generic terrain descriptors for wilderness travel and journey rolls.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

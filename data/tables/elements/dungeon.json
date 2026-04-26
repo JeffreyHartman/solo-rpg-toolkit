@@ -1,6 +1,7 @@
 {
   "name": "dungeon",
   "display_name": "Dungeon Description",
+  "description": "Dungeon room and feature words. Pair with dungeontrap to populate a delve.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

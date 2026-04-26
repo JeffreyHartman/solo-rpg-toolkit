@@ -1,6 +1,7 @@
 {
   "name": "forest",
   "display_name": "Forest Description",
+  "description": "Forest features and atmosphere (overgrown, ancient, blighted).",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

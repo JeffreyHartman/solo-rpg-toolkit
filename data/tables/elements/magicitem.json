@@ -1,6 +1,7 @@
 {
   "name": "magicitem",
   "display_name": "Magic Item Description",
+  "description": "Magic item effects and properties for treasure or quest rewards.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

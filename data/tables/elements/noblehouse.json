@@ -1,6 +1,7 @@
 {
   "name": "noblehouse",
   "display_name": "Noble House",
+  "description": "Noble house traits (sigil, motto, current crisis). Pair with civilization for political plots.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

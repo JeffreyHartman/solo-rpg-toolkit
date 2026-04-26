@@ -1,6 +1,7 @@
 {
   "name": "object",
   "display_name": "Object",
+  "description": "Generic object descriptors — found items, set dressing, scavenged loot.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

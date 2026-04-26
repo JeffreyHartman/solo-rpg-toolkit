@@ -1,6 +1,7 @@
 {
   "name": "cavern",
   "display_name": "Cavern Descriptor",
+  "description": "Cavern features — formations, hazards, and signs of inhabitants. Use for underground exploration.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

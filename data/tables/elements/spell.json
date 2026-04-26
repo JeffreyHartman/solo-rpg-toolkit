@@ -1,6 +1,7 @@
 {
   "name": "spell",
   "display_name": "Spell Effect",
+  "description": "Spell effects and arcane phenomena. Useful for novel magic or wild surge results.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

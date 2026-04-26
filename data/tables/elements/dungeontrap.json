@@ -1,6 +1,7 @@
 {
   "name": "dungeontrap",
   "display_name": "Dungeon Trap",
+  "description": "Trap types and triggers for dungeon hazards.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

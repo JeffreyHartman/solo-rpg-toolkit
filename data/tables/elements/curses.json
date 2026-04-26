@@ -1,6 +1,7 @@
 {
   "name": "curses",
   "display_name": "Curse",
+  "description": "Curse types and lingering hexes. Pair with mutation or undead for darker beats.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

@@ -1,6 +1,7 @@
 {
   "name": "powers",
   "display_name": "Power",
+  "description": "Special powers and supernatural abilities — for characters, creatures, or items.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

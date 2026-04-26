@@ -1,6 +1,7 @@
 {
   "name": "civilization",
   "display_name": "Civilization Description",
+  "description": "Culture and society descriptors (theocratic, fractured, isolationist). Pair with city or noblehouse.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [

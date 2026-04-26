@@ -1,6 +1,7 @@
 {
   "name": "location",
   "display_name": "Location",
+  "description": "Generic location features — use when no themed table fits.",
   "dice": "d100",
   "source": "solo-rpg-toolkit elements",
   "entries": [
