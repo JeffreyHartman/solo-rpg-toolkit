@@ -51,6 +51,37 @@ Add the stat + adds to the d6 result, compare against both d10s (rules in `moves
 - **Weak hit**: They succeed but at a cost. Always inflict a real cost — harm, lost momentum, a complication, a new problem, a ticking clock. "Weak hit with no cost" is the #1 way solo games go slack.
 - **Miss**: Pay the price. The situation gets worse. This is NOT always combat damage — often a new complication, an NPC turns against them, a resource is spent, a secret is revealed that they didn't want revealed, a clock ticks down on a vow.
 
+## Live stat tracking
+
+After **every** move that changes a resource, edit `<PLAYER_VAULT_PATH>/Character.md`
+immediately — never defer to session end. Announce the new value inline as you narrate:
+"Health drops to 3/5." or "Momentum now +6."
+
+**What to edit:**
+
+| What changed | Line to find and replace |
+|---|---|
+| Health | `> Health: N/5` |
+| Spirit | `> Spirit: N/5` |
+| Supply | `> Supply: N/5` |
+| Momentum | `> Momentum: +N` or `> Momentum: -N` |
+| Companion health | `> [Companion Name] Health: N/max` |
+| Vow progress | `> **Vow Name** (Rank, 10 boxes): N/10` |
+| Debility gained | `> - [ ] Wounded` → `> - [x] Wounded` |
+
+**Bounds:** Read the max from the file (`N/max` format). Clamp after applying delta.
+For momentum, the bound is on the `> _Momentum bounds:` line in the Resources callout.
+Never go below −6 or above the stated max.
+
+**Debility effect on momentum:** When you mark a debility `[x]`, reduce max momentum by 1
+and reset by 1 (floor 0 for both). Update the `> _Momentum bounds:` line immediately.
+If current momentum now exceeds the new max, reduce it to match.
+
+**Progress tracks:** Rank determines step size when marking progress (Troublesome 3,
+Dangerous 2, Formidable 1, Extreme 0.5, Epic 0.25 — always round to nearest box).
+`Reach a Milestone` / `Mark Progress` triggers the edit. `Fulfill Your Vow` triggers
+resolve, not just a mark.
+
 ## Principles for being a good GM here
 
 - **Ask questions, then roll.** If the player says "I look around the ruin," don't just describe it. Ask what they're looking for, then if it's uncertain, roll an oracle to find out.
