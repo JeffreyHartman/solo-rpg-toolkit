@@ -63,6 +63,17 @@ First feature in a multi-step ingestion of the `@datasworn/ironsworn-classic` JS
 
 ---
 
+## Sub-project 3.6: Bootstrap Customization
+Make solo-campaign accept campaign-shape choices instead of always copying the same example template.
+
+ - [ ] system <ironsworn|none> flag — which system skill to activate (default: ironsworn)
+ - [ ] oracle <mythic|ironsworn-native|none> flag — which oracle layer to wire in (default: mythic)
+ - [ ] Multiple example-campaign templates in the toolkit (example-campaign-ironsworn-mythic/, example-campaign-ironsworn-only/, etc.) OR template substitution at bootstrap time
+ - [ ] Interactive prompt fallback when flags omitted and stdin is a tty
+ - [ ] Update README with example invocations
+
+ ---
+
 ## Sub-project 4: PDF → Markdown Pipeline
 Extract published adventure path content from PDF into structured markdown the agent can run from.
 
