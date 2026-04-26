@@ -100,6 +100,18 @@ Extract published adventure path content from PDF into structured markdown the a
 
 ---
 
+## Sub-project 4.5: Pre-published Adventure Support
+Play published adventures with Claude as GM. Requires GM secrets (information the player hasn't read) and a dual-vault structure hidden from the player.
+
+- [ ] Adventure extraction pipeline: PDF → structured markdown (encounter blocks, NPC sheets, location maps)
+- [ ] Dual-vault restore: `dm-notes/` with hidden layer, player vault with only revealed content
+- [ ] `solo-journaler` skill: dual-vault mode with public/hidden section splits
+- [ ] GM secrets management: track what player has discovered vs. what remains hidden
+- [ ] `solo-campaign` bootstrap flag: `--mode gm-secrets` creates dual-vault structure
+- [ ] Test with one short published module (PF2e Beginner Box or similar OSR adventure)
+
+---
+
 ## Sub-project 5: Enhanced Journaling + Obsidian Vault
 Improve the solo-journaler skill and the player-facing vault structure.
 
@@ -109,7 +121,7 @@ Improve the solo-journaler skill and the player-facing vault structure.
 - [ ] Location file template
 - [ ] Thread/vow tracker: syncs with Ironsworn progress tracks
 - [ ] End-of-session summary command: agent writes both logs in one pass
-- [ ] `solo-journaler` skill rewrite: clearer write/don't-write rules, example outputs
+- [ ] `solo-journaler` skill: enhance vault templates, session log auto-format, example outputs
 
 ---
 

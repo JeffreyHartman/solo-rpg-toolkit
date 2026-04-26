@@ -33,7 +33,7 @@ Single source of truth: `./playervault/` relative to campaign root. Open this fo
 
 ### At the start of a session
 
-1. Read `./sessions/` for the most recent mechanical log.
+1. Read `./sessions/` for the most recent mechanical log. If `./sessions/` is empty, this is the first session — skip this step.
 2. Read `./mythic-state.md` if Mythic is active.
 3. Read `./playervault/Character.md` for current character state.
 4. Recap for the player: where things stand, what hooks are open.
@@ -49,7 +49,7 @@ Minimal skeleton during play. Flesh out at session end.
 - New NPC met → create `./playervault/People/<Name>.md`
 - New location → create `./playervault/Places/<Name>.md`
 - Vow made or mystery opened → create `./playervault/Threads/<Name>.md`
-- World lore established → add to `./playervault/Lore/`
+- World lore established → add to `./playervault/Lore/` (Ironsworn world truths go in `Lore/Truths/`; other lore as individual files directly in `Lore/`)
 
 ### At the end of a session
 
@@ -72,8 +72,8 @@ Use Obsidian wikilinks in the vault: `[[Kesta Ulfhild]]`, `[[Stonebeck]]`, `[[Fi
 ## Filename conventions
 
 - Title case for proper nouns: `Kesta Ulfhild.md`, `The Old Road.md`
-- ISO date for session logs: `2026-04-26.md`
-- Lower-kebab for mechanical files: `mythic-state.md`, `2026-04-26.md`
+- ISO date for all session logs (`./sessions/` and `./playervault/Session Log/`): `2026-04-26.md`
+- Lower-kebab for other mechanical files: `mythic-state.md`
 
 ## Example NPC file
 
