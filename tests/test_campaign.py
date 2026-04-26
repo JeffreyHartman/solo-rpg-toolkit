@@ -1,3 +1,4 @@
+import json
 import subprocess
 from pathlib import Path
 from unittest.mock import patch
@@ -409,3 +410,29 @@ def test_main_no_vault_non_tty_returns_1(tmp_path, monkeypatch, capsys):
     assert rc == 1
     err = capsys.readouterr().err
     assert "vault" in err.lower()
+
+
+def test_campaign_settings_written_when_ironsworn_selected(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "solo_roll.campaign.shutil.which",
+        lambda cmd: "/usr/bin/solo-roll" if cmd == "solo-roll" else None,
+    )
+    target = tmp_path / "c"
+    rc = main(["X", str(target), "--vault", str(tmp_path / "v")])
+    assert rc == 0
+    settings_file = target / ".claude" / "settings.json"
+    assert settings_file.exists()
+    data = json.loads(settings_file.read_text())
+    assert data["statusLine"]["type"] == "command"
+    assert "statusline.sh" in data["statusLine"]["command"]
+
+
+def test_campaign_settings_not_written_without_ironsworn(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "solo_roll.campaign.shutil.which",
+        lambda cmd: "/usr/bin/solo-roll" if cmd == "solo-roll" else None,
+    )
+    target = tmp_path / "c"
+    rc = main(["X", str(target), "--vault", str(tmp_path / "v"), "--skills", "none"])
+    assert rc == 0
+    assert not (target / ".claude" / "settings.json").exists()

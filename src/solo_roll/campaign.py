@@ -1,6 +1,7 @@
 """solo-campaign: scaffold a new solo RPG campaign folder."""
 
 import argparse
+import json
 import shutil
 import subprocess
 import sys
@@ -114,6 +115,21 @@ def _create_vault(vault_path: Path) -> None:
         (vault_path / sub).mkdir(exist_ok=True)
 
 
+def _write_campaign_settings(campaign_path: Path, installed_names: list[str]) -> None:
+    """Write .claude/settings.json with a statusLine if ironsworn is installed."""
+    if "ironsworn" not in installed_names:
+        return
+    script = campaign_path.resolve() / ".claude" / "skills" / "ironsworn" / "statusline.sh"
+    settings = {
+        "statusLine": {
+            "type": "command",
+            "command": f'bash "{script}"',
+        }
+    }
+    settings_path = campaign_path / ".claude" / "settings.json"
+    settings_path.write_text(json.dumps(settings, indent=2) + "\n")
+
+
 def _ensure_solo_roll(repo_root: Path) -> None:
     """If `solo-roll` is not on PATH, run `uv tool install --editable <repo_root>`."""
     if shutil.which("solo-roll"):
@@ -200,6 +216,7 @@ def main(argv: list[str] | None = None) -> int:
         installed_names = selected if selected is not None else available
         _create_campaign(args.name, target, vault_path, template_dir, installed_names)
         _install_skills(skills_source, skills_target, selected)
+        _write_campaign_settings(target, installed_names)
         _ensure_solo_roll(repo_root)
         _create_vault(vault_path)
     except (CampaignError, FileExistsError, IsADirectoryError,
