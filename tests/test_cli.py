@@ -247,3 +247,13 @@ def test_list_missing_data_dir_exits_1(tmp_path):
     result = _run("list", "--data", str(bogus))
     assert result.returncode == 1
     assert "data dir not found" in result.stderr.lower()
+
+
+def test_list_data_dir_without_tables_subdir(tmp_path):
+    # data dir exists but has no tables/ subdir — list should exit 0 with empty JSON envelope.
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    result = _run("list", "--data", str(data_dir), "--json")
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload == {"tables": []}
