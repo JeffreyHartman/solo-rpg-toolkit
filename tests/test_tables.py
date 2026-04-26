@@ -256,3 +256,17 @@ def test_all_shipped_tables_load_from_real_data():
         rel_name = path.relative_to(tables_root).with_suffix("").as_posix()
         table = load_table(rel_name, DEFAULT_DATA_DIR)
         assert "entries" in table or "ranges" in table
+
+
+def test_all_shipped_tables_have_description():
+    from solo_roll import DEFAULT_DATA_DIR
+    tables_root = DEFAULT_DATA_DIR / "tables"
+    json_files = sorted(tables_root.rglob("*.json"))
+    missing: list[str] = []
+    for path in json_files:
+        rel_name = path.relative_to(tables_root).with_suffix("").as_posix()
+        table = load_table(rel_name, DEFAULT_DATA_DIR)
+        desc = table.get("description")
+        if not isinstance(desc, str) or not desc.strip():
+            missing.append(rel_name)
+    assert not missing, f"tables missing description: {missing}"
