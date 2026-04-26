@@ -35,9 +35,11 @@ When the skill is invoked:
 For each truth the player wants to work on:
 
 1. Read the matching `## <Truth Name>` section from `truths.md`. Present the player with:
-   - The truth's name and a one-line summary of what this truth shapes (from your own knowledge of Ironsworn).
-   - The three stock options labelled A / B / C with their d100 ranges and one-paragraph descriptions.
-   - The quest seed for each option, kept brief at first — full text on request.
+   - The truth's name and a one-line summary of what this truth shapes (from your own knowledge of Ironsworn — this single line is the only original prose you write here).
+   - The three stock options labelled A / B / C with their d100 ranges and option text **quoted verbatim from `truths.md`**. Do not paraphrase, abbreviate, compress, or "tighten" the option text. Copy it character-for-character.
+   - The quest seed for each option, also **verbatim from `truths.md`**. Do not summarize the quest seed. If presenting all three quest seeds at once would be too long, show the option text for all three and offer to expand quest seeds on request — but when you do show a quest seed, show it whole.
+
+   **Why verbatim:** the option text is the canonical Ironsworn truth (Shawn Tomkin, CC-BY-4.0) and the player is choosing between *those exact options*. Paraphrase silently changes what they are picking. A "grateful threat" rewritten as "a threat" is the same failure mode as silently dropping a meaning-pair word — convenient for the LLM, lossy for the player.
 
 2. Offer five paths:
    - **A / B / C** — pick a stock option as written.
