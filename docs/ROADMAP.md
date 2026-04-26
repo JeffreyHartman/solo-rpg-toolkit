@@ -80,6 +80,9 @@ Show character name + live resources in Claude Code's status bar during Ironswor
 - [x] `skills/ironsworn/statusline.sh` — reads Character.md callout lines, outputs colored name + HP/SP/SU/MO
 - [x] `campaign.py` writes `.claude/settings.json` when ironsworn selected (statusLine command → script)
 - [x] Tests: with ironsworn → settings.json written; without → not written
+- [ ] Debility badges — append short codes when marked (e.g. `[WND]` `[SHK]`) so active impacts are visible at a glance
+- [ ] Active progress track — show current fight or journey tracker inline when one is open (e.g. `⚔ 4/10`)
+- [ ] Active vow — show the vow the model judges to be current focus (name-truncated + progress), e.g. `~ Find Cian 0/10`
 
 ---
 
