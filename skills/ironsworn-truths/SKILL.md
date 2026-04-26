@@ -130,9 +130,9 @@ If the player picks a truth that is already `locked: true`:
 
 If `mythic-gme` skill is loaded — detected by either (a) `mythic-gme` appearing in the active skills list shown to you by the harness, (b) a prior invocation of `solo-roll meaning-pair` or `solo-roll fate-check` in this session, or (c) the campaign `CLAUDE.md` listing it as an active skill — include this option in the per-truth menu:
 
-> **Mythic meaning pair** — invoke `solo-roll meaning-pair` once, announce both words verbatim, and interpret them together as the seed for the quest. Follow the [Interpretation discipline](../mythic-gme/SKILL.md#interpretation-discipline) in the `mythic-gme` skill: roll one pair first, use both words (dissonance is a feature), and only roll a second pair or discard a word *explicitly* if the first reading is genuinely forced.
+> **Mythic meaning pair (player-directed)** — invoke `solo-roll meaning-pair` once. Before rolling, ask the player which target: a fresh truth/option, a quest seed for the chosen option, or both. Announce both words verbatim and apply the [Interpretation discipline](../mythic-gme/SKILL.md#interpretation-discipline) from the `mythic-gme` skill — roll one pair first, use both words (dissonance is a feature), and only roll a second pair or discard a word *explicitly* if the first reading is genuinely forced.
 
-If `mythic-gme` is not loaded, do **not** mention this option. Never auto-load it.
+If `mythic-gme` is not loaded, do **not** mention this option. Never auto-load it. Never substitute it for the standard A/B/C/Roll/Fresh/Riff/Freeform paths unless the player asks for it.
 
 ## Boundaries
 
