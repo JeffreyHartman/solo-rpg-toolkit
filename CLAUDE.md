@@ -54,10 +54,12 @@ uv tool install --editable . --reinstall
 
 ### Adding a table
 Drop a JSON file into `data/tables/<name>.json`. Two formats — mutually exclusive:
-- **Flat:** `{name, display_name, dice, source, entries: ["...", ...]}` — index by roll-1
-- **Weighted:** `{name, display_name, dice, source, ranges: [{min, max, result}, ...]}` — used for d100 lookups with non-uniform weights
+- **Flat:** `{name, display_name, description, dice, source, entries: ["...", ...]}` — index by roll-1
+- **Weighted:** `{name, display_name, description, dice, source, ranges: [{min, max, result}, ...]}` — used for d100 lookups with non-uniform weights
 
-No rebuild. No reinstall. `solo-roll table <name>` reads it directly. Nested paths work too: `data/tables/elements/plottwist.json` → `solo-roll table elements/plottwist`.
+`description` is a one-line string explaining what the table covers. It is optional in the schema, but ship every new table with one — `solo-roll list` surfaces it as the table's user-facing summary, and the test suite asserts every shipped table has one.
+
+No rebuild. No reinstall. `solo-roll table <name>` reads it directly. Nested paths work too: `data/tables/elements/plottwist.json` → `solo-roll table elements/plottwist`. Use `solo-roll list` (or `solo-roll list <prefix>`) to see what's available.
 
 ### Adding a fate chart likelihood
 Edit `data/charts/mythic-fate.json` — add to `likelihoods` array and `thresholds` object. Update `KnownLikelihood` frozenset in `src/solo_roll/charts.py`.
