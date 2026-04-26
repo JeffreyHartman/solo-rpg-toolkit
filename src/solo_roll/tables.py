@@ -46,6 +46,9 @@ def _validate(payload: dict[str, Any], path: Path) -> None:
     if not isinstance(payload.get("name"), str):
         raise TableDataError(f"{path}: 'name' must be a non-empty string")
 
+    if "description" in payload and not isinstance(payload["description"], str):
+        raise TableDataError(f"{path}: 'description' must be a string when present")
+
     dice = payload.get("dice")
     if dice not in DICE_FACES:
         raise TableDataError(f"{path}: unknown dice '{dice}'")

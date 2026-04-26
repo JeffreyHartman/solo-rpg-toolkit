@@ -41,6 +41,47 @@ def test_load_flat_table(data_dir: Path):
     assert table["dice"] == "d4"
 
 
+def test_load_table_with_description(data_dir: Path):
+    _write_json(
+        data_dir / "tables" / "described.json",
+        {
+            "name": "described",
+            "dice": "d4",
+            "description": "A handy one-line summary.",
+            "entries": ["a", "b", "c", "d"],
+        },
+    )
+    table = load_table("described", data_dir)
+    assert table["description"] == "A handy one-line summary."
+
+
+def test_load_table_without_description(data_dir: Path):
+    _write_json(
+        data_dir / "tables" / "undescribed.json",
+        {
+            "name": "undescribed",
+            "dice": "d4",
+            "entries": ["a", "b", "c", "d"],
+        },
+    )
+    table = load_table("undescribed", data_dir)
+    assert "description" not in table or table.get("description") is None
+
+
+def test_load_table_non_string_description_raises(data_dir: Path):
+    _write_json(
+        data_dir / "tables" / "baddesc.json",
+        {
+            "name": "baddesc",
+            "dice": "d4",
+            "description": 42,
+            "entries": ["a", "b", "c", "d"],
+        },
+    )
+    with pytest.raises(TableDataError):
+        load_table("baddesc", data_dir)
+
+
 def test_load_nested_table(data_dir: Path):
     _write_json(
         data_dir / "tables" / "nested" / "child.json",
