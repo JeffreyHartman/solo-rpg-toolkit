@@ -29,3 +29,20 @@ def ironsworn_character_template() -> str:
 
 def test_skills_dir_exists():
     assert SKILLS_DIR.is_dir()
+
+
+def test_journaler_has_thread_example(journaler_skill):
+    """Thread example must be present with all required sections."""
+    # Heading anchors example block
+    assert "## Example Thread file" in journaler_skill or \
+           "## Example thread file" in journaler_skill
+    # Required sections inside the Thread example
+    for heading in (
+        "## What we know",
+        "## What we suspect",
+        "## Progression",
+        "## Resolution",
+    ):
+        assert heading in journaler_skill, f"missing Thread heading: {heading}"
+    # Stakes line is part of the metadata block
+    assert "**Stakes**" in journaler_skill

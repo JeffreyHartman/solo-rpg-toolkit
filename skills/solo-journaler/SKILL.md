@@ -114,3 +114,40 @@ Whatever took the missing people from Ashveil — it mimics voices. It knows min
 
 Cian is back, but he's not right.
 ```
+
+## Example Thread file
+
+`./playervault/Threads/Find the Sister.md`:
+
+```markdown
+# Find the Sister
+
+- **Opened**: Snowmonth 14
+- **Status**: open
+- **Stakes**: Sister vanished six months ago. Promise to mother on her deathbed.
+
+## What we know
+- Sister was last seen heading east from [[Stonebeck]]
+- [[Kesta Ulfhild]] knew her name before I said it
+
+## What we suspect
+- Kesta is hiding something — possibly knew sister personally
+- The mimicking thing in [[Ashveil]] may be related (timing lines up)
+
+## People
+- [[Kesta Ulfhild]] — smith, evasive
+- [[Mara]] — bound by promise to be told everything
+
+## Places
+- [[Stonebeck]] — last known location
+- [[The Eastern Wood]] — direction of travel
+
+## Progression
+- Snowmonth 14 — Kesta revealed she knew the name
+- Snowmonth 21 — found tracks heading east
+
+## Resolution
+(filled when closed)
+```
+
+Required sections: metadata block (Opened / Status / Stakes), `What we know`, `What we suspect`, `Progression`, `Resolution`. People and Places sections are optional — add them once entries exist. Move suspicions to `What we know` when confirmed.
