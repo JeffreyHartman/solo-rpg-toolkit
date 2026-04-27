@@ -117,3 +117,12 @@ def test_journaler_has_fictional_dates_rule(journaler_skill):
     assert "Current date" in journaler_skill
     assert "Character.md" in journaler_skill
     assert "Calendar.md" in journaler_skill
+
+
+def test_journaler_has_canonical_context_rule(journaler_skill):
+    """The skill must instruct the agent to keep Thread / Place files
+    self-contained — updating them in place rather than letting context
+    drift into session logs."""
+    assert "canonical context" in journaler_skill.lower()
+    # And must mention moving suspicions to `What we know` when confirmed
+    assert "What we know" in journaler_skill

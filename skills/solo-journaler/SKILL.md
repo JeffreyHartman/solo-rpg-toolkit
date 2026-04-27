@@ -51,6 +51,19 @@ Minimal skeleton during play. Flesh out at session end.
 - Vow made or mystery opened → create `./playervault/Threads/<Name>.md`
 - World lore established → add to `./playervault/Lore/` (Ironsworn world truths go in `Lore/Truths/`; other lore as individual files directly in `Lore/`)
 
+### Threads and Places are canonical context
+
+A Thread or Place file is a **synthesis layer** — the agent must be able to read the single file and understand the full state of the thread or place without paging through session logs.
+
+When new info is revealed mid-session:
+
+- Update the relevant Thread / Place file directly. Don't leave the new fact stranded in the session log.
+- Move suspicions from `What we suspect` to `What we know` when they're confirmed.
+- Add wikilinks to People / Places / Threads as they're introduced.
+- Append to the `Progression` (Threads) or `Visits` (Places) list with a short fictional-date-prefixed entry.
+
+Session logs remain history; Thread and Place files remain the canonical, current view.
+
 ### At the end of a session
 
 1. Write `./sessions/Session NNN.md` with: rolls made, oracle results, CF shifts, threads opened/closed, NPCs introduced, reasoning behind oracle interpretations.
