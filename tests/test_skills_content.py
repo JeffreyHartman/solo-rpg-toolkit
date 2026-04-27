@@ -46,3 +46,18 @@ def test_journaler_has_thread_example(journaler_skill):
         assert heading in journaler_skill, f"missing Thread heading: {heading}"
     # Stakes line is part of the metadata block
     assert "**Stakes**" in journaler_skill
+
+
+def test_journaler_has_location_example(journaler_skill):
+    """Location example must be present with required sections."""
+    assert "## Example Location file" in journaler_skill or \
+           "## Example location file" in journaler_skill
+    # The example file uses Stonebeck — that string should appear in a
+    # Place context (it already appears in the Thread example, so the
+    # check below depends on the heading anchor above)
+    assert "# Stonebeck" in journaler_skill
+    for heading in (
+        "## Description",
+        "## Visits",
+    ):
+        assert heading in journaler_skill, f"missing Location heading: {heading}"

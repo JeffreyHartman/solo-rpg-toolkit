@@ -151,3 +151,42 @@ Cian is back, but he's not right.
 ```
 
 Required sections: metadata block (Opened / Status / Stakes), `What we know`, `What we suspect`, `Progression`, `Resolution`. People and Places sections are optional — add them once entries exist. Move suspicions to `What we know` when confirmed.
+
+## Example Location file
+
+`./playervault/Places/Stonebeck.md`:
+
+```markdown
+# Stonebeck
+
+- **First visited**: Snowmonth 14
+- **Type**: Mining village, edge of [[The Eastern Wood]]
+
+## Description
+Stone-built, smoke-stained. Smithy at the north end. Maybe forty souls.
+
+## What we know
+- Iron-rich seams nearby — village livelihood
+- Travelers stop here before heading east
+
+## What we suspect
+- Locals know more about the woods than they share
+
+## People
+- [[Kesta Ulfhild]] — smith
+- [[Old Rann]] — innkeep, friendly
+
+## Threads
+- [[Find the Sister]] — sister last seen here
+- [[The Eastern Wood Mimic]] — locals avoid the woods
+
+## Notable features
+- The smithy — Kesta's domain, watched our hands
+- The ridge road east — fades into woods after a mile
+
+## Visits
+- Snowmonth 14 — arrived, met Kesta
+- Snowmonth 21 — passed through northbound
+```
+
+Required sections: metadata block (First visited / Type), `Description`. Other sections (`What we know`, `What we suspect`, `People`, `Threads`, `Notable features`, `Visits`) are optional — add once content exists.
