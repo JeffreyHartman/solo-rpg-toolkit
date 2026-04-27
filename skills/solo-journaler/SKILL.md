@@ -71,6 +71,7 @@ Session logs remain history; Thread and Place files remain the canonical, curren
 3. Update `./mythic-state.md` with new Chaos Factor (if Mythic active).
 4. Update any People/Places/Threads files that changed this session.
 5. Update `./playervault/Character.md` for non-stat changes (bonds forged, assets advanced, experience spent). Stats update live during play.
+6. Ask the player how much in-fiction time has passed (or infer from narrative); update `**Current date**:` at the top of `./playervault/Character.md` (or `./playervault/Lore/Calendar.md` if no Character.md exists).
 
 ## What goes in the vault
 

@@ -126,3 +126,16 @@ def test_journaler_has_canonical_context_rule(journaler_skill):
     assert "canonical context" in journaler_skill.lower()
     # And must mention moving suspicions to `What we know` when confirmed
     assert "What we know" in journaler_skill
+
+
+def test_journaler_session_end_updates_current_date(journaler_skill):
+    """Session-end procedure must include updating the current
+    in-fiction date."""
+    # Anchor: the existing heading
+    assert "### At the end of a session" in journaler_skill
+    # The end-of-session block must mention updating Current date
+    end_idx = journaler_skill.index("### At the end of a session")
+    next_heading = journaler_skill.find("\n## ", end_idx + 1)
+    end_block = journaler_skill[end_idx:next_heading if next_heading != -1 else None]
+    assert "Current date" in end_block
+    assert "in-fiction" in end_block.lower()
