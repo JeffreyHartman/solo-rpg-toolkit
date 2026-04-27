@@ -113,13 +113,17 @@ Play published adventures with Claude as GM. Requires GM secrets (information th
 ---
 
 ## Sub-project 5: Vault Templates + Progress Track Integration
-Formalize the file structure and progress track conventions that emerged during play.
+Formalize the file structure and progress track conventions that emerged during play. Spec: `docs/superpowers/specs/2026-04-26-vault-templates-progress-tracks-design.md`. Plan: `docs/superpowers/plans/2026-04-26-vault-templates-progress-tracks.md`.
 
-- [ ] Starter template files in `example-campaign/playervault/`: `People/_template.md`, `Places/_template.md`, `Threads/_template.md`
-- [ ] `Threads/_template.md`: include `▢▢▢▢▢▢▢▢▢▢` progress track row; rank/marks-per-mark table from Ironsworn rules
-- [ ] Ironsworn skill: document progress track fill rules (Troublesome/Dangerous/Formidable/Extreme/Epic marks per progress)
-- [ ] Mechanical session log format: drop "Secrets / DM notes" holdover; rename to "Oracle reasoning" (inferences from rolls and oracle results)
-- [ ] `solo-journaler` SKILL.md: add Thread and Location file examples to match existing NPC example
+- [x] `solo-journaler` SKILL.md: Thread + Location examples added (self-contained-context shape — metadata, What we know / suspect, People / Places, Progression / Visits, Resolution)
+- [x] Fictional dates only in vault narrative — ISO ("Played:") restricted to session-log metadata; in-fiction "Current date" stored in `Character.md` (or `Lore/Calendar.md` fallback)
+- [x] Sequential session-log filenames: `Session NNN.md` (3-digit pad), shared between `./sessions/` and `./playervault/Session Log/`
+- [x] Threads / Places canonical-context rule — synthesis layer, update in place rather than letting context drift to session logs
+- [x] Ironsworn skill: vow-vault overlay — instructs agent to write a 10-column progress-track table block to vow Threads on creation; rank → ticks-per-mark mapping (Troublesome 3 / Dangerous 2 / Formidable 1 / Extreme 1-per-2 / Epic 1-per-4)
+- [x] Ironsworn `character-template.md`: `Current date` field added to Basics block
+- [x] Skill-content test pin (`tests/test_skills_content.py`, 9 assertions) — guards the agent contract against silent breakage
+- ~~Starter `_template.md` files in `example-campaign/playervault/`~~ — dropped as YAGNI per spec; SKILL.md examples drive agent behavior, no second source of truth needed
+- ~~Mechanical session-log "Oracle reasoning" rename~~ — current SKILL.md wording already uses "oracle reasoning" / "reasoning behind oracle interpretations"; no holdover language remained to drop
 
 ---
 
