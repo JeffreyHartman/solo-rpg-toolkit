@@ -71,7 +71,7 @@ Session logs remain history; Thread and Place files remain the canonical, curren
 3. Update `./mythic-state.md` with new Chaos Factor (if Mythic active).
 4. Update any People/Places/Threads files that changed this session.
 5. Update `./playervault/Character.md` for non-stat changes (bonds forged, assets advanced, experience spent). Stats update live during play.
-6. Ask the player how much in-fiction time has passed (or infer from narrative); update `**Current date**:` at the top of `./playervault/Character.md` (or `./playervault/Lore/Calendar.md` if no Character.md exists).
+6. Ask the player how much in-fiction time has passed (or infer from narrative); update `**Current date**:` in the `## Basics` block of `./playervault/Character.md` (or at the top of `./playervault/Lore/Calendar.md` if no Character.md exists).
 
 ## What goes in the vault
 
@@ -89,7 +89,7 @@ Vault narrative uses **fictional dates only** — the in-fiction calendar string
 
 Real-world ISO dates appear only in the `**Played**:` metadata line at the top of session-log files. They never appear in People, Places, Threads, or other narrative content.
 
-**Current date** is stored at the top of `./playervault/Character.md` when a character file exists:
+**Current date** is stored in the `## Basics` block of `./playervault/Character.md` when a character file exists:
 
 ```markdown
 **Current date**: Snowmonth 14, Year of the Iron Wolf
@@ -122,7 +122,7 @@ Knew my sister's name before I said it.
 
 ## Threads
 
-- [[The Sister's Trail]]
+- [[Find the Sister]]
 
 ## Last seen
 
