@@ -69,6 +69,22 @@ Do NOT write oracle mechanics, roll results, chaos factor, or GM reasoning in va
 
 Use Obsidian wikilinks in the vault: `[[Kesta Ulfhild]]`, `[[Stonebeck]]`, `[[Find the Sister]]`. Makes the vault navigable in Obsidian.
 
+## Dates
+
+Vault narrative uses **fictional dates only** — the in-fiction calendar string the player has chosen for the campaign (e.g. `Snowmonth 14, Year of the Iron Wolf`, `Day 12 of the journey`, or `4717 AR Sarenith 3`). Format is free-form; maintain continuity from prior writing.
+
+Real-world ISO dates appear only in the `**Played**:` metadata line at the top of session-log files. They never appear in People, Places, Threads, or other narrative content.
+
+**Current date** is stored at the top of `./playervault/Character.md` when a character file exists:
+
+```markdown
+**Current date**: Snowmonth 14, Year of the Iron Wolf
+```
+
+If the campaign has no `Character.md` (no system skill loaded, or a system that doesn't track a character sheet), store the current date at the top of `./playervault/Lore/Calendar.md` instead. Create that file on first session if needed.
+
+Set the current date during the first session if blank. At session end, ask the player how much in-fiction time has passed (or infer from narrative) and update.
+
 ## Filename conventions
 
 - Title case for proper nouns: `Kesta Ulfhild.md`, `The Old Road.md`

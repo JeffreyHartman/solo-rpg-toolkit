@@ -105,3 +105,15 @@ def test_session_log_example_has_dual_date_metadata(journaler_skill):
     # Metadata block contents
     assert "**Played**: " in journaler_skill
     assert "**In-fiction**: " in journaler_skill
+
+
+def test_journaler_has_fictional_dates_rule(journaler_skill):
+    """The skill must document the fictional-dates-only rule and where
+    the current in-fiction date is stored."""
+    # Heading anchors the rule
+    assert "## Dates" in journaler_skill or \
+           "## Fictional dates" in journaler_skill
+    # Storage location for current date
+    assert "Current date" in journaler_skill
+    assert "Character.md" in journaler_skill
+    assert "Calendar.md" in journaler_skill
