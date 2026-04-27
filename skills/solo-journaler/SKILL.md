@@ -82,7 +82,7 @@ Use Obsidian wikilinks in the vault: `[[Kesta Ulfhild]]`, `[[Stonebeck]]`, `[[Fi
 ```markdown
 # Kesta Ulfhild
 
-- **Met**: 2026-04-26, at the smithy in [[Stonebeck]]
+- **Met**: Snowmonth 14, at the smithy in [[Stonebeck]]
 - **Appearance**: Older woman in furs, sharpening a blade when we arrived.
 - **Demeanor**: Wary but not hostile. Watched our hands more than our faces.
 
@@ -96,7 +96,7 @@ Knew my sister's name before I said it.
 
 ## Last seen
 
-[[Stonebeck]], morning of Session 1.
+[[Stonebeck]], morning of [[Session 001]].
 ```
 
 ## Example session log (vault side)

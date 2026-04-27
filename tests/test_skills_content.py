@@ -61,3 +61,23 @@ def test_journaler_has_location_example(journaler_skill):
         "## Visits",
     ):
         assert heading in journaler_skill, f"missing Location heading: {heading}"
+
+
+def test_npc_example_uses_fictional_date(journaler_skill):
+    """The Kesta NPC example must not use ISO-date strings — vault
+    narrative is fictional-date only."""
+    # Find the NPC example block. Anchor on the existing heading.
+    assert "## Example NPC file" in journaler_skill
+    # The Kesta block previously contained `Met: 2026-04-26`. After this
+    # change it must use a fictional-date string and must not contain
+    # any 4-digit-year-dash-month-dash-day pattern within the example.
+    npc_section_start = journaler_skill.index("## Example NPC file")
+    # The next "## " heading bounds the section
+    next_heading = journaler_skill.find("\n## ", npc_section_start + 1)
+    npc_section = journaler_skill[npc_section_start:next_heading if next_heading != -1 else None]
+    # No ISO-date inside the NPC example
+    import re
+    assert re.search(r"\b20\d{2}-\d{2}-\d{2}\b", npc_section) is None, \
+        "NPC example still contains an ISO date"
+    # And the fictional Met line is present
+    assert "**Met**: " in npc_section
