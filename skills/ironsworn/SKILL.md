@@ -121,3 +121,31 @@ Good solo play needs clear scenes, not continuous sludge. Between scenes, briefl
 - `moves.md` — move triggers, stats, outcomes
 - `oracles.md` — action, theme, yes/no, plot turn, and the core descriptor oracles
 - `character-template.md` — blank character sheet format
+
+## Vow opened — vault overlay
+
+When you create a new Thread file in the player vault for a vow (Swear an Iron Vow, or any vow you're tracking with a progress track), insert this block immediately after the metadata block (Opened / Status / Stakes) and before `## What we know`:
+
+```markdown
+## Progress (<Rank>, 10 boxes, <ticks-per-mark>)
+
+| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|----|
+|   |   |   |   |   |   |   |   |   |    |
+```
+
+**Heading — `<ticks-per-mark>` phrasing by rank:**
+
+| Rank        | Heading suffix         |
+|-------------|------------------------|
+| Troublesome | `3 ticks per mark`     |
+| Dangerous   | `2 ticks per mark`     |
+| Formidable  | `1 tick per mark`      |
+| Extreme     | `1 tick per 2 marks`   |
+| Epic        | `1 tick per 4 marks`   |
+
+**Cell values:** empty cell = 0 ticks, `1` / `2` / `3` = partial ticks (1–3 of 4), `X` = full box (4 ticks). Fill left-to-right.
+
+When the player marks progress, update cells in place (e.g. empty → `2` → `X` → next cell starts at `2`). The fill rules at the live-stat-tracking section above (Troublesome 3, Dangerous 2, Formidable 1, Extreme 0.5, Epic 0.25 — partial boxes tracked, never rounded prematurely) remain authoritative.
+
+This overlay does not replace the live progress shown in `Character.md` Vows callouts — both are kept in sync. The Thread file is canonical for the vow's narrative arc; the Character.md vow line is the live mechanical resource.

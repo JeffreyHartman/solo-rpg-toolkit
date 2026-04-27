@@ -146,3 +146,20 @@ def test_ironsworn_character_template_has_current_date(ironsworn_character_templ
     placeholder so new campaigns start with the field present."""
     assert "**Current date:**" in ironsworn_character_template or \
            "**Current date**:" in ironsworn_character_template
+
+
+def test_ironsworn_has_vow_vault_overlay(ironsworn_skill):
+    """The Ironsworn skill must instruct the agent to write a progress
+    table block to the vow's Thread file when a vow is opened."""
+    # Heading anchors the section
+    assert "## Vow opened" in ironsworn_skill or \
+           "### Vow opened" in ironsworn_skill or \
+           "Vow opened — vault overlay" in ironsworn_skill
+    # Table column header line — verifies the template is literally
+    # present rather than just described
+    assert "| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |" in ironsworn_skill
+    # Required heading-format hints
+    assert "ticks per mark" in ironsworn_skill
+    # All five ranks documented
+    for rank in ("Troublesome", "Dangerous", "Formidable", "Extreme", "Epic"):
+        assert rank in ironsworn_skill
