@@ -127,6 +127,35 @@ Formalize the file structure and progress track conventions that emerged during 
 
 ---
 
+## Sub-project 5.5: Session 2 Playtest Fixes
+
+Issues found during session `6d5f6788` (ironsworn-test1, 2026-04-27). Concrete bugs and quality gaps — not speculative.
+
+### Ironsworn skill — recovery move miss consequences
+
+- [ ] Resupply miss: explicitly apply `-1 supply` and prompt character sheet update. Session 2 left supply at 4 when it should have dropped to 3 — miss was narrated as "nothing available" with no mechanical penalty. Rulebook is unambiguous.
+- [ ] Sojourn miss: confirm and apply the correct consequence (per rulebook). Same pattern — GM currently treats recovery move misses as narrative dead-ends rather than mechanical penalties.
+- [ ] Sojourn bond interaction: when player claims settlement bond affects weak hit choice count, quote the relevant rule text and confirm before accepting. Session 2 silently accepted an unverified interpretation.
+
+### Ironsworn skill — anti-gassing behavior
+
+- [ ] Add explicit instruction: do not editorialize on player choices, do not explain why a position is favorable. Player flagged mid-session: "You don't have to gas me up in your response." GM had listed 3 bullets explaining Cadoc's position was "strong" before answering a question. Wastes tokens, breaks tone.
+
+### Mythic GME skill — CF state write timing
+
+- [ ] Write `mythic-state.md` immediately at scene end, not during end-of-session journaling. Session 2: GM announced "CF 6 → 5" inline but the file write happened ~30 exchanges later. Mid-session crash = stale state file.
+- [ ] Startup: read CF from `mythic-state.md` AND session notes, flag mismatch before play begins. Session 2 opened with `mythic-state.md` at CF 5 while session notes said CF 6. GM used correct value but only by catching it manually.
+
+### Mythic GME skill — post-scene NPC list update
+
+- [ ] After each scene, prompt GM to add new named NPCs to Mythic Characters List for random event targeting. Session 2 introduced Wren and an unnamed Ring member; neither was added. If a random event targets a character next session, Wren won't be on the rollable list.
+
+### Session log naming convention
+
+- [ ] Enforce consistent filenames in `sessions/` and `playervault/Session Log/`. Session 1 wrote `2026-04-26.md`; session 2 wrote `Session 002.md`. Either is fine — pick one and document it in the skill.
+
+---
+
 ## Sub-project 6: Additional Systems + Skills
 Expand beyond Ironsworn.
 
