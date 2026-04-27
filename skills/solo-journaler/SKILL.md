@@ -12,8 +12,8 @@ Single source of truth: `./playervault/` relative to campaign root. Open this fo
 ```
 ./playervault/
 ├── Character.md            # current character sheet state
-├── Session Log/            # one file per session, ISO dated
-│   └── 2026-04-26.md
+├── Session Log/            # one file per session, sequential
+│   └── Session 001.md
 ├── People/                 # NPCs the character has met
 │   └── Kesta Ulfhild.md
 ├── Places/                 # places the character has been or been told of
@@ -27,7 +27,7 @@ Single source of truth: `./playervault/` relative to campaign root. Open this fo
 ## Mechanical state (not in vault)
 
 - `./mythic-state.md` — chaos factor, threads list, characters list (Mythic GME only; absent otherwise)
-- `./sessions/YYYY-MM-DD.md` — mechanical session log: rolls, oracle results, CF shifts, reasoning
+- `./sessions/Session NNN.md` — mechanical session log: rolls, oracle results, CF shifts, reasoning
 
 ## Writing rules
 
@@ -53,8 +53,8 @@ Minimal skeleton during play. Flesh out at session end.
 
 ### At the end of a session
 
-1. Write `./sessions/YYYY-MM-DD.md` with: rolls made, oracle results, CF shifts, threads opened/closed, NPCs introduced, reasoning behind oracle interpretations.
-2. Write `./playervault/Session Log/YYYY-MM-DD.md` — character journal, first person or close narration. No mechanics, no meta.
+1. Write `./sessions/Session NNN.md` with: rolls made, oracle results, CF shifts, threads opened/closed, NPCs introduced, reasoning behind oracle interpretations.
+2. Write `./playervault/Session Log/Session NNN.md` — character journal, first person or close narration. No mechanics, no meta.
 3. Update `./mythic-state.md` with new Chaos Factor (if Mythic active).
 4. Update any People/Places/Threads files that changed this session.
 5. Update `./playervault/Character.md` for non-stat changes (bonds forged, assets advanced, experience spent). Stats update live during play.
@@ -72,8 +72,8 @@ Use Obsidian wikilinks in the vault: `[[Kesta Ulfhild]]`, `[[Stonebeck]]`, `[[Fi
 ## Filename conventions
 
 - Title case for proper nouns: `Kesta Ulfhild.md`, `The Old Road.md`
-- ISO date for all session logs (`./sessions/` and `./playervault/Session Log/`): `2026-04-26.md`
-- Lower-kebab for other mechanical files: `mythic-state.md`
+- Sequential, three-digit zero-padded filenames for session logs (both `./sessions/` and `./playervault/Session Log/`): `Session 001.md`, `Session 002.md`, …, `Session NNN.md`. Both folders share the number — `./sessions/Session 001.md` and `./playervault/Session Log/Session 001.md` describe the same play session.
+- Lower-kebab for top-level mechanical files: `mythic-state.md`
 
 ## Example NPC file
 

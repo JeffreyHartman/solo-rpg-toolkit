@@ -81,3 +81,16 @@ def test_npc_example_uses_fictional_date(journaler_skill):
         "NPC example still contains an ISO date"
     # And the fictional Met line is present
     assert "**Met**: " in npc_section
+
+
+def test_journaler_uses_sequential_session_filenames(journaler_skill):
+    """Session log filenames are `Session NNN.md` — three-digit pad,
+    sequential, not ISO-date based."""
+    # The filename-conventions section must reference the new pattern
+    assert "Session NNN.md" in journaler_skill
+    # And must NOT prescribe ISO-date filenames for session logs.
+    # Specifically: the old wording contained
+    # "ISO date for all session logs ... 2026-04-26.md"
+    # which we are removing. Allow the literal date elsewhere (e.g. in
+    # the Played: metadata of the session-log example).
+    assert "ISO date for all session logs" not in journaler_skill
