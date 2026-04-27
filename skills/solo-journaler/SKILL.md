@@ -101,10 +101,13 @@ Knew my sister's name before I said it.
 
 ## Example session log (vault side)
 
-`./playervault/Session Log/2026-04-26.md`:
+`./playervault/Session Log/Session 001.md`:
 
 ```markdown
-# Session — 2026-04-26
+# Session 001
+
+**Played**: 2026-04-26
+**In-fiction**: Snowmonth 14, Year of the Iron Wolf
 
 Arrived at [[Ashveil]] after a hard road. [[Ossian]] had walked out of [[The Eastern Wood]] on torn feet; [[Fen]] found him and was already tending him when I came down the track.
 

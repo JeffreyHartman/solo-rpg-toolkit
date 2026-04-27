@@ -94,3 +94,14 @@ def test_journaler_uses_sequential_session_filenames(journaler_skill):
     # which we are removing. Allow the literal date elsewhere (e.g. in
     # the Played: metadata of the session-log example).
     assert "ISO date for all session logs" not in journaler_skill
+
+
+def test_session_log_example_has_dual_date_metadata(journaler_skill):
+    """The vault-side session-log example uses a `Session 001` heading
+    and a top metadata block with both Played (real-world ISO) and
+    In-fiction (fictional) dates."""
+    # Anchor: the example uses heading `# Session 001`
+    assert "# Session 001" in journaler_skill
+    # Metadata block contents
+    assert "**Played**: " in journaler_skill
+    assert "**In-fiction**: " in journaler_skill
