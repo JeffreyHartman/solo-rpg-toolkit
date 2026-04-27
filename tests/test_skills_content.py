@@ -139,3 +139,10 @@ def test_journaler_session_end_updates_current_date(journaler_skill):
     end_block = journaler_skill[end_idx:next_heading if next_heading != -1 else None]
     assert "Current date" in end_block
     assert "in-fiction" in end_block.lower()
+
+
+def test_ironsworn_character_template_has_current_date(ironsworn_character_template):
+    """The Ironsworn character template must include a Current date
+    placeholder so new campaigns start with the field present."""
+    assert "**Current date:**" in ironsworn_character_template or \
+           "**Current date**:" in ironsworn_character_template

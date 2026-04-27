@@ -8,7 +8,8 @@ Copy into `Character.md` at `$PLAYER_VAULT_PATH/Character.md` and fill in. The m
 
 **Name:**  
 **Look:** (short physical description — 1-2 sentences)  
-**Background:** (who they were before the vow)
+**Background:** (who they were before the vow)  
+**Current date:** (in-fiction calendar string — set at first session)
 
 ---
 
