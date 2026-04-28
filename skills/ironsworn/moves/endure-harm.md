@@ -2,8 +2,22 @@
 
 **Trigger:** You face physical damage.
 
+## Harm Amounts by Rank
+
+When a foe or hazard causes harm, the amount is determined by rank:
+
+| Rank | Harm | Examples |
+|---|---|---|
+| Troublesome | 1 | Minor foe attack, painful injury, tiring effort |
+| Dangerous | 2 | Skilled foe or deadly creature, nasty injury, demanding effort |
+| Formidable | 3 | Exceptional foe or mighty creature, serious injury, exhausting effort |
+| Extreme | 4 | Overwhelming monster/beast attack, grievous injury, debilitating effort |
+| Epic | 5 | Legendary foe of mythic power, horrific injury, consuming effort |
+
+**Weapon harm (when you inflict on foes):** Deadly weapon (sword, axe, spear, bow) = 2 harm. Unarmed or improvised weapon (shield, stick, club, staff, rock) = 1 harm. Moves may add additional harm on top.
+
 **Mechanics before rolling:**
-1. Suffer -health equal to your foe's rank or as appropriate to the situation.
+1. Suffer -health equal to harm amount (foe's rank, or appropriate to the situation).
 2. If health drops to 0, suffer -momentum equal to any remaining -health (the overflow).
 3. Update Character.md immediately before rolling.
 

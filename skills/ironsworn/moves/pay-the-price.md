@@ -16,14 +16,23 @@ Pay the Price creates the next beat. It does not end it.
 
 ## Procedure
 
-**Step 1 — Determine the price.** Choose one:
-- Make the most obvious negative outcome happen.
-- Envision two negative outcomes. Rate one "likely." Roll Ask the Oracle (yes/no). On "yes," that outcome happens; otherwise, the other.
-- Roll d100 on the table below.
+**Step 1 — Present these three options to the player. They choose, not you.**
 
-**Step 2 — State the price concretely.** Name what is happening or about to happen. Do NOT narrate it to resolution.
+> "We have a miss — Pay the Price. How do you want to determine the cost?
+> 1. I make the most obvious negative outcome happen.
+> 2. I come up with two possible bad outcomes, you pick which is more likely, and we roll to see which happens.
+> 3. We roll on the Pay the Price table (d100) for something random."
 
-**Step 3 — STOP.** Then either:
+Wait for the player to choose before proceeding.
+
+**Step 2 — Determine the price** per their choice:
+- Option 1: Envision and name the most obvious consequence.
+- Option 2: Offer two outcomes. Player rates one "likely." Ask the Oracle (yes/no). On "yes," that outcome; otherwise the other.
+- Option 3: Roll d100 on the table below. Interpret the result for the current situation.
+
+**Step 3 — State the price concretely.** Name what is happening or about to happen. Do NOT narrate it to resolution.
+
+**Step 4 — STOP.** Then either:
 - Trigger the appropriate follow-on move (see table below), OR
 - Hand control back: *"What do you do?"*
 
