@@ -156,6 +156,30 @@ Issues found during session `6d5f6788` (ironsworn-test1, 2026-04-27). Concrete b
 
 ---
 
+## Sub-project 5.6: Ironsworn Skill Quality — Per-Move Restructure + Behavioral Fixes
+
+Issues from ironsworn-test1 play. Bug files in `docs/bugs/`.
+
+**Transcript audit finding (critical):** session 3 JSONL shows `moves.md` was read ONCE late in the session (after errors started) and `oracles.md` was NEVER read. Reference files are reactive-only — LLM runs every move call from SKILL.md context + memory. Improving reference text alone will not land any of the behavior fixes below. Architecture restructure is the prerequisite.
+
+### Architecture (do first — gates the rest)
+
+- [ ] Restructure to per-move files: `skills/ironsworn/moves/<move-slug>.md`. Each file: trigger, stat, all outcomes, full cost menus, follow-on triggers, narrative principles. Same for `oracles/` if needed. See `docs/bugs/ironsworn-skill-architecture.md`.
+- [ ] Update `SKILL.md` core loop: mandatory read of `moves/<slug>.md` BEFORE presenting roll. "Do not run a move from memory" — explicit language.
+- [ ] Add move-trigger → file-slug table in SKILL.md so LLM can map player intent to file.
+- [ ] Skill-content test pin asserts each move file exists with required sections.
+
+### Behavioral fixes (depend on architecture)
+
+- [ ] Undertake a Journey: progress-track move — create track, mark per roll, resolve via Reach Your Destination only. Journey rank = distance/difficulty, not encounter hazard. See `docs/bugs/ironsworn-journey-progress-track.md`.
+- [ ] Pay the Price: mandatory stop — state consequence, trigger follow-on move, hand agency back. Do not narrate through. See `docs/bugs/ironsworn-pay-the-price-procedure.md`.
+- [ ] Weak hit costs: player choice from a menu, not GM-selected narration. "Pay the Price" = one price — no extra momentum drain. Each move file lists its full cost menu. See `docs/bugs/ironsworn-weak-hit-cost-options.md`.
+- [ ] Oracle selection: meaning-pair = events; scene description = elements/ tables. Lives in SKILL.md (always loaded), not buried in oracles.md. See `docs/bugs/oracle-selection-meaning-pair-vs-elements.md`.
+- [ ] NPC creation protocol: required fields (name, age, gender/pronouns) filled on creation; LLM applies demographics to dialogue/behavior. Lives in SKILL.md or with mandatory-read trigger. See `docs/bugs/ironsworn-npc-creation-protocol.md`.
+- [ ] Prose style: GM narration too florid. Fix via campaign `CLAUDE.md` prose block first (short sentences, plain vocabulary, concrete bad/good example pair). Escalate to SKILL.md inline only if needed. No separate skill.
+
+---
+
 ## Sub-project 6: Additional Systems + Skills
 Expand beyond Ironsworn.
 
