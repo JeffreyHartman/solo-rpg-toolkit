@@ -72,3 +72,11 @@ A single Undertake a Journey roll does not end the journey, even on a strong hit
 ## See also
 
 `docs/bugs/ironsworn-skill-architecture.md` — transcript shows `moves.md` was not read before move calls. Fixing this file's text alone will not help unless the LLM actually loads it. Per-move file restructure + mandatory-read language in SKILL.md is the prerequisite.
+
+---
+
+## Status
+
+**FIXED** — commit `b76b358` (2026-04-27)
+
+`skills/ironsworn/moves/undertake-a-journey.md` created with explicit progress track procedure: rank setup before first roll, progress-per-rank table, "do NOT mark progress on miss", "one roll ≠ one journey" note, hand-back-to-player language after each waypoint. Verified passing in blind session test.

@@ -60,3 +60,11 @@ Something like:
 ## See also
 
 `docs/bugs/ironsworn-skill-architecture.md` — if NPC protocol lives in a separate `npcs.md`, transcript evidence suggests it will not be read on demand. Either keep this in SKILL.md (always loaded), or add explicit "before creating an NPC, read `npcs.md`" trigger language.
+
+---
+
+## Status
+
+**FIXED** — commit `b76b358` (2026-04-27)
+
+NPC creation protocol added directly to SKILL.md (always-loaded) under "## NPCs": immediate file creation on NPC appearance with required fields (name, age/range, gender/pronouns, relation, circle, brief impression), plus explicit instruction to re-read the file before writing dialogue and apply demographics as constraints.

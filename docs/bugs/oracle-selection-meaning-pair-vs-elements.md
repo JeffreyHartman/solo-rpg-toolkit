@@ -51,3 +51,11 @@ Something like:
 ## See also
 
 `docs/bugs/ironsworn-skill-architecture.md` — transcript shows `oracles.md` was NEVER read during the session. Putting oracle selection guidance in `oracles.md` will not work; it must live in SKILL.md (always loaded) or in a small `oracles/selecting-an-oracle.md` file with a mandatory-read trigger in SKILL.md.
+
+---
+
+## Status
+
+**FIXED** — commit `b76b358` (2026-04-27)
+
+Oracle selection guide added directly to SKILL.md (always-loaded) under "## Choosing an oracle" with a table mapping question type to correct tool. `skills/ironsworn/moves/ask-the-oracle.md` created with the same guide plus the yes/no odds table. Explicit note: "Do not use meaning-pair for atmosphere or description." Verified passing in blind session test.

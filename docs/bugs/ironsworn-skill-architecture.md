@@ -121,3 +121,16 @@ Recommended sequence:
 3. Add NPC protocol + oracle selection (in their files or SKILL.md per per-file decisions).
 4. Add mandatory-read language to SKILL.md core loop.
 5. Skill-content test pin asserting each move file exists with required sections.
+
+---
+
+## Status
+
+**FIXED** — commits `b76b358`, `41c594b` (2026-04-27)
+
+- 35 per-move files created under `skills/ironsworn/moves/`
+- SKILL.md core loop updated with mandatory BEFORE-read language
+- Move-trigger → slug table added to SKILL.md
+- Verified by blind multi-turn session test: agent read move files proactively, not reactively
+
+Remaining: skill-content test pin (assert each move file exists with required sections) — still open.

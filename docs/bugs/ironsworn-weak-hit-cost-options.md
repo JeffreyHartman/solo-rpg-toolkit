@@ -88,3 +88,11 @@ before asking for the roll — player can correct if wrong. Don't silently apply
 ## See also
 
 `docs/bugs/ironsworn-skill-architecture.md` — transcript shows `moves.md` was read once, late. Cost menus added to `moves.md` will be invisible until SKILL.md mandates a read of the relevant move file before every roll. Per-move file restructure makes the read cheaper and more likely.
+
+---
+
+## Status
+
+**FIXED** — commit `b76b358` (2026-04-27)
+
+Every move file with a weak hit cost menu lists options as a numbered player-choice list with explicit "player chooses one" label. `face-danger.md` includes note: "Do not choose for the player. Do not narrate a cost without the player selecting it." SKILL.md "Interpreting outcomes" updated: "Weak hit costs are player choices — present the menu from the move file and wait." Verified passing in blind session test.

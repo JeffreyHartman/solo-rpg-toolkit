@@ -87,3 +87,11 @@ The player must have agency over the follow-on. The price creates the next beat;
 ## See also
 
 `docs/bugs/ironsworn-skill-architecture.md` — transcript shows `moves.md` was not read before move calls. Pay the Price procedure in `moves.md` is invisible by default. Fix requires per-move file + mandatory-read instruction in SKILL.md core loop.
+
+---
+
+## Status
+
+**FIXED** — commits `b76b358`, `41c594b` (2026-04-27)
+
+`skills/ironsworn/moves/pay-the-price.md` created with explicit STOP procedure. Initial commit had "choose one" ambiguous about who chooses — blind test caught agent choosing unilaterally. Second commit (41c594b) changed Step 1 to present all three options to the player and wait for their choice. Verified passing in blind session test v2.
