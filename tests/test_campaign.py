@@ -491,3 +491,14 @@ def test_scaffold_unknown_voice_errors(tmp_path):
     )
     assert result.returncode != 0
     assert "nonsense" in result.stderr or "Voice not found" in result.stderr
+
+
+def test_voice_list_prints_available_voices():
+    result = subprocess.run(
+        ["solo-campaign", "voice", "list"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "default" in result.stdout
+    # Output should include display name from H1
+    assert "Default" in result.stdout

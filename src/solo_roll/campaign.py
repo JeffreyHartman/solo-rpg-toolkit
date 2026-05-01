@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -10,6 +11,7 @@ from pathlib import Path
 from solo_roll.voices import (
     VoiceError,
     inject_voice_block,
+    list_voices,
     load_voice,
 )
 
@@ -199,25 +201,42 @@ def _parse_skills_arg(raw: str | None, available: list[str]) -> list[str] | None
     return parts
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        prog="solo-campaign",
-        description="Scaffold a new solo RPG campaign folder.",
-    )
-    parser.add_argument("name", help="Display name for the campaign")
-    parser.add_argument("path", help="Target campaign directory (must not exist)")
-    parser.add_argument(
-        "--skills", type=str, default=None, dest="skills",
-        help="Comma-separated skill names to install "
-             "(default: all). Use 'none' to install no skills.",
-    )
-    parser.add_argument(
-        "--voice", type=str, default=None, dest="voice",
-        help="Narrative voice to inject into campaign CLAUDE.md "
-             "(default: 'default'). Use 'none' to skip injection.",
-    )
-    args = parser.parse_args(argv)
+def _voice_first_note_line(body: str) -> str:
+    """Extract the first non-blank sentence after the '## Voice notes' heading."""
+    m = re.search(r"^## Voice notes\s*\n+(.*?)(?:\n##|\Z)",
+                  body, re.DOTALL | re.MULTILINE)
+    if not m:
+        return "(no voice notes)"
+    para = m.group(1).strip().split("\n\n", 1)[0].strip()
+    first = para.split(". ", 1)[0].rstrip(".")
+    return (first[:80] + "...") if len(first) > 80 else first
 
+
+def _voice_list(voices_dir: Path) -> int:
+    names = list_voices(voices_dir)
+    if not names:
+        print("(no voices available)")
+        return 0
+    for name in names:
+        try:
+            display, body = load_voice(name, voices_dir)
+            desc = _voice_first_note_line(body)
+        except Exception:
+            display, desc = name, "(invalid voice file)"
+        print(f"  {name:20s} — {display}: {desc}")
+    return 0
+
+
+def _voice_command(args) -> int:
+    repo_root = _resolve_repo_root()
+    voices_dir = repo_root / "data" / "voices"
+    if args.voice_action == "list":
+        return _voice_list(voices_dir)
+    print("usage: solo-campaign voice {list}", file=sys.stderr)
+    return 2
+
+
+def _scaffold_command(args) -> int:
     repo_root = _resolve_repo_root()
     template_dir = repo_root / "example-campaign"
     skills_source = repo_root / "skills"
@@ -260,6 +279,45 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"ready — run `claude` in {target}")
     return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="solo-campaign",
+        description="Scaffold a new solo RPG campaign folder.",
+    )
+    subparsers = parser.add_subparsers(dest="command")
+
+    scaffold = subparsers.add_parser("scaffold", help="Create a new campaign")
+    scaffold.add_argument("name", help="Display name for the campaign")
+    scaffold.add_argument("path", help="Target campaign directory (must not exist)")
+    scaffold.add_argument(
+        "--skills", type=str, default=None, dest="skills",
+        help="Comma-separated skill names to install "
+             "(default: all). Use 'none' to install no skills.",
+    )
+    scaffold.add_argument(
+        "--voice", type=str, default=None, dest="voice",
+        help="Narrative voice to inject into campaign CLAUDE.md "
+             "(default: 'default'). Use 'none' to skip injection.",
+    )
+
+    voice_cmd = subparsers.add_parser("voice", help="Voice management")
+    voice_subs = voice_cmd.add_subparsers(dest="voice_action")
+    voice_subs.add_parser("list", help="List available voices")
+
+    raw = list(sys.argv[1:] if argv is None else argv)
+    known_subs = {"scaffold", "voice"}
+    if raw and raw[0] not in known_subs and not raw[0].startswith("-"):
+        raw = ["scaffold"] + raw
+    args = parser.parse_args(raw)
+
+    if args.command == "voice":
+        return _voice_command(args)
+    if args.command == "scaffold":
+        return _scaffold_command(args)
+    parser.print_help()
+    return 2
 
 
 if __name__ == "__main__":
