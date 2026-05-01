@@ -176,7 +176,22 @@ Issues from ironsworn-test1 play. Bug files in `docs/bugs/`.
 - [x] Weak hit costs: player choice from a menu, not GM-selected narration. "Pay the Price" = one price — no extra momentum drain. Each move file lists its full cost menu. See `docs/bugs/ironsworn-weak-hit-cost-options.md`.
 - [x] Oracle selection: meaning-pair = events; scene description = elements/ tables. Lives in SKILL.md (always loaded), not buried in oracles.md. See `docs/bugs/oracle-selection-meaning-pair-vs-elements.md`.
 - [x] NPC creation protocol: required fields (name, age, gender/pronouns) filled on creation; LLM applies demographics to dialogue/behavior. Lives in SKILL.md or with mandatory-read trigger. See `docs/bugs/ironsworn-npc-creation-protocol.md`.
-- [ ] Prose style: GM narration too florid. Fix via campaign `CLAUDE.md` prose block first (short sentences, plain vocabulary, concrete bad/good example pair). Escalate to SKILL.md inline only if needed. No separate skill.
+- [x] Prose style: shipped via standalone narrative-voices sub-project (5.7). See `docs/superpowers/specs/2026-04-30-narrative-voices-design.md` and `docs/superpowers/plans/2026-04-30-narrative-voices.md`. Voices live in `data/voices/`; campaigns receive a chosen voice block via `solo-campaign --voice <name>` (default: `default`) injected into CLAUDE.md.
+
+---
+
+## Sub-project 5.7: Narrative Voices
+
+Per-campaign GM prose discipline. Voices ship as standalone markdown in `data/voices/`, injected into the campaign's `CLAUDE.md` at scaffold time inside HTML-comment marker block. Frozen-snapshot semantics — campaigns do not drift when toolkit voice files change. `solo-campaign voice apply` re-injects/swaps for existing campaigns.
+
+- [x] Spec: `docs/superpowers/specs/2026-04-30-narrative-voices-design.md`
+- [x] Plan: `docs/superpowers/plans/2026-04-30-narrative-voices.md`
+- [x] `voices.py` — loader, validator, injection helper
+- [x] `solo-campaign --voice <name>` flag at scaffold time
+- [x] `solo-campaign voice list` subcommand
+- [x] `solo-campaign voice apply <campaign> <voice>` subcommand
+- [x] Ship voices: `default.md`, `folkloric.md`, `grim-grounded.md`
+- [x] Skill-content tests pinning scope clause + required sections + word cap
 
 ---
 
