@@ -227,12 +227,37 @@ def _voice_list(voices_dir: Path) -> int:
     return 0
 
 
+def _voice_apply(campaign_path: Path, voice_name: str,
+                 voices_dir: Path) -> int:
+    claude_md = campaign_path / "CLAUDE.md"
+    if not claude_md.is_file():
+        print(f"error: CLAUDE.md not found at {claude_md}", file=sys.stderr)
+        return 1
+    try:
+        warning = _inject_voice_into_campaign(
+            campaign_path, voice_name, voices_dir,
+        )
+    except VoiceError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    if warning:
+        print(f"warning: {warning}", file=sys.stderr)
+    print(f"voice '{voice_name}' applied to {campaign_path}")
+    return 0
+
+
 def _voice_command(args) -> int:
     repo_root = _resolve_repo_root()
     voices_dir = repo_root / "data" / "voices"
     if args.voice_action == "list":
         return _voice_list(voices_dir)
-    print("usage: solo-campaign voice {list}", file=sys.stderr)
+    if args.voice_action == "apply":
+        return _voice_apply(
+            Path(args.campaign_path).expanduser(),
+            args.voice_name,
+            voices_dir,
+        )
+    print("usage: solo-campaign voice {list,apply}", file=sys.stderr)
     return 2
 
 
@@ -305,6 +330,10 @@ def main(argv: list[str] | None = None) -> int:
     voice_cmd = subparsers.add_parser("voice", help="Voice management")
     voice_subs = voice_cmd.add_subparsers(dest="voice_action")
     voice_subs.add_parser("list", help="List available voices")
+    voice_apply = voice_subs.add_parser("apply",
+        help="Re-inject or swap voice block in an existing campaign")
+    voice_apply.add_argument("campaign_path", help="Existing campaign directory")
+    voice_apply.add_argument("voice_name", help="Voice to inject")
 
     raw = list(sys.argv[1:] if argv is None else argv)
     known_subs = {"scaffold", "voice"}

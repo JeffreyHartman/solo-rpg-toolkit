@@ -502,3 +502,87 @@ def test_voice_list_prints_available_voices():
     assert "default" in result.stdout
     # Output should include display name from H1
     assert "Default" in result.stdout
+
+
+def test_voice_apply_inserts_block_when_absent(tmp_path):
+    target = tmp_path / "camp"
+    subprocess.run(
+        ["solo-campaign", "Camp", str(target),
+         "--skills", "none", "--voice", "none"],
+        check=True,
+    )
+    claude_md = target / "CLAUDE.md"
+    assert "<!-- voice:start -->" not in claude_md.read_text()
+
+    result = subprocess.run(
+        ["solo-campaign", "voice", "apply", str(target), "default"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    text = claude_md.read_text()
+    assert "<!-- voice:start -->" in text
+    assert "## Narrative Style: Default" in text
+
+
+def test_voice_apply_idempotent(tmp_path):
+    target = tmp_path / "camp"
+    subprocess.run(
+        ["solo-campaign", "Camp", str(target),
+         "--skills", "none", "--voice", "default"],
+        check=True,
+    )
+    claude_md = target / "CLAUDE.md"
+    text_before = claude_md.read_text()
+
+    result = subprocess.run(
+        ["solo-campaign", "voice", "apply", str(target), "default"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    text_after = claude_md.read_text()
+    assert text_before == text_after
+
+
+def test_voice_apply_missing_campaign_errors(tmp_path):
+    result = subprocess.run(
+        ["solo-campaign", "voice", "apply",
+         str(tmp_path / "nonexistent"), "default"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode != 0
+    assert "CLAUDE.md" in result.stderr or "not found" in result.stderr.lower()
+
+
+def test_voice_apply_unknown_voice_errors(tmp_path):
+    target = tmp_path / "camp"
+    subprocess.run(
+        ["solo-campaign", "Camp", str(target),
+         "--skills", "none", "--voice", "default"],
+        check=True,
+    )
+    result = subprocess.run(
+        ["solo-campaign", "voice", "apply", str(target), "nonsense"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode != 0
+    assert "nonsense" in result.stderr or "Voice not found" in result.stderr
+
+
+def test_voice_apply_duplicate_markers_errors(tmp_path):
+    target = tmp_path / "camp"
+    subprocess.run(
+        ["solo-campaign", "Camp", str(target),
+         "--skills", "none", "--voice", "default"],
+        check=True,
+    )
+    claude_md = target / "CLAUDE.md"
+    text = claude_md.read_text()
+    extra = "\n<!-- voice:start -->\nx\n<!-- voice:end -->\n"
+    claude_md.write_text(text + extra)
+
+    result = subprocess.run(
+        ["solo-campaign", "voice", "apply", str(target), "default"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode != 0
+    assert "Malformed" in result.stderr or "manually" in result.stderr.lower()
