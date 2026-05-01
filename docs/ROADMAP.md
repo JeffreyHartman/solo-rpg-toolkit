@@ -133,8 +133,8 @@ Issues found during session `6d5f6788` (ironsworn-test1, 2026-04-27). Concrete b
 
 ### Ironsworn skill — recovery move miss consequences
 
-- [ ] Resupply miss: explicitly apply `-1 supply` and prompt character sheet update. Session 2 left supply at 4 when it should have dropped to 3 — miss was narrated as "nothing available" with no mechanical penalty. Rulebook is unambiguous.
-- [ ] Sojourn miss: confirm and apply the correct consequence (per rulebook). Same pattern — GM currently treats recovery move misses as narrative dead-ends rather than mechanical penalties.
+- ~~Resupply miss: explicitly apply `-1 supply`~~ — superseded by 5.6. Resupply miss → Pay the Price is rules-correct; 5.6 made PTP a proper stop-and-trigger that selects a consequence from its menu. `-1 supply` is one option, not mandated.
+- ~~Sojourn miss: confirm and apply the correct consequence~~ — superseded by 5.6, same reasoning. Sojourn miss → Pay the Price.
 - [ ] Sojourn bond interaction: when player claims settlement bond affects weak hit choice count, quote the relevant rule text and confirm before accepting. Session 2 silently accepted an unverified interpretation.
 
 ### Ironsworn skill — anti-gassing behavior
@@ -152,7 +152,7 @@ Issues found during session `6d5f6788` (ironsworn-test1, 2026-04-27). Concrete b
 
 ### Session log naming convention
 
-- [ ] Enforce consistent filenames in `sessions/` and `playervault/Session Log/`. Session 1 wrote `2026-04-26.md`; session 2 wrote `Session 002.md`. Either is fine — pick one and document it in the skill.
+- [x] Enforce consistent filenames in `sessions/` and `playervault/Session Log/`. Shipped in `fcc3050` as part of sub-project 5 — `solo-journaler/SKILL.md:102-105` documents `Session NNN.md` (3-digit zero-padded, shared filename across both folders).
 
 ---
 
