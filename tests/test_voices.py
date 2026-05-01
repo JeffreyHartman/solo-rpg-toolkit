@@ -4,9 +4,12 @@ from pathlib import Path
 import pytest
 
 from solo_roll.voices import (
+    MARKER_END,
+    MARKER_START,
     VoiceError,
     VoiceFormatError,
     VoiceNotFoundError,
+    inject_voice_block,
     list_voices,
     load_voice,
 )
@@ -117,3 +120,88 @@ def test_load_voice_missing_scope_pin_raises(voices_dir):
     (voices_dir / "bad.md").write_text(bad)
     with pytest.raises(VoiceFormatError, match="scope clause"):
         load_voice("bad", voices_dir)
+
+
+VOICE_BODY_FIXTURE = "## Narrative Style: Test\n\nbody content here\n"
+
+
+CLAUDE_MD_TEMPLATE = """# Solo RPG Campaign — Foo
+
+## Configuration
+
+```
+SYSTEM: Ironsworn
+```
+
+## Active skills
+
+This campaign uses:
+- ironsworn
+
+## House rules
+
+- something
+"""
+
+
+def test_inject_into_empty_markers_inserts_before_active_skills():
+    new_text, warning = inject_voice_block(CLAUDE_MD_TEMPLATE, VOICE_BODY_FIXTURE)
+    assert warning is None
+    assert MARKER_START in new_text
+    assert MARKER_END in new_text
+    # Block must appear before "## Active skills"
+    assert new_text.index(MARKER_END) < new_text.index("## Active skills")
+    # Block must appear after "## Configuration"
+    assert new_text.index("## Configuration") < new_text.index(MARKER_START)
+    # Voice body must be inside markers
+    start = new_text.index(MARKER_START)
+    end = new_text.index(MARKER_END)
+    assert "body content here" in new_text[start:end]
+
+
+def test_inject_replaces_existing_block():
+    initial, _ = inject_voice_block(CLAUDE_MD_TEMPLATE, VOICE_BODY_FIXTURE)
+    new_body = "## Narrative Style: Other\n\nreplacement content\n"
+    replaced, warning = inject_voice_block(initial, new_body)
+    assert warning is None
+    assert "replacement content" in replaced
+    assert "body content here" not in replaced
+    # Exactly one marker pair survives
+    assert replaced.count(MARKER_START) == 1
+    assert replaced.count(MARKER_END) == 1
+
+
+def test_inject_idempotent_same_voice():
+    once, _ = inject_voice_block(CLAUDE_MD_TEMPLATE, VOICE_BODY_FIXTURE)
+    twice, _ = inject_voice_block(once, VOICE_BODY_FIXTURE)
+    assert once == twice
+
+
+def test_inject_anchor_missing_appends_with_warning():
+    no_anchor = "# Title\n\n## Configuration\n\n## House rules\n\n- thing\n"
+    new_text, warning = inject_voice_block(no_anchor, VOICE_BODY_FIXTURE)
+    assert warning is not None
+    assert "Active skills" in warning
+    assert new_text.endswith(MARKER_END + "\n")
+
+
+def test_inject_duplicate_markers_raises():
+    bad = (
+        CLAUDE_MD_TEMPLATE
+        + f"\n{MARKER_START}\nfirst\n{MARKER_END}\n"
+        + f"\n{MARKER_START}\nsecond\n{MARKER_END}\n"
+    )
+    with pytest.raises(VoiceFormatError, match="[Mm]alformed|duplicate"):
+        inject_voice_block(bad, VOICE_BODY_FIXTURE)
+
+
+def test_inject_unbalanced_markers_raises():
+    bad = CLAUDE_MD_TEMPLATE + f"\n{MARKER_START}\norphaned start\n"
+    with pytest.raises(VoiceFormatError, match="[Mm]alformed"):
+        inject_voice_block(bad, VOICE_BODY_FIXTURE)
+
+
+def test_inject_end_before_start_raises():
+    bad = CLAUDE_MD_TEMPLATE + f"\n{MARKER_END}\nweird\n{MARKER_START}\n"
+    with pytest.raises(VoiceFormatError, match="end before start"):
+        inject_voice_block(bad, VOICE_BODY_FIXTURE)
