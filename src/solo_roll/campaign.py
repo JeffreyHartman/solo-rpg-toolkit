@@ -7,6 +7,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+from solo_roll.voices import (
+    VoiceError,
+    inject_voice_block,
+    load_voice,
+)
+
 
 class CampaignError(Exception):
     """Internal error type for clean exit-1 paths from helpers."""
@@ -155,6 +161,23 @@ def _ensure_solo_roll(repo_root: Path) -> None:
     )
 
 
+def _inject_voice_into_campaign(
+    campaign_path: Path,
+    voice_name: str,
+    voices_dir: Path,
+) -> str | None:
+    """Load voice and inject block into campaign CLAUDE.md.
+
+    Returns optional warning string from inject_voice_block, or None.
+    Raises VoiceNotFoundError / VoiceFormatError on failure.
+    """
+    _, body = load_voice(voice_name, voices_dir)
+    claude_md_path = campaign_path / "CLAUDE.md"
+    new_text, warning = inject_voice_block(claude_md_path.read_text(), body)
+    claude_md_path.write_text(new_text)
+    return warning
+
+
 def _parse_skills_arg(raw: str | None, available: list[str]) -> list[str] | None:
     """Translate --skills CLI arg into a selection list.
 
@@ -188,6 +211,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Comma-separated skill names to install "
              "(default: all). Use 'none' to install no skills.",
     )
+    parser.add_argument(
+        "--voice", type=str, default=None, dest="voice",
+        help="Narrative voice to inject into campaign CLAUDE.md "
+             "(default: 'default'). Use 'none' to skip injection.",
+    )
     args = parser.parse_args(argv)
 
     repo_root = _resolve_repo_root()
@@ -213,13 +241,19 @@ def main(argv: list[str] | None = None) -> int:
         selected = _parse_skills_arg(args.skills, available)
         installed_names = selected if selected is not None else available
         _create_campaign(args.name, target, template_dir, installed_names)
+        voices_source = repo_root / "data" / "voices"
+        voice_choice = args.voice if args.voice is not None else "default"
+        if voice_choice.lower() != "none":
+            warning = _inject_voice_into_campaign(target, voice_choice, voices_source)
+            if warning:
+                print(f"warning: {warning}", file=sys.stderr)
         _install_skills(skills_source, skills_target, selected)
         _write_campaign_settings(target, installed_names)
         _ensure_solo_roll(repo_root)
         _create_vault(target / "playervault")
         if "mythic-gme" in installed_names:
             _create_mythic_state(target)
-    except (CampaignError, FileExistsError, IsADirectoryError,
+    except (CampaignError, VoiceError, FileExistsError, IsADirectoryError,
             OSError, subprocess.CalledProcessError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

@@ -449,3 +449,45 @@ def test_campaign_settings_not_written_without_ironsworn(tmp_path, monkeypatch):
     assert rc == 0
     settings_file = target / ".claude" / "settings.json"
     assert not settings_file.exists()
+
+
+# ---------------------------------------------------------------------------
+# --voice flag (subprocess-level)
+# ---------------------------------------------------------------------------
+
+
+def test_scaffold_default_voice_injects_default_block(tmp_path):
+    target = tmp_path / "camp"
+    result = subprocess.run(
+        ["solo-campaign", "Camp", str(target), "--skills", "none"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    claude_md = (target / "CLAUDE.md").read_text()
+    assert "<!-- voice:start -->" in claude_md
+    assert "<!-- voice:end -->" in claude_md
+    assert "## Narrative Style: Default" in claude_md
+
+
+def test_scaffold_voice_none_skips_injection(tmp_path):
+    target = tmp_path / "camp"
+    result = subprocess.run(
+        ["solo-campaign", "Camp", str(target),
+         "--skills", "none", "--voice", "none"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    claude_md = (target / "CLAUDE.md").read_text()
+    assert "<!-- voice:start -->" not in claude_md
+    assert "## Narrative Style:" not in claude_md
+
+
+def test_scaffold_unknown_voice_errors(tmp_path):
+    target = tmp_path / "camp"
+    result = subprocess.run(
+        ["solo-campaign", "Camp", str(target),
+         "--skills", "none", "--voice", "nonsense"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode != 0
+    assert "nonsense" in result.stderr or "Voice not found" in result.stderr
