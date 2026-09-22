@@ -1,11 +1,16 @@
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
 from . import DEFAULT_DATA_DIR, __version__
+from .character import roll_character
 from .charts import FateChartError, fate_check, load_fate_chart
+from .checks import CheckError, morale_check, surprise_check
+from .dice import DiceError, parse_dice, roll_dice
+from .dungeon import DungeonError, advance_turn, load_state, new_state, save_state
 from .quicksets import QuicksetDataError, QuicksetNotFoundError, run_quickset
 from .rng import DiceSource, RandomDice
 from .tables import TableDataError, TableNotFoundError, load_table, roll_table
@@ -35,7 +40,7 @@ def _dice(args: argparse.Namespace) -> DiceSource:
 def _cmd_table(args: argparse.Namespace) -> int:
     data_dir = _resolve_data_dir(args.data)
     try:
-        payload = roll_table(args.name, data_dir, _dice(args))
+        payload = roll_table(args.name, data_dir, _dice(args), modifier=args.mod)
     except TableNotFoundError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
@@ -99,20 +104,71 @@ def _cmd_quickset(args: argparse.Namespace) -> int:
 
 
 def _cmd_roll(args: argparse.Namespace) -> int:
-    dice_str = args.dice.lower()
-    if not dice_str.startswith("d"):
-        print(f"error: invalid dice '{args.dice}' — expected format dN (e.g. d10, d6)", file=sys.stderr)
-        return 1
     try:
-        sides = int(dice_str[1:])
-    except ValueError:
-        print(f"error: invalid dice '{args.dice}' — expected format dN (e.g. d10, d6)", file=sys.stderr)
+        spec = parse_dice(args.dice)
+    except DiceError as exc:
+        print(f"error: {exc}", file=sys.stderr)
         return 1
-    if sides < 2:
-        print(f"error: dice must have at least 2 sides, got {sides}", file=sys.stderr)
+    payload = roll_dice(spec, _dice(args))
+    payload["dice"] = re.sub(r"\s+", "", args.dice.lower())  # echo the caller's notation
+    payload["roll"] = payload["total"]  # kept for callers written against dN output
+    print(json.dumps(payload, indent=2))
+    return 0
+
+
+def _cmd_turn(args: argparse.Namespace) -> int:
+    data_dir = _resolve_data_dir(args.data)
+    state_path = Path(args.state)
+    try:
+        if args.init:
+            state = new_state(level=args.level or 1)
+            save_state(state_path, state)
+            print(json.dumps({"initialised": str(state_path), "state": state}, indent=2))
+            return 0
+        state = load_state(state_path)
+        payload = advance_turn(state, data_dir, _dice(args))
+    except DungeonError as exc:
+        print(f"error: {exc}", file=sys.stderr)
         return 1
-    result = _dice(args).roll(1, sides)
-    print(json.dumps({"dice": dice_str, "roll": result}, indent=2))
+    except (TableNotFoundError, TableDataError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if not args.dry_run:
+        save_state(state_path, payload["state"])
+    print(json.dumps(payload, indent=2))
+    return 0
+
+
+def _cmd_check(args: argparse.Namespace) -> int:
+    data_dir = _resolve_data_dir(args.data)
+    dice = _dice(args)
+    try:
+        if args.kind == "surprise":
+            payload = surprise_check(dice)
+        elif args.kind == "morale":
+            if args.target is None:
+                print("error: morale needs --target <2-12>", file=sys.stderr)
+                return 1
+            payload = morale_check(args.target, dice, modifier=args.mod)
+        else:
+            payload = roll_table("ose/reaction", data_dir, dice, modifier=args.mod)
+    except CheckError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    except (TableNotFoundError, TableDataError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    print(json.dumps(payload, indent=2))
+    return 0
+
+
+def _cmd_gen_character(args: argparse.Namespace) -> int:
+    try:
+        payload = roll_character(_dice(args), character_class=args.character_class)
+    except CheckError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(json.dumps(payload, indent=2))
     return 0
 
 
@@ -137,7 +193,14 @@ def _cmd_list(args: argparse.Namespace) -> int:
             if "entries" in table:
                 count = len(table["entries"])
             else:
-                count = sum(b["max"] - b["min"] + 1 for b in table["ranges"])
+                # Bands may run past the dice range so a modifier still lands, so
+                # count only the results the dice can reach unmodified.
+                spec = parse_dice(table["dice"])
+                count = len({
+                    n for b in table["ranges"]
+                    for n in range(max(b["min"], spec.minimum),
+                                   min(b["max"], spec.maximum) + 1)
+                })
             entries.append({
                 "name": rel_name,
                 "display_name": table.get("display_name", table["name"]),
@@ -184,6 +247,8 @@ def main(argv: list[str] | None = None) -> int:
 
     p_table = subparsers.add_parser("table", help="Roll a single table by name")
     p_table.add_argument("name", help="Table name, e.g. action1 or elements/plottwist")
+    p_table.add_argument("--mod", type=int, default=0,
+                         help="Modifier added to the roll, e.g. a CHA reaction adjustment")
     _add_common_args(p_table)
     p_table.set_defaults(func=_cmd_table)
 
@@ -204,10 +269,36 @@ def main(argv: list[str] | None = None) -> int:
     _add_common_args(p_qs)
     p_qs.set_defaults(func=_cmd_quickset)
 
-    p_roll = subparsers.add_parser("roll", help="Roll a die (e.g. d10, d6, d100)")
-    p_roll.add_argument("dice", help="Dice notation, e.g. d10")
+    p_roll = subparsers.add_parser("roll", help="Roll dice (e.g. d20, 3d6, 1d8+1)")
+    p_roll.add_argument("dice", help="Dice notation: dN, NdN, or NdN+M")
     _add_common_args(p_roll)
     p_roll.set_defaults(func=_cmd_roll)
+
+    p_turn = subparsers.add_parser(
+        "turn", help="Advance one OSE dungeon turn: clock, light, rest, wandering check")
+    p_turn.add_argument("--state", default="state/clock.json",
+                        help="Path to the dungeon clock file")
+    p_turn.add_argument("--init", action="store_true",
+                        help="Write a fresh clock file instead of advancing")
+    p_turn.add_argument("--level", type=int, default=None, help="Dungeon level, with --init")
+    p_turn.add_argument("--dry-run", action="store_true",
+                        help="Roll the turn without writing the new state")
+    _add_common_args(p_turn)
+    p_turn.set_defaults(func=_cmd_turn)
+
+    p_check = subparsers.add_parser("check", help="Roll an OSE reaction, morale, or surprise check")
+    p_check.add_argument("kind", choices=["reaction", "morale", "surprise"])
+    p_check.add_argument("--target", type=int, default=None,
+                         help="Morale score, 2-12, required for morale")
+    p_check.add_argument("--mod", type=int, default=0, help="Situational modifier")
+    _add_common_args(p_check)
+    p_check.set_defaults(func=_cmd_check)
+
+    p_gen = subparsers.add_parser("gen-character", help="Roll an OSE character, 3d6 down the line")
+    p_gen.add_argument("--class", dest="character_class", default="Fighter",
+                       help="Cleric, Dwarf, Elf, Fighter, Halfling, Magic-User, or Thief")
+    _add_common_args(p_gen)
+    p_gen.set_defaults(func=_cmd_gen_character)
 
     p_list = subparsers.add_parser("list", help="List available tables grouped by directory")
     p_list.add_argument("prefix", nargs="?", default=None,
