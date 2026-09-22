@@ -1,0 +1,15 @@
+{
+  "name": "ose/listen-at-door",
+  "display_name": "Listen at a Door",
+  "description": "OSE 1-in-6 chance of detecting subtle sounds beyond a door. One attempt per character per door, and the referee always rolls.",
+  "dice": "d6",
+  "source": "Old-School Essentials Classic Fantasy, Adventures, p12",
+  "entries": [
+    "A sound is heard.",
+    "Nothing heard.",
+    "Nothing heard.",
+    "Nothing heard.",
+    "Nothing heard.",
+    "Nothing heard."
+  ]
+}

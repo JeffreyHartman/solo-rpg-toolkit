@@ -22,6 +22,42 @@ First message to the agent:
 
 > *"Let's start a new Ironsworn campaign with Mythic GME on top. Walk me through character creation, then frame the opening scene."*
 
+## OSE dungeon crawls
+
+A second campaign shape, for running a published old-school dungeon with Claude
+as referee rather than as an oracle:
+
+```bash
+solo-campaign ose "Barrowmaze" ~/rpg/barrowmaze --module "Barrowmaze Complete"
+```
+
+That scaffolds the referee harness, the OSE procedure in `rules/`, the OSE tables,
+and an empty `dungeon/`. Three layers, kept apart on purpose:
+
+- **Engine**, module- and system-neutral: the three hooks, the statusline, the
+  `referee` subagent, the journaler skill, the output style.
+- **System**, OSE but module-neutral: `rules/`, `data/tables/ose/`.
+- **Module**, per-adventure: `dungeon/`, its own tables, and `module.md`.
+
+`module.md` is the only file that names the adventure. Nothing about it is
+hardcoded in `CLAUDE.md` or the output style.
+
+Then convert the module into `dungeon/` against
+[docs/dungeon-schema.md](docs/dungeon-schema.md). There is no generic
+PDF-to-rooms converter, because every publisher lays out a page differently.
+Write one script per module against the documented schema and the engine works
+unchanged. `tools/extract_prose.py` dumps a page range of a multi-column PDF in
+reading order and is the usual starting point.
+
+### Why the referee cannot read the dungeon
+
+A `PreToolUse` hook denies the main session any read under `dungeon/`, so the key
+reaches it only through the `referee` subagent, which returns what the party
+perceives and nothing else. This is deliberate: a session that has read a room
+key cannot un-know the secret door forty turns later. The same reason drives
+`solo-roll turn`, which runs the clock, the light, the rest counter and the
+wandering check in one call, so no step can be skipped.
+
 ## What `solo-campaign` does
 
 One idempotent command:

@@ -1,0 +1,15 @@
+{
+  "name": "ose/searching",
+  "display_name": "Search a 10ft Square",
+  "description": "OSE 1-in-6 search for a secret door or room trap. Takes one turn. The referee rolls, and each character gets one attempt per area.",
+  "dice": "d6",
+  "source": "Old-School Essentials Classic Fantasy, Adventures, p12-13",
+  "entries": [
+    "Found.",
+    "Nothing found.",
+    "Nothing found.",
+    "Nothing found.",
+    "Nothing found.",
+    "Nothing found."
+  ]
+}

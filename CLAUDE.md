@@ -61,6 +61,19 @@ Drop a JSON file into `data/tables/<name>.json`. Two formats — mutually exclus
 
 No rebuild. No reinstall. `solo-roll table <name>` reads it directly. Nested paths work too: `data/tables/elements/plottwist.json` → `solo-roll table elements/plottwist`. Use `solo-roll list` (or `solo-roll list <prefix>`) to see what's available.
 
+### Adding an OSE table
+Same as any table, under `data/tables/ose/`. A 2d6 table uses `ranges`, not
+`entries`, because 2d6 is not uniform; the loader rejects flat entries for any
+multi-die spec. Pad the outermost bands past the natural range (`min: -20`,
+`max: 30`) so a modifier still lands somewhere.
+
+### Adding to the OSE campaign template
+`templates/ose/` is the engine plus the OSE system layer. It must stay
+module-neutral: nothing in `CLAUDE.md`, `rules/`, or the output style may name a
+published adventure. Module specifics belong in the campaign's own `module.md`
+and `dungeon/`. `docs/dungeon-schema.md` is the contract a per-module conversion
+script writes against.
+
 ### Adding a fate chart likelihood
 Edit `data/charts/mythic-fate.json` — add to `likelihoods` array and `thresholds` object. Update `KnownLikelihood` frozenset in `src/solo_roll/charts.py`.
 

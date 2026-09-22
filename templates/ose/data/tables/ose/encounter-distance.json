@@ -1,0 +1,64 @@
+{
+  "name": "ose/encounter-distance",
+  "display_name": "Dungeon Encounter Distance",
+  "description": "OSE dungeon encounter distance, 2d6 x 10 feet. The result is the multiplier; multiply by 10.",
+  "dice": "2d6",
+  "source": "Old-School Essentials Classic Fantasy, Adventures, p20",
+  "ranges": [
+    {
+      "min": 2,
+      "max": 2,
+      "result": "20 feet"
+    },
+    {
+      "min": 3,
+      "max": 3,
+      "result": "30 feet"
+    },
+    {
+      "min": 4,
+      "max": 4,
+      "result": "40 feet"
+    },
+    {
+      "min": 5,
+      "max": 5,
+      "result": "50 feet"
+    },
+    {
+      "min": 6,
+      "max": 6,
+      "result": "60 feet"
+    },
+    {
+      "min": 7,
+      "max": 7,
+      "result": "70 feet"
+    },
+    {
+      "min": 8,
+      "max": 8,
+      "result": "80 feet"
+    },
+    {
+      "min": 9,
+      "max": 9,
+      "result": "90 feet"
+    },
+    {
+      "min": 10,
+      "max": 10,
+      "result": "100 feet"
+    },
+    {
+      "min": 11,
+      "max": 11,
+      "result": "110 feet"
+    },
+    {
+      "min": 12,
+      "max": 12,
+      "result": "120 feet"
+    }
+  ]
+}

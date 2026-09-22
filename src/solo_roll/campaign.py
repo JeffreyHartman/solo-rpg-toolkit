@@ -306,6 +306,98 @@ def _scaffold_command(args) -> int:
     return 0
 
 
+OSE_HOOKS = (
+    ("UserPromptSubmit", None, "inject-state.sh"),
+    ("PreToolUse", "Read", "guard-dungeon.sh"),
+    ("Stop", None, "journal.sh"),
+)
+
+
+def _ose_settings(target: Path) -> dict:
+    """Settings for an OSE campaign: referee voice, the three hooks, and a deny
+    on the dungeon key so information hiding is enforced rather than requested."""
+    hooks: dict[str, list[dict]] = {}
+    for event, matcher, script in OSE_HOOKS:
+        entry: dict = {"hooks": [{
+            "type": "command",
+            "command": f'bash "{target / ".claude/hooks" / script}"',
+        }]}
+        if matcher:
+            entry["matcher"] = matcher
+        hooks.setdefault(event, []).append(entry)
+
+    return {
+        "outputStyle": "referee",
+        "env": {"SOLO_ROLL_DATA": str(target / "data")},
+        "statusLine": {
+            "type": "command",
+            "command": f'bash "{target / ".claude/statusline.sh"}"',
+        },
+        "permissions": {
+            "allow": [
+                "Bash(solo-roll:*)",
+                f"Read({target}/rules/**)",
+                f"Read({target}/state/**)",
+                f"Read({target}/playervault/**)",
+                f"Read({target}/module.md)",
+                f"Edit({target}/state/**)",
+                f"Edit({target}/playervault/**)",
+                f"Write({target}/playervault/**)",
+            ],
+            "deny": [f"Read({target}/dungeon/**)"],
+        },
+        "hooks": hooks,
+    }
+
+
+def _ose_command(args) -> int:
+    repo_root = _resolve_repo_root()
+    template_dir = repo_root / "templates" / "ose"
+    if not template_dir.is_dir():
+        print(f"error: toolkit install corrupt — {template_dir} not found",
+              file=sys.stderr)
+        return 1
+
+    target = Path(args.path).expanduser()
+    if target.exists():
+        print(f"error: {target} already exists", file=sys.stderr)
+        return 1
+
+    try:
+        shutil.copytree(template_dir, target)
+        for name in ("CLAUDE.md", "README.md", "module.md"):
+            path = target / name
+            if path.is_file():
+                text = path.read_text()
+                text = text.replace("[CAMPAIGN NAME]", args.name)
+                text = text.replace("[MODULE NAME]", args.module)
+                path.write_text(text)
+
+        for hook in (target / ".claude" / "hooks").glob("*.sh"):
+            hook.chmod(0o755)
+        statusline = target / ".claude" / "statusline.sh"
+        if statusline.is_file():
+            statusline.chmod(0o755)
+
+        clock = target / "state" / "clock.json"
+        state = json.loads(clock.read_text())
+        state["level"] = args.starting_level
+        clock.write_text(json.dumps(state, indent=2) + "\n")
+
+        settings = target / ".claude" / "settings.json"
+        settings.write_text(json.dumps(_ose_settings(target), indent=2) + "\n")
+        _ensure_solo_roll(repo_root)
+    except (CampaignError, FileExistsError, OSError,
+            subprocess.CalledProcessError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+
+    print(f"scaffolded {target}")
+    print("next: convert the module into dungeon/ against "
+          "docs/dungeon-schema.md, then fill in module.md")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="solo-campaign",
@@ -327,6 +419,17 @@ def main(argv: list[str] | None = None) -> int:
              "(default: 'default'). Use 'none' to skip injection.",
     )
 
+    ose = subparsers.add_parser(
+        "ose", help="Create an OSE dungeon-crawl campaign (referee harness, "
+                    "OSE rules and tables, empty dungeon/)")
+    ose.add_argument("name", help="Display name for the campaign")
+    ose.add_argument("path", help="Target campaign directory (must not exist)")
+    ose.add_argument("--module", default="[MODULE NAME]",
+                     help="Published module this campaign runs")
+    ose.add_argument("--starting-level", type=int, default=1,
+                     help="Dungeon level the party starts on (default 1)")
+    ose.set_defaults(func=_ose_command)
+
     voice_cmd = subparsers.add_parser("voice", help="Voice management")
     voice_subs = voice_cmd.add_subparsers(dest="voice_action")
     voice_subs.add_parser("list", help="List available voices")
@@ -336,7 +439,7 @@ def main(argv: list[str] | None = None) -> int:
     voice_apply.add_argument("voice_name", help="Voice to inject")
 
     raw = list(sys.argv[1:] if argv is None else argv)
-    known_subs = {"scaffold", "voice"}
+    known_subs = {"scaffold", "voice", "ose"}
     if raw and raw[0] not in known_subs and not raw[0].startswith("-"):
         raw = ["scaffold"] + raw
     args = parser.parse_args(raw)
@@ -345,6 +448,8 @@ def main(argv: list[str] | None = None) -> int:
         return _voice_command(args)
     if args.command == "scaffold":
         return _scaffold_command(args)
+    if args.command == "ose":
+        return _ose_command(args)
     parser.print_help()
     return 2
 

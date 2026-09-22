@@ -1,0 +1,15 @@
+{
+  "name": "ose/wandering-check",
+  "display_name": "Wandering Monster Check",
+  "description": "OSE 1-in-6 wandering monster check, rolled once every two turns in the dungeon.",
+  "dice": "d6",
+  "source": "Old-School Essentials Classic Fantasy, Adventures, p13",
+  "entries": [
+    "Wandering monster, 2d6 x 10 feet away, moving toward the party.",
+    "No encounter.",
+    "No encounter.",
+    "No encounter.",
+    "No encounter.",
+    "No encounter."
+  ]
+}

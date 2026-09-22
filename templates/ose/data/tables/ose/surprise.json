@@ -1,0 +1,15 @@
+{
+  "name": "ose/surprise",
+  "display_name": "Surprise",
+  "description": "OSE 1d6 surprise check for one side. A 1 or 2 means that side is surprised and loses one round.",
+  "dice": "d6",
+  "source": "Old-School Essentials Classic Fantasy, Adventures, p20",
+  "entries": [
+    "Surprised, loses one round.",
+    "Surprised, loses one round.",
+    "Not surprised.",
+    "Not surprised.",
+    "Not surprised.",
+    "Not surprised."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "ose/trap-trigger",
+  "display_name": "Trap Trigger",
+  "description": "OSE 2-in-6 chance that an action which could trigger a trap springs it. Damage is usually automatic, with no attack roll.",
+  "dice": "d6",
+  "source": "Old-School Essentials Classic Fantasy, Adventures, p13",
+  "entries": [
+    "Trap springs.",
+    "Trap springs.",
+    "Does not spring.",
+    "Does not spring.",
+    "Does not spring.",
+    "Does not spring."
+  ]
+}

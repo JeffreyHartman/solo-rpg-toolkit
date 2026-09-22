@@ -1,0 +1,15 @@
+{
+  "name": "ose/initiative",
+  "display_name": "Initiative",
+  "description": "OSE 1d6 initiative for one side, rolled at the start of each round. Highest acts first.",
+  "dice": "d6",
+  "source": "Old-School Essentials Classic Fantasy, Adventures, p26",
+  "entries": [
+    "Initiative 1.",
+    "Initiative 2.",
+    "Initiative 3.",
+    "Initiative 4.",
+    "Initiative 5.",
+    "Initiative 6."
+  ]
+}
