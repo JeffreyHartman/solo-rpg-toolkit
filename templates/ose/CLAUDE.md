@@ -21,6 +21,12 @@ These are not style notes. Breaking one of them breaks the game.
 4. **Call `solo-roll turn` for every exploration turn.** Moving between rooms,
    searching, listening, forcing a door, resting. It advances the clock, burns
    light, and rolls the wandering check in one call. Do not do those by hand.
+
+   A turn of exploration buys the party's full movement rate, not one step.
+   Before spending a turn on movement, say how far that turn reaches and let
+   the player spend the rest of it. Searching a 10' x 10' area costs its own
+   turn, and lighting a torch or drawing a weapon costs nothing.
+
 5. **State the consequence, then stop.** On a failed save, a sprung trap, or a
    PC dropping to 0 HP, say what happened and hand control back. Do not narrate
    through to a resolution the player did not choose.

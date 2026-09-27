@@ -35,6 +35,11 @@ if party.exists():
     lines.append(f"Marching order and HP: {who}.")
     if p.get("light_bearer"):
         lines.append(f"Light is carried by {p['light_bearer']}.")
+    if p.get("party_movement"):
+        lines.append(
+            f"Party exploration movement: {p['party_movement']}' per turn "
+            "(the slowest member). A turn buys that much distance. State how "
+            "much of it is left when the party stops short of it.")
 
 if lines:
     print("<game-state>")
