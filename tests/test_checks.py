@@ -81,4 +81,4 @@ class TestCharacter:
 
     def test_rejects_unknown_class(self):
         with pytest.raises(CheckError):
-            roll_character(ScriptedDice([3] * 19), character_class="Bard")
+            roll_character(ScriptedDice([3] * 19), character_class="Warlock")

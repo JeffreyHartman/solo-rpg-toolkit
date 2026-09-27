@@ -7,8 +7,9 @@ __all__ = ["ABILITIES", "CLASS_HIT_DICE", "ability_modifier", "roll_character"]
 
 ABILITIES = ("STR", "INT", "WIS", "DEX", "CON", "CHA")
 
+# Bard is Advanced Fantasy (Advanced Player's Tome p34); the rest are Classic Fantasy.
 CLASS_HIT_DICE = {
-    "Cleric": "d6", "Dwarf": "d8", "Elf": "d6", "Fighter": "d8",
+    "Bard": "d6", "Cleric": "d6", "Dwarf": "d8", "Elf": "d6", "Fighter": "d8",
     "Halfling": "d6", "Magic-User": "d4", "Thief": "d4",
 }
 

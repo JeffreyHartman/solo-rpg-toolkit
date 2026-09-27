@@ -131,5 +131,5 @@ class TestGenCharacter:
         assert out["hit_points"] >= 1
 
     def test_rejects_unknown_class(self):
-        proc = run("gen-character", "--class", "Bard")
+        proc = run("gen-character", "--class", "Warlock")
         assert proc.returncode == 1
