@@ -31,7 +31,7 @@ class TestScaffold:
         _, target = scaffold(tmp_path)
         for path in (
             ".claude/agents/referee.md",
-            ".claude/hooks/guard-dungeon.sh",
+            ".claude/hooks/guard-dungeon.py",
             ".claude/hooks/inject-state.sh",
             ".claude/hooks/journal.sh",
             ".claude/output-styles/referee.md",
@@ -64,7 +64,9 @@ class TestScaffold:
 
     def test_hooks_are_executable(self, tmp_path):
         _, target = scaffold(tmp_path)
-        for hook in (target / ".claude/hooks").glob("*.sh"):
+        hooks = list((target / ".claude/hooks").iterdir())
+        assert hooks
+        for hook in hooks:
             assert hook.stat().st_mode & 0o111, hook
 
 
@@ -76,16 +78,29 @@ class TestSettings:
         assert settings["env"]["SOLO_ROLL_DATA"] == str(target / "data")
         assert str(target) in settings["statusLine"]["command"]
 
-    def test_denies_reading_the_dungeon(self, tmp_path):
+    def test_no_deny_rule_guards_the_dungeon(self, tmp_path):
+        """A deny rule would block the referee subagent too, so guard-dungeon.py
+        is the only guard. It reads agent_type to tell the referee apart."""
         _, target = scaffold(tmp_path)
         settings = json.loads((target / ".claude/settings.json").read_text())
-        assert f"Read({target}/dungeon/**)" in settings["permissions"]["deny"]
+        assert settings["permissions"]["deny"] == []
+
+    def test_permission_paths_are_relative(self, tmp_path):
+        """Claude Code does not match absolute paths in permission rules."""
+        _, target = scaffold(tmp_path)
+        settings = json.loads((target / ".claude/settings.json").read_text())
+        paths = [r for r in settings["permissions"]["allow"] if not r.startswith("Bash(")]
+        assert paths
+        for rule in paths:
+            assert "(./" in rule, rule
+            assert str(target) not in rule, rule
 
     def test_registers_all_three_hooks(self, tmp_path):
         _, target = scaffold(tmp_path)
         hooks = json.loads((target / ".claude/settings.json").read_text())["hooks"]
         assert set(hooks) == {"UserPromptSubmit", "PreToolUse", "Stop"}
-        assert hooks["PreToolUse"][0]["matcher"] == "Read"
+        assert hooks["PreToolUse"][0]["matcher"] == "Read|Glob|Grep|Bash"
+        assert "guard-dungeon.py" in hooks["PreToolUse"][0]["hooks"][0]["command"]
 
     def test_state_starts_at_turn_zero(self, tmp_path):
         _, target = scaffold(tmp_path)

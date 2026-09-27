@@ -307,20 +307,23 @@ def _scaffold_command(args) -> int:
 
 
 OSE_HOOKS = (
-    ("UserPromptSubmit", None, "inject-state.sh"),
-    ("PreToolUse", "Read", "guard-dungeon.sh"),
-    ("Stop", None, "journal.sh"),
+    ("UserPromptSubmit", None, "bash", "inject-state.sh"),
+    ("PreToolUse", "Read|Glob|Grep|Bash", "python3", "guard-dungeon.py"),
+    ("Stop", None, "bash", "journal.sh"),
 )
 
 
 def _ose_settings(target: Path) -> dict:
-    """Settings for an OSE campaign: referee voice, the three hooks, and a deny
-    on the dungeon key so information hiding is enforced rather than requested."""
+    """Settings for an OSE campaign: referee voice and the three hooks.
+
+    guard-dungeon.py, not a permissions deny rule, is what hides the key. A deny
+    rule would also block the referee subagent, and absolute paths in permission
+    rules do not match anything."""
     hooks: dict[str, list[dict]] = {}
-    for event, matcher, script in OSE_HOOKS:
+    for event, matcher, runner, script in OSE_HOOKS:
         entry: dict = {"hooks": [{
             "type": "command",
-            "command": f'bash "{target / ".claude/hooks" / script}"',
+            "command": f'{runner} "{target / ".claude/hooks" / script}"',
         }]}
         if matcher:
             entry["matcher"] = matcher
@@ -334,17 +337,18 @@ def _ose_settings(target: Path) -> dict:
             "command": f'bash "{target / ".claude/statusline.sh"}"',
         },
         "permissions": {
+            # Paths must be relative. Claude Code does not match absolute
+            # paths in permission rules, and Edit rules cover Write too.
             "allow": [
                 "Bash(solo-roll:*)",
-                f"Read({target}/rules/**)",
-                f"Read({target}/state/**)",
-                f"Read({target}/playervault/**)",
-                f"Read({target}/module.md)",
-                f"Edit({target}/state/**)",
-                f"Edit({target}/playervault/**)",
-                f"Write({target}/playervault/**)",
+                "Read(./rules/**)",
+                "Read(./state/**)",
+                "Read(./playervault/**)",
+                "Read(./module.md)",
+                "Edit(./state/**)",
+                "Edit(./playervault/**)",
             ],
-            "deny": [f"Read({target}/dungeon/**)"],
+            "deny": [],
         },
         "hooks": hooks,
     }
