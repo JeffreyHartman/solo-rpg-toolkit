@@ -12,6 +12,7 @@ from .checks import CheckError, morale_check, surprise_check
 from .dice import DiceError, parse_dice, roll_dice
 from .dungeon import DungeonError, advance_turn, load_state, new_state, save_state
 from .quicksets import QuicksetDataError, QuicksetNotFoundError, run_quickset
+from .reveal import RevealError, hide, load_revealed, reveal
 from .rng import DiceSource, RandomDice
 from .tables import TableDataError, TableNotFoundError, load_table, roll_table
 
@@ -135,6 +136,22 @@ def _cmd_turn(args: argparse.Namespace) -> int:
         return 2
     if not args.dry_run:
         save_state(state_path, payload["state"])
+    print(json.dumps(payload, indent=2))
+    return 0
+
+
+def _cmd_reveal(args: argparse.Namespace) -> int:
+    state_path = Path(args.state)
+    try:
+        if args.hide:
+            payload = hide(state_path, args.hide)
+        elif args.ids:
+            payload = reveal(state_path, Path(args.areas), args.ids)
+        else:
+            payload = {"revealed": load_revealed(state_path)}
+    except RevealError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
     print(json.dumps(payload, indent=2))
     return 0
 
@@ -285,6 +302,17 @@ def main(argv: list[str] | None = None) -> int:
                         help="Roll the turn without writing the new state")
     _add_common_args(p_turn)
     p_turn.set_defaults(func=_cmd_turn)
+
+    p_reveal = subparsers.add_parser(
+        "reveal", help="Show map areas in the fog-of-war viewer; no ids lists them")
+    p_reveal.add_argument("ids", nargs="*", help="Area ids, e.g. 7 c2 s1")
+    p_reveal.add_argument("--hide", nargs="+", default=None, metavar="ID",
+                          help="Put these areas back under the fog")
+    p_reveal.add_argument("--state", default="state/revealed.js",
+                          help="Path to the reveal file the viewer polls")
+    p_reveal.add_argument("--areas", default="map/areas.json",
+                          help="Path to the viewer's area list, for validating ids")
+    p_reveal.set_defaults(func=_cmd_reveal)
 
     p_check = subparsers.add_parser("check", help="Roll an OSE reaction, morale, or surprise check")
     p_check.add_argument("kind", choices=["reaction", "morale", "surprise"])
