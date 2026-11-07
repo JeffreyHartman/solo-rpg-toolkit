@@ -41,6 +41,12 @@ class TestMainSession:
         "/home/x/camp/dungeon/monsters/goblin.md",
         "/home/x/camp/dungeon/index.json",
         "/home/x/camp/dungeon/00-running-the-tomb.md",
+        "/home/x/camp/dungeon/map/exits.json",
+        "/home/x/camp/dungeon/map/crops/7.png",
+        "/home/x/camp/map/map.png",
+        "/home/x/camp/map/masks/7.png",
+        "/home/x/camp/map/patches/s1.png",
+        "/home/x/camp/map/areas.json",
     ])
     def test_denies_the_other_guarded_paths(self, path):
         assert denied({"tool_name": "Read", "tool_input": {"file_path": path}})
@@ -50,6 +56,9 @@ class TestMainSession:
         "/home/x/camp/state/clock.json",
         "/home/x/camp/playervault/Character.md",
         "/home/x/camp/module.md",
+        "/home/x/camp/state/revealed.js",
+        "/home/x/camp/map/index.html",
+        "/home/x/camp/playervault/Map.md",
     ])
     def test_allows_everything_else(self, path):
         assert not denied({"tool_name": "Read", "tool_input": {"file_path": path}})

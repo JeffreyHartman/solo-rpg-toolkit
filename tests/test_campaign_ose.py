@@ -1,4 +1,6 @@
 import json
+import subprocess
+import sys
 
 import pytest
 
@@ -111,3 +113,34 @@ class TestSettings:
     def test_starting_level_is_recorded(self, tmp_path):
         _, target = scaffold(tmp_path, extra=("--starting-level", "2"))
         assert json.loads((target / "state/clock.json").read_text())["level"] == 2
+
+
+class TestFogMap:
+    def test_ships_the_viewer_and_the_installer(self, tmp_path):
+        _, target = scaffold(tmp_path)
+        assert (target / "map/index.html").is_file()
+        assert (target / "tools/install_map.py").is_file()
+
+    def test_viewer_polls_the_reveal_file_in_state(self, tmp_path):
+        _, target = scaffold(tmp_path)
+        assert "../state/revealed.js" in (target / "map/index.html").read_text()
+
+    def test_installer_places_viewer_and_referee_files(self, tmp_path):
+        _, target = scaffold(tmp_path)
+        stage = tmp_path / "stage"
+        (stage / "viewer/masks").mkdir(parents=True)
+        (stage / "viewer/areas.json").write_text('{"areas": []}')
+        (stage / "viewer/masks/1.png").write_bytes(b"png")
+        (stage / "referee/crops").mkdir(parents=True)
+        (stage / "referee/exits.json").write_text("{}")
+        (stage / "referee/crops/1.png").write_bytes(b"png")
+
+        proc = subprocess.run([sys.executable, str(target / "tools/install_map.py"),
+                               str(stage)], capture_output=True, text=True)
+
+        assert proc.returncode == 0, proc.stderr
+        assert (target / "map/masks/1.png").is_file()
+        assert (target / "map/index.html").is_file()
+        assert (target / "dungeon/map/exits.json").is_file()
+        assert (target / "dungeon/map/crops/1.png").is_file()
+        assert (target / "state/revealed.js").read_text() == "window.REVEALED = [];\n"

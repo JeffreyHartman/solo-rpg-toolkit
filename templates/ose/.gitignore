@@ -3,3 +3,5 @@ dungeon/
 rules/
 state/
 playervault/
+map/*
+!map/index.html

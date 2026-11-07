@@ -24,7 +24,14 @@ range of a multi-column PDF in reading order and is the usual starting point.
     ├── monsters/
     │   └── basilisk.md         one file per creature
     └── map/
-        └── map-05.png          rendered level maps
+        ├── map-05.png          rendered level maps
+        ├── exits.json          optional: per-area shape and exits, from the map
+        ├── crops/7.png         optional: unfogged crop per area id
+        └── build/              optional: the scripts that built the fog map
+
+`exits.json`, `crops/` and `build/` come from the fog-map build in
+`docs/fog-map.md`. The referee reads `exits.json` whenever it exists, because
+room text often leaves out an exit the map shows.
 
 Room files are named `<zero-padded number>-<slugged name>.md`. The `00-` prefix
 is reserved for a level overview, so room numbering starts at 01.

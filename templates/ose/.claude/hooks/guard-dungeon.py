@@ -9,7 +9,12 @@ not a deny rule, is what enforces the split.
 import json
 import sys
 
-GUARDED = ("dungeon/level-", "dungeon/monsters/", "dungeon/index.json", "dungeon/00-")
+GUARDED = (
+    "dungeon/level-", "dungeon/monsters/", "dungeon/index.json", "dungeon/00-",
+    "dungeon/map/",
+    # The fog viewer's assets. Its index.html is generic and stays readable.
+    "map/map.png", "map/masks/", "map/patches/", "map/areas.",
+)
 
 REASON = (
     "The dungeon key is hidden from this session on purpose. Use the referee "

@@ -40,6 +40,11 @@ These are not style notes. Breaking one of them breaks the game.
    in `playervault/People/` with name, apparent age, and what it wants, before it
    speaks. Re-read that file before writing its dialogue.
 
+9. **Reveal what the referee says was seen.** When a referee report ends with
+   a `Reveal:` line, run `solo-roll reveal <those ids>` before narrating. The
+   player's map (`map/index.html`) shows only the areas in
+   `state/revealed.js`. Never reveal an id the referee did not name.
+
 ## Commands
 
     solo-roll turn                          # one dungeon turn, the whole procedure
@@ -52,6 +57,8 @@ These are not style notes. Breaking one of them breaks the game.
     solo-roll table ose/initiative          # 1d6 per side per round
     solo-roll roll 1d8+1                    # any NdN+M
     solo-roll gen-character --class Fighter # 3d6 down the line
+    solo-roll reveal 7 c2                   # lift the fog on the player's map
+    solo-roll reveal --hide 7               # put an area back, to fix a mistake
 
 `SOLO_ROLL_DATA` is set to `./data` by `.claude/settings.json`, so the OSE tables
 resolve without a flag.
@@ -81,6 +88,8 @@ covers.
     rules/              OSE procedure. Read the relevant file before adjudicating.
     state/clock.json    turn, level, room, light, wandering config
     state/party.json    HP, AC, marching order, who holds the light
+    state/revealed.js   map area ids the player's map shows, written by reveal
+    map/index.html      the player's fogged map. Its other files are the key.
     playervault/        what the player reads. Open THIS in Obsidian, not the root.
     data/tables/ose/    the OSE and module tables
 
@@ -90,7 +99,8 @@ covers.
 2. Read `state/clock.json` and `state/party.json`.
 3. Read the newest file in `playervault/Session Log/`.
 4. Read `playervault/Map.md` for what the party has established.
-5. Give the player three or four sentences of recap.
+5. Give the player three or four sentences of recap. If `map/index.html`
+   exists, remind them to open it.
 6. Ask what they do. Do not frame a scene for them.
 
 ## Session end

@@ -28,3 +28,21 @@ root holds the dungeon key, and Obsidian search would spoil it.
   wandering check, and on a hit the encounter, distance, surprise, and reaction.
 - `.claude/output-styles/referee.md` sets the voice, with
   `keep-coding-instructions: false` so the engineering system prompt is gone.
+
+## The player's map (optional)
+
+`map/index.html` is a fog-of-war map. Open it in a browser straight from disk;
+it shows only the areas listed in `state/revealed.js` and re-reads that file
+every few seconds. The referee names what the party has seen and the main
+session runs `solo-roll reveal <ids>`.
+
+It needs a map built from the module's PDF, which is per-module work like the
+dungeon conversion. The method is in the toolkit's `docs/fog-map.md`. Build it
+outside the campaign, then install it with:
+
+    python3 tools/install_map.py <stage-dir>
+
+The build also writes `exits.json` and per-area crops into the referee's side
+of the key, so the referee can see exits the room text leaves out. Everything
+under `map/` except `index.html` is the whole level layout. Don't open it
+where the player can see it.
