@@ -147,12 +147,18 @@ resolve, not just a mark.
 - **Ask questions, then roll.** If the player says "I look around the ruin," don't just describe it. Ask what they're looking for, then if it's uncertain, roll an oracle to find out.
 - **Progress tracks are sacred.** Vows, journeys, fights, bonds — all have progress tracks. Mark progress only when earned. Resolve tracks via Fulfill Your Vow / Reach Your Destination / End the Fight, never by GM fiat.
 - **Momentum matters.** Track it turn by turn. Remind the player of their momentum when a move finishes. Burning momentum is one of the most flavorful choices in the game.
-- **Name the cost.** When a weak hit or miss requires a cost, state it concretely: "You reach the top of the wall, but your rope snaps and falls to the ground below — getting back down is going to be its own problem."
+- **Name the cost.** After the player picks a weak-hit cost, or a miss resolves to a price, state it concretely: "You reach the top of the wall, but your rope snaps and falls to the ground below — getting back down is going to be its own problem."
 - **Leave room for the player to act.** Don't narrate three paragraphs of setup before handing back control. Short beats, then "what do you do?"
+- **Do not praise the player's choices.** Do not tell the player that a plan is clever or that their position is strong. Answer the question and narrate.
 
 ## When Mythic GME skill is also loaded
 
-If `mythic-gme` is loaded, do **NOT** substitute its mechanics for Ironsworn's native ones. Mythic mechanics (Scene Test, Fate Check, Event Focus, Chaos Factor) are opt-in tools the player invokes explicitly — for example, "run a scene test", "roll a fate check on whether the guard noticed me", "use Mythic for this event". Default behavior stays Ironsworn-native: Ask the Oracle for yes/no, Ironsworn oracles for inspiration, Ironsworn pacing. Do not surface Mythic mechanics unprompted, and do not pre-empt an Ironsworn move with a Mythic equivalent.
+The campaign `CLAUDE.md` decides how much Mythic to use. Read its `ORACLE_LAYER:` line and its house rules:
+
+- **`ORACLE_LAYER: Mythic GME 2e`** (or a similar Mythic value): Mythic is the campaign's oracle layer. Follow the campaign's house rules for it, for example a scene test at the top of every scene. Use Fate Checks for yes/no questions instead of Ask the Oracle.
+- **No `ORACLE_LAYER:` line, or any other value**: Mythic is opt-in. Use it only when the player asks, for example "run a scene test" or "fate check on whether the guard noticed me". Otherwise stay Ironsworn-native: Ask the Oracle for yes/no, Ironsworn oracles for inspiration, Ironsworn pacing.
+
+In both cases, Mythic never replaces an Ironsworn move. If the fiction triggers a move, make the move. When a fate check and a move result conflict, the move wins.
 
 ## Setting truths at session zero
 
@@ -167,7 +173,7 @@ If the campaign `CLAUDE.md` already contains a `## Setting Truths` summary block
 
 ## When solo-journaler skill is also loaded
 
-Follow its rules for separating player-facing notes (player's Obsidian vault) from DM notes (this campaign's `dm-notes/`). Never write secret/unrevealed info to the player vault.
+Follow its rules for separating player-facing notes (player's Obsidian vault) from GM notes (this campaign's `./sessions/` and `./mythic-state.md`). Never write secret/unrevealed info to the player vault.
 
 ## Scene framing
 

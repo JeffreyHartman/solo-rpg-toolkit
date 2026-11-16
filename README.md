@@ -61,7 +61,7 @@ wandering check in one call, so no step can be skipped.
 ## What `solo-campaign` does
 
 One idempotent command:
-- Creates `~/rpg/my-campaign/` from `example-campaign/` template, with `CLAUDE.md` and `dm-notes/`
+- Creates `~/rpg/my-campaign/` from `example-campaign/` template, with `CLAUDE.md`, `sessions/`, and a player vault
 - Symlinks selected skills into `~/rpg/my-campaign/.claude/skills/` — **project-local**, scoped to this campaign only (no cross-campaign trigger collisions)
 - Creates `~/Obsidian/Solo/{Session Log,People,Places,Threads,Lore}` if missing
 - Verifies `solo-roll` is on PATH; runs `uv tool install --editable .` from the repo if not

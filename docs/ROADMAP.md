@@ -135,20 +135,20 @@ Issues found during session `6d5f6788` (ironsworn-test1, 2026-04-27). Concrete b
 
 - ~~Resupply miss: explicitly apply `-1 supply`~~ — superseded by 5.6. Resupply miss → Pay the Price is rules-correct; 5.6 made PTP a proper stop-and-trigger that selects a consequence from its menu. `-1 supply` is one option, not mandated.
 - ~~Sojourn miss: confirm and apply the correct consequence~~ — superseded by 5.6, same reasoning. Sojourn miss → Pay the Price.
-- [ ] Sojourn bond interaction: when player claims settlement bond affects weak hit choice count, quote the relevant rule text and confirm before accepting. Session 2 silently accepted an unverified interpretation.
+- [x] Sojourn bond interaction: when player claims settlement bond affects weak hit choice count, quote the relevant rule text and confirm before accepting. Session 2 silently accepted an unverified interpretation. Resolved by `moves/sojourn.md`, which states the bond rule: on a weak hit, choose one, plus one more with a bond.
 
 ### Ironsworn skill — anti-gassing behavior
 
-- [ ] Add explicit instruction: do not editorialize on player choices, do not explain why a position is favorable. Player flagged mid-session: "You don't have to gas me up in your response." GM had listed 3 bullets explaining Cadoc's position was "strong" before answering a question. Wastes tokens, breaks tone.
+- [x] Add explicit instruction: do not editorialize on player choices, do not explain why a position is favorable. Player flagged mid-session: "You don't have to gas me up in your response." GM had listed 3 bullets explaining Cadoc's position was "strong" before answering a question. Wastes tokens, breaks tone.
 
 ### Mythic GME skill — CF state write timing
 
-- [ ] Write `mythic-state.md` immediately at scene end, not during end-of-session journaling. Session 2: GM announced "CF 6 → 5" inline but the file write happened ~30 exchanges later. Mid-session crash = stale state file.
-- [ ] Startup: read CF from `mythic-state.md` AND session notes, flag mismatch before play begins. Session 2 opened with `mythic-state.md` at CF 5 while session notes said CF 6. GM used correct value but only by catching it manually.
+- [x] Write `mythic-state.md` immediately at scene end, not during end-of-session journaling. Session 2: GM announced "CF 6 → 5" inline but the file write happened ~30 exchanges later. Mid-session crash = stale state file.
+- [x] Startup: read CF from `mythic-state.md` AND session notes, flag mismatch before play begins. Session 2 opened with `mythic-state.md` at CF 5 while session notes said CF 6. GM used correct value but only by catching it manually.
 
 ### Mythic GME skill — post-scene NPC list update
 
-- [ ] After each scene, prompt GM to add new named NPCs to Mythic Characters List for random event targeting. Session 2 introduced Wren and an unnamed Ring member; neither was added. If a random event targets a character next session, Wren won't be on the rollable list.
+- [x] After each scene, prompt GM to add new named NPCs to Mythic Characters List for random event targeting. Session 2 introduced Wren and an unnamed Ring member; neither was added. If a random event targets a character next session, Wren won't be on the rollable list.
 
 ### Session log naming convention
 
@@ -167,7 +167,7 @@ Issues from ironsworn-test1 play. Bug files in `docs/bugs/`.
 - [x] Restructure to per-move files: `skills/ironsworn/moves/<move-slug>.md`. Each file: trigger, stat, all outcomes, full cost menus, follow-on triggers, narrative principles. Same for `oracles/` if needed. See `docs/bugs/ironsworn-skill-architecture.md`.
 - [x] Update `SKILL.md` core loop: mandatory read of `moves/<slug>.md` BEFORE presenting roll. "Do not run a move from memory" — explicit language.
 - [x] Add move-trigger → file-slug table in SKILL.md so LLM can map player intent to file.
-- [ ] Skill-content test pin asserts each move file exists with required sections.
+- [x] Skill-content test pin asserts each move file exists with required sections.
 
 ### Behavioral fixes (depend on architecture)
 

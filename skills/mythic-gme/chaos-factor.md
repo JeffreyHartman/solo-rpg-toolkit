@@ -20,7 +20,7 @@ Trust the honest read. If you're hedging the adjustment to keep CF stable, you'r
 
 ## History format
 
-Keep a running scene history in `dm-notes/mythic-state.md`. Visible history makes shifts feel earned rather than whimsical — sanity-check yourself by glancing at the last few entries.
+Keep a running scene history in `./mythic-state.md`. Visible history makes shifts feel earned rather than whimsical — sanity-check yourself by glancing at the last few entries.
 
 ```
 # Mythic State
