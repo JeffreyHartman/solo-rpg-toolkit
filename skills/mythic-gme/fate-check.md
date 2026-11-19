@@ -25,4 +25,6 @@ Source: Mythic GME 2e.
 - **Exceptional Yes**: roll ≤ ⌊yes_threshold ÷ 5⌋
 - **Exceptional No**: roll ≥ 101 − ⌈(100 − yes_threshold) ÷ 5⌉
 
+When `yes_threshold` is 99 the book's chart prints `20 99 x`: Exceptional Yes on 20 or less, and no Exceptional No (a roll of 100 is a plain No).
+
 CLI computes both automatically and returns `exceptional: true/false`.

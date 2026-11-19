@@ -22,12 +22,12 @@ CF is a 1–9 dial tracking narrative volatility. Starts at **5**.
 At scene end, ask: did the player come out more in control or less?
 - More in control (plans worked, threat neutralized): **CF − 1** (min 1)
 - Less in control (resource lost, complication unresolved): **CF + 1** (max 9)
-- Genuine mixed result: no change
+- The book allows only +1 or -1 per scene. If the scene was neither, pick the closer read; do not hold CF steady.
 
 Track CF in `./mythic-state.md` at the campaign root. Pass it as `--cf N` to every CLI fate check.
 
 When a scene ends, update `./mythic-state.md` before you frame the next scene, not at session end:
-1. Write the new CF and add a line to the CF history.
+1. Write the new CF in the `## Chaos Factor:` heading and add a line to `## Scene History`.
 2. Add each NPC named in the scene to the Characters List, so random events can target them.
 3. Add new threads to the Threads List, and mark closed threads.
 
