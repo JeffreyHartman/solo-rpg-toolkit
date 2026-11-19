@@ -12,7 +12,7 @@ git clone https://github.com/<you>/solo-rpg-toolkit.git ~/git/solo-rpg-toolkit
 cd ~/git/solo-rpg-toolkit && uv tool install --editable .
 
 # 2. Scaffold a campaign
-solo-campaign "My Campaign" ~/rpg/my-campaign --vault ~/Obsidian/Solo
+solo-campaign "My Campaign" ~/rpg/my-campaign
 
 # 3. Play
 cd ~/rpg/my-campaign && claude
@@ -62,13 +62,13 @@ wandering check in one call, so no step can be skipped.
 
 ## What `solo-campaign` does
 
-One idempotent command:
-- Creates `~/rpg/my-campaign/` from `example-campaign/` template, with `CLAUDE.md`, `sessions/`, and a player vault
+One command:
+- Creates `~/rpg/my-campaign/` from `example-campaign/` template, with `CLAUDE.md`, `sessions/`, and a player vault in `playervault/`
 - Symlinks selected skills into `~/rpg/my-campaign/.claude/skills/` — **project-local**, scoped to this campaign only (no cross-campaign trigger collisions)
-- Creates `~/Obsidian/Solo/{Session Log,People,Places,Threads,Lore}` if missing
+- Creates `playervault/{Session Log,People,Places,Threads,Lore}` inside the campaign folder. Open that folder in Obsidian
 - Verifies `solo-roll` is on PATH; runs `uv tool install --editable .` from the repo if not
 
-Fails fast if the target campaign directory already exists. If you omit `--vault`, prompts interactively.
+Fails fast if the target campaign directory already exists. Relative paths are resolved to absolute ones.
 
 ### Picking skills per campaign
 
@@ -76,11 +76,11 @@ By default all skills install. Use `--skills` to pick a subset:
 
 ```bash
 # Ironsworn only, no Mythic oracle layer
-solo-campaign "Lite" ~/rpg/lite --vault ~/Obsidian/Solo \
+solo-campaign "Lite" ~/rpg/lite \
   --skills ironsworn,solo-journaler
 
 # Pure freeform — no system skills triggering at all
-solo-campaign "Free" ~/rpg/free --vault ~/Obsidian/Solo --skills none
+solo-campaign "Free" ~/rpg/free --skills none
 ```
 
 Available skills:

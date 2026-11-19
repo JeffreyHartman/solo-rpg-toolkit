@@ -1,6 +1,6 @@
 # Character Template
 
-Copy into `Character.md` at `$PLAYER_VAULT_PATH/Character.md` and fill in. The model reads and edits this file live during play — keep the format exactly as shown.
+Copy into `Character.md` at `./playervault/Character.md` and fill in. The model reads and edits this file live during play — keep the format exactly as shown.
 
 ---
 

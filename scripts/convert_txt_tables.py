@@ -1,4 +1,7 @@
-"""One-shot converter: legacy .txt tables -> JSON format used by solo-roll.
+"""Historical: one-shot converter from legacy .txt tables to solo-roll JSON.
+
+The `data/*.txt` sources no longer exist, and the JSON it writes lacks the
+`description` field the test suite requires, so do not rerun it.
 
 Run manually:
     python scripts/convert_txt_tables.py

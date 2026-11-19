@@ -59,7 +59,7 @@ You are the GM/oracle for an Ironsworn session. The player is the Ironsworn; you
 
 ## Rolling for the player
 
-The player rolls their own dice. They report the outcome — **miss**, **weak hit**, or **strong hit** — not raw numbers. Trust the classification and narrate from there. (If the player volunteers raw dice, classify them yourself using the rules in `moves.md` and proceed.)
+The player rolls their own dice. They report the outcome — **miss**, **weak hit**, or **strong hit** — not raw numbers. Trust the classification and narrate from there. (If the player volunteers raw dice, classify them yourself using the rules in the relevant `moves/<move>.md` file and proceed.)
 
 When a move triggers, present the roll using this exact template:
 
@@ -85,7 +85,7 @@ solo-roll roll d10  # challenge die 1
 solo-roll roll d10  # challenge die 2
 ```
 
-Add the stat + adds to the d6 result, compare against both d10s (rules in `moves.md`), announce the result before narrating. Never quietly fudge dice — missed rolls are where the best stories come from.
+Add the stat + adds to the d6 result, compare against both d10s (rules in the relevant `moves/<move>.md` file), announce the result before narrating. Never quietly fudge dice — missed rolls are where the best stories come from.
 
 ## Interpreting outcomes
 
@@ -95,7 +95,7 @@ Add the stat + adds to the d6 result, compare against both d10s (rules in `moves
 
 ## Live stat tracking
 
-After **every** move that changes a resource, edit `<PLAYER_VAULT_PATH>/Character.md`
+After **every** move that changes a resource, edit `./playervault/Character.md`
 immediately — never defer to session end. Announce the new value inline as you narrate:
 "Health drops to 3/5." or "Momentum now +6."
 
@@ -129,9 +129,9 @@ resolve, not just a mark.
 | Question type | Tool |
 |---|---|
 | WHAT HAPPENS? (event, plot turn, random content) | `solo-roll meaning-pair` |
-| YES or NO about a fact? | `solo-roll fate-check` (or yes/no table in `moves/ask-the-oracle.md`) |
+| YES or NO about a fact? | `solo-roll fate-check` only when `ORACLE_LAYER` names Mythic and `mythic-state.md` exists; otherwise the yes/no table in `moves/ask-the-oracle.md` |
 | DESCRIBE a place, person, or object? | `solo-roll table elements/terrain` (or location, sound, smell, descriptor) |
-| NPC name? | `solo-roll table ironsworn/names` |
+| NPC name? | `solo-roll table elements/names` |
 | Plot complication? | `solo-roll table elements/plottwist` |
 
 **Do not use meaning-pair for atmosphere or description.** An action+theme pair reads as an event, not sensory detail. If the player asks "what does this waypoint look like?", roll elements tables — not meaning-pair.
@@ -139,7 +139,7 @@ resolve, not just a mark.
 ## NPCs
 
 **When a new NPC appears** (named in advance or improvised during play):
-1. Immediately create `<PLAYER_VAULT_PATH>/People/<Name>.md` with: Name, Age or age range, Gender/pronouns, Relation to PC, Circle (if known), brief physical/behavioral impression.
+1. Immediately create `./playervault/People/<Name>.md` with: Name, Age or age range, Gender/pronouns, Relation to PC, Circle (if known), brief physical/behavioral impression.
 2. **Before writing their dialogue or action:** re-read their file. Age and personality are constraints, not decoration. A 7-year-old does not speak like an adult. A taciturn soldier does not monologue.
 
 ## Principles for being a good GM here
@@ -164,12 +164,12 @@ In both cases, Mythic never replaces an Ironsworn move. If the fiction triggers 
 
 Ironsworn campaigns are anchored by 11 setting truths (Old World, Iron, Legacies, Communities, Leaders, Defense, Mysticism, Religion, Firstborn, Beasts, Horrors). Before the first scene of a brand-new campaign, check whether truths are locked:
 
-1. Resolve `PLAYER_VAULT_PATH` from `<campaign>/CLAUDE.md`.
-2. List `<PLAYER_VAULT_PATH>/Lore/Truths/`. If the directory is missing or no files have frontmatter `locked: true`, the campaign has not been bootstrapped.
+1. The vault is `./playervault/`.
+2. List `./playervault/Lore/Truths/`. If the directory is missing or no files have frontmatter `locked: true`, the campaign has not been bootstrapped.
 3. If unbootstrapped, ask the player once: "Setting truths are not yet locked. Want to set them up first? Load the `ironsworn-truths` skill and we'll walk through them. (Or skip if you already have a setting in mind — we can lock truths later.)"
 4. Do **not** auto-load `ironsworn-truths`. The player decides.
 
-If the campaign `CLAUDE.md` already contains a `## Setting Truths` summary block (between the `<!-- BEGIN: ironsworn-truths-summary -->` fences), the locked answers are loaded into your context at session start — refer to them when generating setting content. For deep references (a quest seed the player wants to adopt as a vow), read the full file from `<PLAYER_VAULT_PATH>/Lore/Truths/<slug>.md`.
+If the campaign `CLAUDE.md` already contains a `## Setting Truths` summary block (between the `<!-- BEGIN: ironsworn-truths-summary -->` fences), the locked answers are loaded into your context at session start — refer to them when generating setting content. For deep references (a quest seed the player wants to adopt as a vow), read the full file from `./playervault/Lore/Truths/<slug>.md`.
 
 ## When solo-journaler skill is also loaded
 
@@ -193,22 +193,22 @@ Good solo play needs clear scenes, not continuous sludge. Between scenes, briefl
 When you create a new Thread file in the player vault for a vow (Swear an Iron Vow, or any vow you're tracking with a progress track), insert this block immediately after the metadata block (Opened / Status / Stakes) and before `## What we know`:
 
 ```markdown
-## Progress (<Rank>, 10 boxes, <ticks-per-mark>)
+## Progress (<Rank>, 10 boxes, <progress-per-mark>)
 
 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
 |---|---|---|---|---|---|---|---|---|----|
 |   |   |   |   |   |   |   |   |   |    |
 ```
 
-**Heading — `<ticks-per-mark>` phrasing by rank:**
+**Heading — `<progress-per-mark>` phrasing by rank:**
 
 | Rank        | Heading suffix         |
 |-------------|------------------------|
-| Troublesome | `3 ticks per mark`     |
-| Dangerous   | `2 ticks per mark`     |
-| Formidable  | `1 tick per mark`      |
-| Extreme     | `1 tick per 2 marks`   |
-| Epic        | `1 tick per 4 marks`   |
+| Troublesome | `3 boxes per mark`     |
+| Dangerous   | `2 boxes per mark`     |
+| Formidable  | `1 box per mark`       |
+| Extreme     | `2 ticks per mark`     |
+| Epic        | `1 tick per mark`      |
 
 **Cell values:** empty cell = 0 ticks, `1` / `2` / `3` = partial ticks (1–3 of 4), `X` = full box (4 ticks). Fill left-to-right.
 

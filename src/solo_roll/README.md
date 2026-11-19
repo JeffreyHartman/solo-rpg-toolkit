@@ -21,6 +21,11 @@ JSON output → set.
 | `solo-roll fate-check --likelihood <key> --cf <1..9>` | Full Mythic fate check |
 | `solo-roll quickset <id>` | Run a quickset chain (`npc_profile`, `location_profile`, `creature_profile`) |
 | `solo-roll roll <dice>` | Raw dice (e.g. `d10`, `d6`, `d100`) |
+| `solo-roll list [prefix]` | List available tables, optionally under a prefix |
+| `solo-roll turn [--rest] [--init [--force]]` | OSE dungeon turn: clock, light, rest counter, wandering check |
+| `solo-roll check reaction\|morale\|surprise` | OSE reaction, morale, and surprise checks |
+| `solo-roll reveal [ids]` | Lift the fog on the OSE player map (`--hide` puts areas back) |
+| `solo-roll gen-character --class <name>` | Roll an OSE character, 3d6 down the line |
 
 Every subcommand accepts `--seed N` (reproducibility) and `--data DIR` (override data directory).
 
@@ -47,7 +52,7 @@ Nested paths work: `data/tables/elements/plottwist.json` → `solo-roll table el
 
 ## Notes on Mythic 2e content
 
-The **fate chart** values (`data/charts/mythic-fate.json`) match the Mythic 2e book exactly — yes thresholds and exceptional yes/no caps are computed by the same formulas the book uses.
+The **fate chart** values (`data/charts/mythic-fate.json`) match the Mythic 2e book exactly. Yes thresholds and exceptional yes/no caps are computed by the same formulas the book uses, with the 99 cell special-cased to the book's `20 99 x`.
 
 The **event focus** d100 ranges (`data/tables/mythic/event-focus.json`) also match the book.
 
@@ -100,6 +105,6 @@ foreach ($sub in "Session Log","People","Places","Threads","Lore") {
 }
 ```
 
-Then edit `$campaign\CLAUDE.md` — replace `[Campaign Name]`, the `PLAYER_VAULT_PATH` placeholder, and the `[Active Skills]` block with the skill list you symlinked.
+Then edit `$campaign\CLAUDE.md` — replace `[Campaign Name]` and the `[Active Skills]` block with the skill list you symlinked.
 
 (Symlinks on Windows require Developer Mode or admin shell. `Copy-Item -Recurse` works as fallback for the skills, but won't auto-update on repo edits.)

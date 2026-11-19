@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 # Ironsworn character status bar for Claude Code.
-# Run from the campaign dir; reads CLAUDE.md → Character.md → prints resource bar.
+# Run from the campaign dir; reads ./playervault/Character.md and prints the resource bar.
 
-VAULT_PATH=$(grep 'PLAYER_VAULT_PATH:' ./CLAUDE.md 2>/dev/null | head -1 \
-    | sed 's/.*PLAYER_VAULT_PATH: //' | xargs)
-[ -z "$VAULT_PATH" ] && exit 0
-
-CHAR_FILE="$VAULT_PATH/Character.md"
+CHAR_FILE="./playervault/Character.md"
 [ -f "$CHAR_FILE" ] || exit 0
 
 NAME=$(grep '^# '         "$CHAR_FILE" 2>/dev/null | head -1 | sed 's/^# //')
