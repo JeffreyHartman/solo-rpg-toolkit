@@ -26,6 +26,18 @@ def test_thresholds_formula_low():
     assert result.exceptional_no_floor == 82 # 101 - ceil((100 - 5) / 5) = 101 - 19
 
 
+def test_thresholds_at_99_match_the_book_chart_cell():
+    """reference/mythic2e.md Fate Chart prints '20 99 x' for a 99 threshold:
+    Exceptional Yes on 20 or less, and no Exceptional No."""
+    result = thresholds(yes_threshold=99)
+    assert result.exceptional_yes_cap == 20
+    assert result.exceptional_no_floor > 100
+    assert classify_outcome(20, result) == ("exceptional_yes", True)
+    assert classify_outcome(21, result) == ("yes", False)
+    assert classify_outcome(99, result) == ("yes", False)
+    assert classify_outcome(100, result) == ("no", False)
+
+
 def test_thresholds_formula_high():
     result = thresholds(yes_threshold=95)
     assert result.exceptional_yes_cap == 19  # 95 // 5
@@ -102,9 +114,15 @@ def test_is_random_event_non_doubles_never_fires():
     assert is_random_event(0, 1, cf=9) is False
 
 
-def test_is_random_event_double_zero_does_not_fire_unless_cf_allows():
-    # 0 == 0 is doubles. 0 <= any CF (>=1) so it fires at any CF.
-    assert is_random_event(0, 0, cf=1) is True
+def test_is_random_event_double_zero_never_fires():
+    """Mythic 2e, Fate Questions, Random Events: only doubles 11 through 99
+    whose digit is at most the CF trigger an event, so a roll of 100 does not."""
+    for cf in range(1, 10):
+        assert is_random_event(0, 0, cf=cf) is False
+
+
+def test_is_random_event_double_above_cf_does_not_fire():
+    assert is_random_event(6, 6, cf=5) is False
 
 
 def test_fate_chart_loads_with_nine_likelihoods_and_nine_cfs():

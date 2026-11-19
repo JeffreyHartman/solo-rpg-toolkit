@@ -7,7 +7,7 @@ Oracles inject randomness into the narrative. When the agent needs to answer a q
 ## How to use oracles
 
 - **Action + Theme** is the Swiss Army knife. Roll both (1d100 each), then interpret the pair in context. "Persevere + Energy" could be "a figure straining to keep a magical fire from going out." Trust the first creative read — don't re-roll until you get something you like.
-- **Yes/No**: If Mythic GME is loaded, use Fate Check. Otherwise use the Ask the Oracle thresholds in `moves.md`.
+- **Yes/No**: If Mythic GME is loaded, use Fate Check. Otherwise use the Ask the Oracle thresholds in `moves/ask-the-oracle.md`.
 - **Plot Turn**: When the story feels stuck or needs a shake-up, roll a Plot Turn oracle instead of inventing one.
 - **Names/places**: Roll when introducing something new.
 

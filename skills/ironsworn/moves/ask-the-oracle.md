@@ -13,7 +13,7 @@
 | What happens? (event, random event, plot turn) | `solo-roll meaning-pair` (action + theme) |
 | Yes or no about a fact? | Yes/No table below (or `solo-roll fate-check` if Mythic is loaded) |
 | What does this place/thing look/feel/sound like? | `solo-roll table elements/terrain` (or location, sound, smell, descriptor) |
-| NPC name? | `solo-roll table ironsworn/names` |
+| NPC name? | `solo-roll table elements/names` |
 | Plot complication? | `solo-roll table elements/plottwist` or meaning-pair |
 
 **Do not use meaning-pair for atmosphere or description.** An action+theme pair reads as an event, not sensory detail.
@@ -22,7 +22,7 @@
 
 ## Ask a Yes/No Question
 
-Decide the odds of "yes," then roll 2d10 using `solo-roll roll 2d10`. If both dice match, an extreme result or twist has occurred.
+Decide the odds of "yes," then roll one d100 with `solo-roll roll d100`. If the roll is a match (doubles: 11, 22, 33, 44, 55, 66, 77, 88, 99, or 100), an extreme result or twist has occurred.
 
 | Odds | Answer is "yes" if you roll... |
 |---|---|

@@ -14,6 +14,12 @@ GUTTER = 15.0
 COL_GAP = 25.0
 LINE_GAP = 13.5
 
+
+def repair_hyphenation(text):
+    """Join "ac- tions" into "actions" without touching "1d6- 1" or "1- 3"."""
+    return re.sub(r"([A-Za-z])- ([a-z])", r"\1\2", text)
+
+
 ap = argparse.ArgumentParser()
 ap.add_argument("pdf")
 ap.add_argument("first", type=int)
@@ -89,6 +95,6 @@ for pno, page in enumerate(ET.fromstring(xml).iter(f"{NS}page"), start=1):
         out.append(cur)
     for para in out:
         joined = " ".join(para)
-        joined = re.sub(r"(\w)- (\w)", r"\1\2", joined)  # repair "ac- tions"
+        joined = repair_hyphenation(joined)
         print(joined)
         print()

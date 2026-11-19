@@ -9,6 +9,8 @@ SYSTEM: Ironsworn
 ORACLE_LAYER: Mythic GME 2e
 ```
 
+`ORACLE_LAYER` sets how the GM uses Mythic. With `Mythic GME 2e`, Mythic runs every scene. `none` is written when `mythic-gme` is not installed: the scene tests and other Mythic house rules are removed, and yes/no questions use Ask the Oracle.
+
 Player vault: `./playervault/` (Obsidian vault — open this folder in Obsidian)
 
 ## Active skills
@@ -36,10 +38,10 @@ Skills are symlinked into `.claude/skills/` of this campaign folder, so they're 
 
 ## Session end procedure
 
-1. Write today's mechanical log to `./sessions/YYYY-MM-DD.md` with rolls, CF shifts, threads opened/closed, NPCs introduced, oracle reasoning.
-2. Write today's player-facing journal to `./playervault/Session Log/YYYY-MM-DD.md` in the character's voice (or close narration). No mechanics, no meta.
+1. Write today's mechanical log to `./sessions/Session NNN.md` (three-digit number, for example `Session 005.md`) with rolls, CF shifts, threads opened/closed, NPCs introduced, oracle reasoning.
+2. Write today's player-facing journal to `./playervault/Session Log/Session NNN.md` (same number) in the character's voice (or close narration). No mechanics, no meta.
 3. Update NPC files, place files, thread files in `./playervault/`. Character sheet stats are updated live during play — at session end only update non-stat changes (bonds forged, assets advanced, experience spent).
-4. Update `./mythic-state.md` with the new Chaos Factor (if Mythic is active).
+4. Confirm `./mythic-state.md` matches the last finished scene (if Mythic is active). CF is written at the end of each scene.
 5. End with: "Good stopping point. Picking up next time at [hook]."
 
 ## Starting a fresh campaign

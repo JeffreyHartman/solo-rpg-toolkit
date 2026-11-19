@@ -165,3 +165,36 @@ def test_ironsworn_has_vow_vault_overlay(ironsworn_skill):
     # All five ranks documented
     for rank in ("Troublesome", "Dangerous", "Formidable", "Extreme", "Epic"):
         assert rank in ironsworn_skill
+
+
+def test_every_slug_table_move_file_exists(ironsworn_skill):
+    """Every `moves/<slug>.md` named in the ironsworn SKILL.md exists."""
+    import re
+    slugs = set(re.findall(r"`moves/([a-z-]+)\.md`", ironsworn_skill))
+    assert slugs, "no move slugs found in SKILL.md"
+    moves_dir = SKILLS_DIR / "ironsworn" / "moves"
+    missing = sorted(s for s in slugs if not (moves_dir / f"{s}.md").is_file())
+    assert not missing, f"slug table names missing move files: {missing}"
+
+
+@pytest.mark.parametrize(
+    "move_file",
+    sorted((SKILLS_DIR / "ironsworn" / "moves").glob("*.md")),
+    ids=lambda p: p.stem,
+)
+def test_move_file_has_title_and_trigger(move_file):
+    """Each move file opens with an H1 title and states its trigger."""
+    text = move_file.read_text()
+    assert text.startswith("# "), f"{move_file.name}: no H1 title"
+    assert "**Trigger:**" in text, f"{move_file.name}: no **Trigger:** line"
+
+
+def test_rolled_move_files_cover_all_outcomes():
+    """A move file with a `**Roll:**` line has Strong Hit, Weak Hit, and Miss sections."""
+    moves_dir = SKILLS_DIR / "ironsworn" / "moves"
+    for move_file in sorted(moves_dir.glob("*.md")):
+        text = move_file.read_text()
+        if "**Roll:**" not in text:
+            continue
+        for heading in ("## Strong Hit", "## Weak Hit", "## Miss"):
+            assert heading in text, f"{move_file.name}: missing {heading}"

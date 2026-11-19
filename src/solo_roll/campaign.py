@@ -64,7 +64,17 @@ def _create_campaign(
         text = claude_md.read_text()
         text = text.replace("[Campaign Name]", name)
         text = text.replace("[Active Skills]", _format_active_skills(selected_skills))
+        if "mythic-gme" not in selected_skills:
+            text = _drop_mythic_layer(text)
         claude_md.write_text(text)
+
+
+def _drop_mythic_layer(text: str) -> str:
+    """Set ORACLE_LAYER to none and remove the house rules that assume Mythic."""
+    text = text.replace("ORACLE_LAYER: Mythic GME 2e", "ORACLE_LAYER: none")
+    kept = [line for line in text.split("\n")
+            if "Scene tests are run" not in line and "Mythic is the pacing" not in line]
+    return "\n".join(kept)
 
 
 def _install_skills(
@@ -122,17 +132,17 @@ def _create_mythic_state(campaign_path: Path) -> None:
     """Bootstrap mythic-state.md at campaign root with CF 5 and empty lists."""
     (campaign_path / "mythic-state.md").write_text(
         "# Mythic State\n\n"
-        "## Chaos Factor\n**Current: 5**\n\n"
+        "## Chaos Factor: 5\n\n"
         "## Current scene\n*(Set at start of each scene: \"Expected setup = [one sentence]\")*\n\n"
-        "## Last scene outcome\n*(in control / out of control / mixed — used to adjust CF at scene end)*\n\n"
+        "## Last scene outcome\n*(in control / out of control, used to adjust CF at scene end)*\n\n"
         "## Threads List\n"
         "*(Active story threads — problems, quests, unresolved tensions. Numbered for oracle rolls.)*\n\n"
         "1. \n\n"
         "## Characters List\n"
         "*(NPCs in play, including ones the player hasn't met. Numbered for oracle rolls.)*\n\n"
         "1. \n\n"
-        "## CF History\n"
-        "*(One line per session: date + CF start → CF end + reason)*\n"
+        "## Scene History\n"
+        "*(One line per scene: Scene N: CF start → CF end (reason))*\n"
     )
 
 
@@ -273,7 +283,7 @@ def _scaffold_command(args) -> int:
         )
         return 1
 
-    target = Path(args.path).expanduser()
+    target = Path(args.path).expanduser().resolve()
     if target.exists():
         print(f"error: {target} already exists", file=sys.stderr)
         return 1
@@ -311,6 +321,11 @@ OSE_HOOKS = (
     ("PreToolUse", "Read|Glob|Grep|Bash", "python3", "guard-dungeon.py"),
     ("Stop", None, "bash", "journal.sh"),
 )
+
+
+OSE_GITIGNORE_TEMPLATE = "gitignore.template"
+OSE_REQUIRED = (OSE_GITIGNORE_TEMPLATE, "state/clock.json", "state/party.json",
+                "playervault")
 
 
 def _ose_settings(target: Path) -> dict:
@@ -362,14 +377,28 @@ def _ose_command(args) -> int:
               file=sys.stderr)
         return 1
 
-    target = Path(args.path).expanduser()
+    missing = [p for p in OSE_REQUIRED if not (template_dir / p).exists()]
+    if missing:
+        print(f"error: toolkit install corrupt: {template_dir} lacks "
+              f"{', '.join(missing)}", file=sys.stderr)
+        return 1
+
+    target = Path(args.path).expanduser().resolve()
     if target.exists():
         print(f"error: {target} already exists", file=sys.stderr)
         return 1
 
     try:
         shutil.copytree(template_dir, target)
-        for name in ("CLAUDE.md", "README.md", "module.md"):
+        if not (template_dir / "rules").is_dir():
+            (target / "rules").mkdir()
+            print("warning: this toolkit checkout has no templates/ose/rules/. "
+                  f"Put the OSE procedure files in {target / 'rules'}; the "
+                  "referee reads them. The CLI and hooks do not.",
+                  file=sys.stderr)
+        (target / OSE_GITIGNORE_TEMPLATE).rename(target / ".gitignore")
+        for name in ("CLAUDE.md", "README.md", "module.md",
+                     "playervault/Character.md"):
             path = target / name
             if path.is_file():
                 text = path.read_text()

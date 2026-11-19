@@ -345,7 +345,7 @@ def test_main_mythic_state_created_when_mythic_gme_in_skills(tmp_path, monkeypat
     assert (target / "mythic-state.md").is_file()
     content = (target / "mythic-state.md").read_text()
     assert "Chaos Factor" in content
-    assert "Current: 5" in content
+    assert "## Chaos Factor: 5" in content
     assert "Threads List" in content
     assert "Characters List" in content
 
@@ -586,3 +586,26 @@ def test_voice_apply_duplicate_markers_errors(tmp_path):
     )
     assert result.returncode != 0
     assert "Malformed" in result.stderr or "manually" in result.stderr.lower()
+
+
+def test_create_campaign_without_mythic_sets_oracle_layer_none(tmp_path, example_template):
+    """`_create_campaign` writes `ORACLE_LAYER: none` and drops the Mythic house
+    rules when mythic-gme is not installed. Audit finding 9."""
+    from solo_roll.campaign import _create_campaign
+    template = example_template
+    target = tmp_path / "lite"
+    _create_campaign("Lite", target, template, ["ironsworn"])
+    text = (target / "CLAUDE.md").read_text()
+    assert "ORACLE_LAYER: none" in text
+    assert "ORACLE_LAYER: Mythic" not in text
+    assert "Scene tests are run" not in text
+
+
+def test_create_campaign_with_mythic_keeps_oracle_layer(tmp_path, example_template):
+    from solo_roll.campaign import _create_campaign
+    template = example_template
+    target = tmp_path / "full"
+    _create_campaign("Full", target, template, ["ironsworn", "mythic-gme"])
+    text = (target / "CLAUDE.md").read_text()
+    assert "ORACLE_LAYER: Mythic GME 2e" in text
+    assert "Scene tests are run" in text

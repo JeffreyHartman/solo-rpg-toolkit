@@ -5,8 +5,8 @@ Starting value, adjustment rule, and `--cf` usage live in `SKILL.md`. This file 
 ## What CF affects
 
 - **Scene tests**: higher CF = more likely the next scene is altered or interrupted.
-- **Fate checks**: higher CF shifts odds toward more extreme outcomes at the edges of the likelihood ladder (yeses get yes-er, nos get no-er) and increases random-event chance.
-- **Random event frequency**: doubles on a fate check only trigger an event if both dice are ≤ CF. Low CF → events fire only on low doubles; high CF → most doubles trigger events.
+- **Fate checks**: higher CF raises the chance of Yes for every likelihood (Mythic 2e, The Chaos Factor) and makes random events more likely.
+- **Random event frequency**: doubles 11 through 99 on a fate check trigger an event only if the repeated digit is ≤ CF. Low CF → events fire only on low doubles; high CF → most doubles trigger events.
 
 ## Feel of different CF values
 
@@ -20,13 +20,13 @@ Trust the honest read. If you're hedging the adjustment to keep CF stable, you'r
 
 ## History format
 
-Keep a running scene history in `dm-notes/mythic-state.md`. Visible history makes shifts feel earned rather than whimsical — sanity-check yourself by glancing at the last few entries.
+Update `./mythic-state.md` at the end of every scene, not at session end, with one line per scene in `## Scene History`. Visible history makes shifts feel earned rather than whimsical — sanity-check yourself by glancing at the last few entries.
 
 ```
 # Mythic State
 ## Chaos Factor: 5 (was 4 last scene, +1 after the ambush)
 
-## History
+## Scene History
 - Scene 1: CF 5 → 4 (player escaped the ruin intact)
 - Scene 2: CF 4 → 5 (camp was raided)
 - Scene 3: CF 5 → 6 (wolf companion taken)

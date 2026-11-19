@@ -51,16 +51,24 @@ def save_state(path: Path, state: dict[str, Any]) -> None:
 
 
 def advance_turn(
-    state: dict[str, Any], data_dir: Path, dice: DiceSource
+    state: dict[str, Any], data_dir: Path, dice: DiceSource, rest: bool = False
 ) -> dict[str, Any]:
+    """Advance one turn. With rest set, the turn is spent resting and
+    turns_since_rest goes back to 0."""
     state = json.loads(json.dumps(state))  # do not mutate the caller's dict
     state["turn"] = state.get("turn", 0) + 1
-    state["turns_since_rest"] = state.get("turns_since_rest", 0) + 1
+    state["turns_since_rest"] = 0 if rest else state.get("turns_since_rest", 0) + 1
 
     burning, expired = [], []
     for source in state.get("light") or []:
         source = dict(source)
-        source["turns_left"] = source.get("turns_left", 0) - 1
+        turns_left = source.get("turns_left")
+        if not isinstance(turns_left, int) or isinstance(turns_left, bool):
+            raise DungeonError(
+                f"light source {source!r} needs an integer turns_left "
+                '(for example {"kind": "torch", "bearer": "Hana", "turns_left": 6})'
+            )
+        source["turns_left"] = turns_left - 1
         if source["turns_left"] > 0:
             burning.append(source)
         else:
@@ -73,6 +81,7 @@ def advance_turn(
         "room": state.get("room"),
         "light_expired": expired,
         "in_darkness": not burning,
+        "rested": rest,
         "rest_due": state["turns_since_rest"] >= TURNS_BETWEEN_RESTS,
         "wandering": _wandering(state, data_dir, dice),
         "state": state,
@@ -86,7 +95,14 @@ def _wandering(
     if not config:
         return {"checked": False, "reason": "no wandering table on this level"}
 
-    interval = int(config.get("interval", 2))
+    table = config.get("table", config.get("wandering_table"))
+    if not table:
+        raise DungeonError(
+            'wandering config in state/clock.json needs a "table" '
+            '(for example {"table": "ose/my-level-1", "interval": 2})'
+        )
+
+    interval = int(config.get("interval", config.get("wandering_interval_turns", 2)))
     if interval < 1 or state["turn"] % interval != 0:
         return {"checked": False, "reason": f"checked every {interval} turns"}
 
@@ -101,7 +117,7 @@ def _wandering(
     if not report["encounter"]:
         return report
 
-    report["monster"] = roll_table(config["table"], data_dir, dice)
+    report["monster"] = roll_table(table, data_dir, dice)
     distance = roll_dice(parse_dice(ENCOUNTER_DISTANCE), dice)
     report["distance_feet"] = distance["total"] * 10
     report["surprise"] = {

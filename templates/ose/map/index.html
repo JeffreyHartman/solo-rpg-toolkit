@@ -64,7 +64,7 @@
   // Written by the campaign's reveal command; either an array of ids or {group: [ids]}.
   const REVEAL_SRC = '../state/revealed.js';
   const TEST = new URLSearchParams(location.search).has('test');
-  const byId = new Map(D.areas.map(a => [a.id, a]));
+  const byId = new Map(D.areas.map(a => [String(a.id), a]));
   if (D.map.title) { document.title = D.map.title; document.getElementById('title').textContent = D.map.title; }
 
   const view = document.getElementById('view');
@@ -286,7 +286,7 @@
     buildTestPanel();
     try {
       mapImg = await loadImg(D.map.src);
-      await Promise.all(D.areas.map(a => loadImg(a.mask).then(im => maskImg.set(a.id, im))));
+      await Promise.all(D.areas.map(a => loadImg(a.mask).then(im => maskImg.set(String(a.id), im))));
       await Promise.all(D.patches.map((p, i) => loadImg(p.src).then(im => { patchImg[i] = im; })));
     } catch (err) {
       statusEl.textContent = String(err.message || err);

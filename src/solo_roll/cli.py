@@ -122,12 +122,15 @@ def _cmd_turn(args: argparse.Namespace) -> int:
     state_path = Path(args.state)
     try:
         if args.init:
+            if state_path.exists() and not args.force:
+                raise DungeonError(
+                    f"{state_path} already exists; pass --force to overwrite it")
             state = new_state(level=args.level or 1)
             save_state(state_path, state)
             print(json.dumps({"initialised": str(state_path), "state": state}, indent=2))
             return 0
         state = load_state(state_path)
-        payload = advance_turn(state, data_dir, _dice(args))
+        payload = advance_turn(state, data_dir, _dice(args), rest=args.rest)
     except DungeonError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
@@ -297,6 +300,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="Path to the dungeon clock file")
     p_turn.add_argument("--init", action="store_true",
                         help="Write a fresh clock file instead of advancing")
+    p_turn.add_argument("--force", action="store_true",
+                        help="With --init, overwrite an existing clock file")
+    p_turn.add_argument("--rest", action="store_true",
+                        help="Spend this turn resting and reset the rest counter")
     p_turn.add_argument("--level", type=int, default=None, help="Dungeon level, with --init")
     p_turn.add_argument("--dry-run", action="store_true",
                         help="Roll the turn without writing the new state")
@@ -324,7 +331,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p_gen = subparsers.add_parser("gen-character", help="Roll an OSE character, 3d6 down the line")
     p_gen.add_argument("--class", dest="character_class", default="Fighter",
-                       help="Cleric, Dwarf, Elf, Fighter, Halfling, Magic-User, or Thief")
+                       help="Bard, Cleric, Dwarf, Elf, Fighter, Halfling, Magic-User, or Thief")
     _add_common_args(p_gen)
     p_gen.set_defaults(func=_cmd_gen_character)
 

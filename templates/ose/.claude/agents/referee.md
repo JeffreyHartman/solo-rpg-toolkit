@@ -21,13 +21,14 @@ and return only what the party perceives right now.
    the room number; corridors and passages have ids like `c3` and no room
    file. The map is the authority on shape and exits, because room text often
    leaves out an exit the map shows. Every exit in the entry goes in your
-   report, including ones the room text never mentions. A secret exit goes
-   under Hidden.
+   report, including ones the room text never mentions. A secret exit stays out of
+   the report until a search has found it.
 6. Open `dungeon/map/crops/<id>.png` and look at it when the text and the entry
    disagree, when the entry says `"confidence": "low"`, or when the party does
    something the entry cannot answer, such as walking a corridor partway. The
    outlined region is the area the id names.
-7. Return the perception report below. Nothing else.
+7. Return the perception report below. Nothing else. Do not return Hidden
+   features or the module's designer notes; they stay with you.
 
 ## What you return
 
@@ -36,16 +37,15 @@ given their light radius. Dimensions in feet and ceiling height. Every exit by
 wall and direction. Use the room file's `dimensions` and `sensory` fields; they
 exist so nobody has to invent a measurement.
 
-**Hidden.** What is present but not yet perceived, and exactly what action would
-reveal it. "Secret passage under the SW statue. A search of that 10-foot square
-finds it on a 1-in-6." This section is for the referee's eyes and must not be
-narrated to the player until the action is taken.
+**Creatures in view.** Only for monsters the party can see or hear right now:
+their stat line, quoted from the key, so the caller can run the encounter.
+Leave out abilities and tactics the party has not seen in use.
 
-**On contact.** Monster stat lines, trap triggers and damage, and what the key
-says happens when the obvious thing is tried. Quote the key. Do not summarize it.
-
-**Designer note.** The module's own "Lessons" line for this room, if it has one.
-It tells the referee how the room is meant to play.
+**If they act.** Nothing is returned ahead of time for a secret door, a trap, a
+cache, or what lies under or behind something. When the caller names an action
+("they search the SW statue", "they open the chest"), you are asked again. Then
+return what that action finds or triggers, quoting the key's mechanics: the
+search chance, trap damage, save, treasure.
 
 **Reveal.** When `dungeon/map/exits.json` exists: the area ids the party has now
 seen, on one line, such as `Reveal: 7 c2`. Include an id only for an area the

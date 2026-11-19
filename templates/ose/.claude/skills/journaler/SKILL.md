@@ -31,7 +31,9 @@ it cost, what they learned.
 - Turn 14: level 1, room 12, light 3 turns remaining
 ```
 
-The Stop hook appends the turn log lines. Write the narrative above them.
+The Stop hook appends the turn log lines to the newest `Session NNN.md`, so
+create the next session's file at session start, before the first turn. Write the
+narrative above the turn log.
 
 ## People/<Name>.md
 

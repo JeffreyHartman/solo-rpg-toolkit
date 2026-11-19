@@ -68,7 +68,7 @@ Session logs remain history; Thread and Place files remain the canonical, curren
 
 1. Write `./sessions/Session NNN.md` with: rolls made, oracle results, CF shifts, threads opened/closed, NPCs introduced, reasoning behind oracle interpretations.
 2. Write `./playervault/Session Log/Session NNN.md` — character journal, first person or close narration. No mechanics, no meta.
-3. Update `./mythic-state.md` with new Chaos Factor (if Mythic active).
+3. Confirm `./mythic-state.md` matches the last finished scene (if Mythic active). CF is written at the end of each scene, not here.
 4. Update any People/Places/Threads files that changed this session.
 5. Update `./playervault/Character.md` for non-stat changes (bonds forged, assets advanced, experience spent). Stats update live during play.
 6. Ask the player how much in-fiction time has passed (or infer from narrative); update `**Current date**:` in the `## Basics` block of `./playervault/Character.md` (or at the top of `./playervault/Lore/Calendar.md` if no Character.md exists).

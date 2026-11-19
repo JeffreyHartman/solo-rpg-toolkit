@@ -13,10 +13,9 @@ You walk the player through locking in the 11 Ironsworn setting truths. Each tru
 
 ## Path resolution
 
-1. Read `<campaign>/CLAUDE.md` (current working directory). Find the `PLAYER_VAULT_PATH:` line in the Configuration block.
-2. If `PLAYER_VAULT_PATH` is missing or still set to the placeholder (`/CHANGE/ME/...`), stop. Tell the player to set it first, then re-run this skill.
-3. Truth files live at `<PLAYER_VAULT_PATH>/Lore/Truths/<slug>.md`. Slugs use lowercase hyphenated names: `old-world.md`, `iron.md`, `legacies.md`, `communities.md`, `leaders.md`, `defense.md`, `mysticism.md`, `religion.md`, `firstborn.md`, `beasts.md`, `horrors.md`.
-4. Create `<PLAYER_VAULT_PATH>/Lore/Truths/` on the first lock if it does not exist. If the vault root itself is missing, stop and ask the player to fix the path.
+1. The vault is `./playervault/` in the campaign folder (the current working directory).
+2. Truth files live at `./playervault/Lore/Truths/<slug>.md`. Slugs use lowercase hyphenated names: `old-world.md`, `iron.md`, `legacies.md`, `communities.md`, `leaders.md`, `defense.md`, `mysticism.md`, `religion.md`, `firstborn.md`, `beasts.md`, `horrors.md`.
+3. Create `./playervault/Lore/Truths/` on the first lock if it does not exist. If `./playervault/` itself is missing, stop and tell the player the campaign was not scaffolded with `solo-campaign`.
 
 ## Activation guard (always run first)
 
@@ -56,7 +55,7 @@ For each truth the player wants to work on:
    - Whether they want to add freeform notes to the file (campaign-specific lore that does not fit the option text).
 
 5. **Lock procedure** — when the player confirms:
-   - Write `<PLAYER_VAULT_PATH>/Lore/Truths/<slug>.md` with the schema below. Overwrite if the file already exists.
+   - Write `./playervault/Lore/Truths/<slug>.md` with the schema below. Overwrite if the file already exists.
    - Regenerate the campaign `CLAUDE.md` summary block (see "Summary block" below).
    - Confirm: `"Locked: <Truth Name>. Y of 11 truths locked."`
 

@@ -7,6 +7,13 @@ from typing import Any
 from .rng import DiceSource
 
 
+# The highest yes threshold. The book's chart prints "20 99 x" for it.
+MAX_YES_THRESHOLD = 99
+EXCEPTIONAL_YES_CAP_AT_99 = 20
+# One above the d100 range, so no roll is an Exceptional No.
+EXCEPTIONAL_NO_FLOOR_NEVER = 101
+
+
 @dataclass(frozen=True)
 class Thresholds:
     yes_threshold: int
@@ -17,6 +24,9 @@ class Thresholds:
 def thresholds(yes_threshold: int) -> Thresholds:
     if not (1 <= yes_threshold <= 99):
         raise ValueError(f"yes_threshold out of range: {yes_threshold}")
+    if yes_threshold == MAX_YES_THRESHOLD:
+        return Thresholds(yes_threshold, EXCEPTIONAL_YES_CAP_AT_99,
+                          EXCEPTIONAL_NO_FLOOR_NEVER)
     exc_yes = yes_threshold // 5
     exc_no = 101 - math.ceil((100 - yes_threshold) / 5)
     return Thresholds(
@@ -47,7 +57,7 @@ def classify_outcome(roll: int, t: Thresholds) -> tuple[str, bool]:
 
 
 def is_random_event(d1: int, d2: int, cf: int) -> bool:
-    return d1 == d2 and d1 <= cf
+    return d1 == d2 and 1 <= d1 <= cf
 
 
 KnownLikelihood = frozenset({

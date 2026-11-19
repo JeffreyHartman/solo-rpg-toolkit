@@ -25,7 +25,10 @@ def load_revealed(path: Path) -> list[str]:
     if not path.exists():
         return []
     body = path.read_text().strip().removeprefix(PREFIX).rstrip(";").strip()
-    data = json.loads(body)
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError as exc:
+        raise RevealError(f"invalid JSON in {path}: {exc}") from exc
     if isinstance(data, dict):
         data = [i for ids in data.values() for i in ids]
     return sorted({str(i) for i in data}, key=_sort_key)
