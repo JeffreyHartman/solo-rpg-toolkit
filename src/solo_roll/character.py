@@ -3,7 +3,7 @@ from .checks import CheckError
 from .dice import parse_dice, roll_dice
 from .rng import DiceSource
 
-__all__ = ["ABILITIES", "CLASS_HIT_DICE", "ability_modifier", "roll_character"]
+__all__ = ["ABILITIES", "CLASS_HIT_DICE", "CLASS_REQUIREMENTS", "ability_modifier", "roll_character"]
 
 ABILITIES = ("STR", "INT", "WIS", "DEX", "CON", "CHA")
 
@@ -11,6 +11,13 @@ ABILITIES = ("STR", "INT", "WIS", "DEX", "CON", "CHA")
 CLASS_HIT_DICE = {
     "Bard": "d6", "Cleric": "d6", "Dwarf": "d8", "Elf": "d6", "Fighter": "d8",
     "Halfling": "d6", "Magic-User": "d4", "Thief": "d4",
+}
+
+# Minimum ability scores (OSE Classic Fantasy Characters, p10-13; Bard from
+# Advanced Fantasy).
+CLASS_REQUIREMENTS = {
+    "Bard": {"DEX": 9, "INT": 9}, "Dwarf": {"CON": 9}, "Elf": {"INT": 9},
+    "Halfling": {"CON": 9, "DEX": 9},
 }
 
 # OSE Classic Fantasy: Characters, p13. The same bands serve STR melee, WIS magic
@@ -41,6 +48,10 @@ def roll_character(dice: DiceSource, character_class: str = "Fighter") -> dict:
         rolled = roll_dice(parse_dice("3d6"), dice)
         scores[ability] = rolled["total"]
 
+    unmet = [f"{ability} {minimum} (rolled {scores[ability]})"
+             for ability, minimum in CLASS_REQUIREMENTS.get(character_class, {}).items()
+             if scores[ability] < minimum]
+
     hit_die = CLASS_HIT_DICE[character_class]
     hp_roll = roll_dice(parse_dice(hit_die), dice)["total"]
     con = ability_modifier(scores["CON"], "CON")
@@ -48,7 +59,10 @@ def roll_character(dice: DiceSource, character_class: str = "Fighter") -> dict:
         "class": character_class,
         "hit_die": hit_die,
         "abilities": scores,
-        "modifiers": {a: ability_modifier(s, a) for a, s in scores.items()},
+        # INT has no ability modifier in OSE, so it is not listed.
+        "modifiers": {a: ability_modifier(s, a) for a, s in scores.items() if a != "INT"},
+        "eligible": not unmet,
+        "unmet_requirements": unmet,
         "hit_point_roll": hp_roll,
         "constitution_modifier": con,
         "hit_points": max(1, hp_roll + con),  # always at least 1 per Hit Die

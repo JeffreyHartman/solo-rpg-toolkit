@@ -81,13 +81,23 @@ cannot follow, so the conversion script resolves those to paths.
 level: 3
 name: The Lower Tombs
 rooms: 22-52
-wandering_table: ose/tsk-wandering-level-3
+wandering_table: ose/wandering-level-3
 wandering_interval_turns: 3
 ---
 ```
 
-`wandering_table` names a table in `data/tables/`. It is copied into
-`state/clock.json` when the party changes level, and `solo-roll turn` rolls it.
+`wandering_table` names a table in `data/tables/`. When the party changes level,
+the referee copies these two fields into the `wandering` block of
+`state/clock.json` as:
+
+```json
+"wandering": {"table": "ose/wandering-level-3", "interval": 3}
+```
+
+`solo-roll turn` reads `table` and `interval`, plus optional `chance` (default 1)
+and `die` (default 6). It also accepts `wandering_table` and
+`wandering_interval_turns` under their overview names, and exits with an error
+when no table is given.
 
 ## Monster file
 

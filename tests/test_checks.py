@@ -82,3 +82,33 @@ class TestCharacter:
     def test_rejects_unknown_class(self):
         with pytest.raises(CheckError):
             roll_character(ScriptedDice([3] * 19), character_class="Warlock")
+
+
+class TestClassRequirements:
+    """`roll_character` reports `eligible` and `unmet_requirements` against the
+    class minimums in templates/ose/CLAUDE.md. Audit finding 19."""
+
+    def rolled(self, scores, cls):
+        dice = [d for score in scores for d in (score // 3,) * 3]
+        return roll_character(ScriptedDice(dice + [1]), character_class=cls)
+
+    def test_dwarf_with_low_con_is_not_eligible(self):
+        out = self.rolled([10, 10, 10, 10, 6, 10], "Dwarf")
+        assert out["eligible"] is False
+        assert out["unmet_requirements"] == ["CON 9 (rolled 6)"]
+
+    def test_dwarf_meeting_the_minimum_is_eligible(self):
+        out = self.rolled([10, 10, 10, 10, 9, 10], "Dwarf")
+        assert out["eligible"] is True and out["unmet_requirements"] == []
+
+    def test_halfling_needs_both_con_and_dex(self):
+        out = self.rolled([10, 10, 10, 6, 6, 10], "Halfling")
+        assert len(out["unmet_requirements"]) == 2
+
+    def test_fighter_has_no_minimums(self):
+        assert self.rolled([3, 3, 3, 3, 3, 3], "Fighter")["eligible"] is True
+
+    def test_int_is_not_given_a_modifier(self):
+        out = self.rolled([10, 6, 10, 10, 10, 10], "Fighter")
+        assert "INT" not in out["modifiers"]
+        assert out["modifiers"]["STR"] == 0

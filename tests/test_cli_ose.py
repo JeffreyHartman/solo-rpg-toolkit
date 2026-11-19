@@ -133,3 +133,43 @@ class TestGenCharacter:
     def test_rejects_unknown_class(self):
         proc = run("gen-character", "--class", "Warlock")
         assert proc.returncode == 1
+
+
+class TestTurnFlags:
+    def test_rest_flag_resets_and_persists(self, tmp_path, data_dir):
+        clock = tmp_path / "clock.json"
+        run("turn", "--init", "--state", str(clock), "--data", str(data_dir))
+        state = json.loads(clock.read_text())
+        state["turns_since_rest"] = 7
+        clock.write_text(json.dumps(state))
+        out = json.loads(run("turn", "--rest", "--state", str(clock),
+                             "--data", str(data_dir)).stdout)
+        assert out["rest_due"] is False
+        assert json.loads(clock.read_text())["turns_since_rest"] == 0
+
+    def test_init_refuses_to_overwrite_a_clock(self, tmp_path, data_dir):
+        """`turn --init` exits 1 and keeps an existing clock unless `--force` is given."""
+        clock = tmp_path / "clock.json"
+        run("turn", "--init", "--state", str(clock), "--data", str(data_dir))
+        clock.write_text(json.dumps({"turn": 9}))
+        proc = run("turn", "--init", "--state", str(clock), "--data", str(data_dir))
+        assert proc.returncode == 1
+        assert json.loads(clock.read_text()) == {"turn": 9}
+
+    def test_init_force_overwrites(self, tmp_path, data_dir):
+        clock = tmp_path / "clock.json"
+        clock.write_text(json.dumps({"turn": 9}))
+        proc = run("turn", "--init", "--force", "--state", str(clock),
+                   "--data", str(data_dir))
+        assert proc.returncode == 0
+        assert json.loads(clock.read_text())["turn"] == 0
+
+    def test_bad_light_entry_exits_1_and_keeps_the_clock(self, tmp_path, data_dir):
+        clock = tmp_path / "clock.json"
+        run("turn", "--init", "--state", str(clock), "--data", str(data_dir))
+        state = json.loads(clock.read_text())
+        state["light"] = [{"kind": "torch", "bearer": "Hana", "turns": 6}]
+        clock.write_text(json.dumps(state))
+        proc = run("turn", "--state", str(clock), "--data", str(data_dir))
+        assert proc.returncode == 1
+        assert json.loads(clock.read_text())["turn"] == 0

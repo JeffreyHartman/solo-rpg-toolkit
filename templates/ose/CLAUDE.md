@@ -27,6 +27,10 @@ These are not style notes. Breaking one of them breaks the game.
    the player spend the rest of it. Searching a 10' x 10' area costs its own
    turn, and lighting a torch or drawing a weapon costs nothing.
 
+   When the party rests, call `solo-roll turn --rest`. It spends the turn and
+   resets the rest counter. Without `--rest`, `rest_due` stays true and the
+   -1 to attack and damage never lifts.
+
 5. **State the consequence, then stop.** On a failed save, a sprung trap, or a
    PC dropping to 0 HP, say what happened and hand control back. Do not narrate
    through to a resolution the player did not choose.
@@ -48,6 +52,7 @@ These are not style notes. Breaking one of them breaks the game.
 ## Commands
 
     solo-roll turn                          # one dungeon turn, the whole procedure
+    solo-roll turn --rest                   # the party rests this turn; resets rest_due
     solo-roll check reaction --mod <CHA>    # 2d6 monster reaction
     solo-roll check morale --target <2-12>  # 2d6 morale, 2 and 12 never roll
     solo-roll check surprise                # 1d6 per side
@@ -62,6 +67,30 @@ These are not style notes. Breaking one of them breaks the game.
 
 `SOLO_ROLL_DATA` is set to `./data` by `.claude/settings.json`, so the OSE tables
 resolve without a flag.
+
+## State shapes in `state/clock.json`
+
+Write these exactly; `solo-roll turn` rejects other shapes.
+
+    "light": [{"kind": "torch", "bearer": "Hana", "turns_left": 6}]
+    "wandering": {"table": "ose/<level-table>", "interval": 2,
+                  "chance": 1, "die": 6}
+
+`turns_left` is an integer (a torch is 6, a lantern flask is 24). `wandering`
+is `null` on a level with no wandering monsters. Only `table` is required;
+`interval`, `chance` and `die` default to 2, 1 and 6.
+
+## Rules that rolls depend on
+
+Some classes search at 2-in-6 instead of 1-in-6. `ose/searching` is a 1-in-6
+table, so pass `--mod -1` for those classes: `solo-roll table ose/searching
+--mod -1`. The flat tables clamp the modifier.
+
+`solo-roll gen-character` checks the class minimums (Bard DEX 9 and INT 9, Dwarf
+CON 9, Elf INT 9, Halfling CON 9 and DEX 9; the other classes have none). When
+a score misses one, the output has `"eligible": false` and an
+`unmet_requirements` list. Roll again or pick another class. INT has no
+modifier.
 
 ## Which roll for which question
 

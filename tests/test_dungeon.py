@@ -126,3 +126,59 @@ class TestStateFile:
             save_state(path, payload["state"])
         assert load_state(path)["light"] == []
         assert load_state(path)["turn"] == 6
+
+
+class TestRest:
+    """`advance_turn(rest=True)` resets `turns_since_rest` and still spends the
+    turn. Rest rule: OSE Classic Fantasy Adventures, 'Resting': one turn of rest
+    per hour (6 turns); without it, -1 to attack and damage. Audit finding 6."""
+
+    def test_rest_turn_resets_the_counter(self, data_dir):
+        payload = advance_turn(base_state(turns_since_rest=6), data_dir,
+                               ScriptedDice([]), rest=True)
+        assert payload["state"]["turns_since_rest"] == 0
+        assert payload["rest_due"] is False
+        assert payload["rested"] is True
+
+    def test_rest_turn_still_spends_the_turn_and_burns_light(self, data_dir):
+        payload = advance_turn(base_state(), data_dir, ScriptedDice([]), rest=True)
+        assert payload["state"]["turn"] == 1
+        assert payload["state"]["light"][0]["turns_left"] == 5
+
+    def test_counter_counts_again_after_a_rest(self, data_dir):
+        state = advance_turn(base_state(turns_since_rest=6), data_dir,
+                             ScriptedDice([]), rest=True)["state"]
+        payload = advance_turn(state, data_dir, ScriptedDice([]))
+        assert payload["state"]["turns_since_rest"] == 1
+        assert payload["rest_due"] is False
+
+
+class TestWanderingConfigAliases:
+    """`advance_turn` accepts the key names docs/dungeon-schema.md uses for the
+    wandering config. Audit finding 7."""
+
+    def test_schema_key_names_are_accepted_as_aliases(self, data_dir):
+        cfg = {"wandering_table": "ose/w", "wandering_interval_turns": 3}
+        off = advance_turn(base_state(turn=1, wandering=cfg), data_dir, ScriptedDice([]))
+        assert off["wandering"]["checked"] is False  # turn 2, interval 3
+        on = advance_turn(base_state(turn=2, wandering=cfg), data_dir, ScriptedDice([4]))
+        assert on["wandering"]["checked"] is True
+
+    def test_missing_table_is_a_dungeon_error_not_a_key_error(self, data_dir):
+        state = base_state(turn=1, wandering={"interval": 2})
+        with pytest.raises(DungeonError, match="table"):
+            advance_turn(state, data_dir, ScriptedDice([1]))
+
+
+class TestLightShape:
+    """`advance_turn` rejects a light entry whose `turns_left` is not an integer.
+    Audit finding 16."""
+
+    @pytest.mark.parametrize("entry", [
+        {"kind": "torch", "bearer": "Hana", "turns": 6},
+        {"kind": "torch", "bearer": "Hana", "turns_left": "6"},
+        {"kind": "torch", "bearer": "Hana", "turns_left": None},
+    ])
+    def test_rejects_entries_without_integer_turns_left(self, data_dir, entry):
+        with pytest.raises(DungeonError, match="turns_left"):
+            advance_turn(base_state(light=[entry]), data_dir, ScriptedDice([]))
