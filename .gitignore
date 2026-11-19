@@ -15,3 +15,6 @@ __pycache__/
 venv/
 dist/
 build/
+
+# OSE book text for the template, kept locally only
+/templates/ose/rules/

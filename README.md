@@ -31,8 +31,10 @@ as referee rather than as an oracle:
 solo-campaign ose "Barrowmaze" ~/rpg/barrowmaze --module "Barrowmaze Complete"
 ```
 
-That scaffolds the referee harness, the OSE procedure in `rules/`, the OSE tables,
-and an empty `dungeon/`. Three layers, kept apart on purpose:
+That scaffolds the referee harness, the OSE tables, an empty `dungeon/`, and an
+empty `rules/` that you fill with the OSE procedure files. The toolkit does not
+ship those files, because they quote the OSE books. The `solo-roll` CLI and the
+hooks do not read `rules/`; the referee does. Three layers, kept apart on purpose:
 
 - **Engine**, module- and system-neutral: the three hooks, the statusline, the
   `referee` subagent, the journaler skill, the output style.

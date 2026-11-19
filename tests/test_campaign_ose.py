@@ -1,4 +1,5 @@
 import json
+import shutil
 import subprocess
 import sys
 
@@ -42,10 +43,15 @@ class TestScaffold:
         ):
             assert (target / path).is_file(), path
 
-    def test_copies_the_ose_system_layer(self, tmp_path):
+    def test_copies_the_ose_rules_folder(self, tmp_path, ose_template):
+        if not (ose_template / "rules").is_dir():
+            pytest.skip("templates/ose/rules/ is gitignored and absent here")
         _, target = scaffold(tmp_path)
         assert (target / "rules/dungeon-turn.md").is_file()
         assert (target / "rules/encounters.md").is_file()
+
+    def test_copies_the_ose_tables(self, tmp_path):
+        _, target = scaffold(tmp_path)
         assert (target / "data/tables/ose/reaction.json").is_file()
 
     def test_leaves_the_dungeon_empty(self, tmp_path):
@@ -146,6 +152,70 @@ class TestFogMap:
         assert (target / "state/revealed.js").read_text() == "window.REVEALED = [];\n"
 
 
+class TestOseTemplateFiles:
+    """Checks that the template ships `gitignore.template` instead of a live
+    `.gitignore`, and ships its state and vault files. Audit finding 1."""
+
+    def test_template_folder_has_no_live_gitignore(self, ose_template):
+        assert not (ose_template / ".gitignore").exists()
+        assert (ose_template / "gitignore.template").is_file()
+
+    def test_campaign_gets_the_ignore_rules(self, tmp_path):
+        _, target = scaffold(tmp_path)
+        ignore = (target / ".gitignore").read_text().splitlines()
+        assert {"dungeon/", "rules/", "state/", "playervault/"} <= set(ignore)
+        assert not (target / "gitignore.template").exists()
+
+    def test_template_ships_state_and_vault(self, ose_template):
+        for path in ("state/clock.json", "state/party.json",
+                     "playervault/Character.md", "playervault/Map.md"):
+            assert (ose_template / path).is_file(), path
+
+    def test_character_sheet_names_no_module(self, tmp_path):
+        _, target = scaffold(tmp_path, name="Barrowmaze")
+        text = (target / "playervault/Character.md").read_text()
+        assert "campaign: Barrowmaze" in text
+        assert "Serpent" not in text
+
+    def test_missing_template_state_fails_before_creating_target(
+            self, tmp_path, monkeypatch):
+        fake = tmp_path / "repo"
+        (fake / "templates/ose").mkdir(parents=True)
+        monkeypatch.setattr("solo_roll.campaign._resolve_repo_root", lambda: fake)
+        target = tmp_path / "camp"
+        assert main(["ose", "X", str(target)]) == 1
+        assert not target.exists()
+
+
+class TestRulesFolder:
+    """`solo-campaign ose` copies rules/ when the template has it and otherwise
+    creates an empty rules/ with a warning, because rules/ is gitignored."""
+
+    def test_without_template_rules_creates_an_empty_folder_and_warns(
+            self, tmp_path, monkeypatch, ose_template, capsys):
+        fake = tmp_path / "repo"
+        shutil.copytree(ose_template, fake / "templates/ose",
+                        ignore=shutil.ignore_patterns("rules"))
+        monkeypatch.setattr("solo_roll.campaign._resolve_repo_root", lambda: fake)
+        target = tmp_path / "camp"
+        assert main(["ose", "X", str(target), "--module", "M"]) == 0
+        assert list((target / "rules").iterdir()) == []
+        assert "rules" in capsys.readouterr().err
+
+    def test_with_template_rules_copies_them(
+            self, tmp_path, monkeypatch, ose_template, capsys):
+        fake = tmp_path / "repo"
+        shutil.copytree(ose_template, fake / "templates/ose",
+                        ignore=shutil.ignore_patterns("rules"))
+        (fake / "templates/ose/rules").mkdir()
+        (fake / "templates/ose/rules/a.md").write_text("a")
+        monkeypatch.setattr("solo_roll.campaign._resolve_repo_root", lambda: fake)
+        target = tmp_path / "camp"
+        assert main(["ose", "X", str(target), "--module", "M"]) == 0
+        assert (target / "rules/a.md").read_text() == "a"
+        assert "warning" not in capsys.readouterr().err
+
+
 class TestRelativeTarget:
     """`solo-campaign ose` with a relative path writes absolute hook and data
     paths into settings.json. Audit finding 2."""
@@ -159,4 +229,3 @@ class TestRelativeTarget:
         for entries in settings["hooks"].values():
             assert root in entries[0]["hooks"][0]["command"]
         assert root in settings["statusLine"]["command"]
-

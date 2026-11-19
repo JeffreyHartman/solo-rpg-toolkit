@@ -323,6 +323,11 @@ def _ose_settings(target: Path) -> dict:
     for event, matcher, runner, script in OSE_HOOKS:
         entry: dict = {"hooks": [{
             "type": "command",
+OSE_GITIGNORE_TEMPLATE = "gitignore.template"
+OSE_REQUIRED = (OSE_GITIGNORE_TEMPLATE, "state/clock.json", "state/party.json",
+                "playervault")
+
+
             "command": f'{runner} "{target / ".claude/hooks" / script}"',
         }]}
         if matcher:
@@ -369,9 +374,23 @@ def _ose_command(args) -> int:
 
     try:
         shutil.copytree(template_dir, target)
-        for name in ("CLAUDE.md", "README.md", "module.md"):
+        if not (template_dir / "rules").is_dir():
+            (target / "rules").mkdir()
+            print("warning: this toolkit checkout has no templates/ose/rules/. "
+                  f"Put the OSE procedure files in {target / 'rules'}; the "
+                  "referee reads them. The CLI and hooks do not.",
+                  file=sys.stderr)
+        (target / OSE_GITIGNORE_TEMPLATE).rename(target / ".gitignore")
+        for name in ("CLAUDE.md", "README.md", "module.md",
+                     "playervault/Character.md"):
             path = target / name
             if path.is_file():
+    missing = [p for p in OSE_REQUIRED if not (template_dir / p).exists()]
+    if missing:
+        print(f"error: toolkit install corrupt: {template_dir} lacks "
+              f"{', '.join(missing)}", file=sys.stderr)
+        return 1
+
                 text = path.read_text()
                 text = text.replace("[CAMPAIGN NAME]", args.name)
                 text = text.replace("[MODULE NAME]", args.module)
