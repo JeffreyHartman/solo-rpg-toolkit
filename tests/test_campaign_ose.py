@@ -229,3 +229,33 @@ class TestRelativeTarget:
         for entries in settings["hooks"].values():
             assert root in entries[0]["hooks"][0]["command"]
         assert root in settings["statusLine"]["command"]
+
+
+class TestJournalHook:
+    """Checks that journal.sh writes each turn line once, into the newest
+    session file. Audit finding 8."""
+
+    def run_hook(self, target):
+        subprocess.run(["bash", str(target / ".claude/hooks/journal.sh")], check=True)
+
+    def test_does_not_repeat_a_turn_line_after_narrative(self, tmp_path):
+        _, target = scaffold(tmp_path)
+        log = target / "playervault/Session Log/Session 001.md"
+        self.run_hook(target)
+        with log.open("a") as fh:
+            fh.write("\nThe party rested.\n")
+        self.run_hook(target)
+        assert log.read_text().count("- Turn 0:") == 1
+
+    def test_writes_to_the_newest_session_file(self, tmp_path):
+        _, target = scaffold(tmp_path)
+        folder = target / "playervault/Session Log"
+        (folder / "Session 001.md").write_text("# Session 001\n")
+        (folder / "Session 002.md").write_text("# Session 002\n\n## Turn log\n\n")
+        self.run_hook(target)
+        assert "- Turn 0:" in (folder / "Session 002.md").read_text()
+        assert "- Turn" not in (folder / "Session 001.md").read_text()
+
+    def test_session_start_procedure_creates_the_next_file(self, tmp_path):
+        _, target = scaffold(tmp_path)
+        assert "create the next" in (target / "CLAUDE.md").read_text()

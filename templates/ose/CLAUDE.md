@@ -126,7 +126,10 @@ covers.
 
 1. Read `module.md`.
 2. Read `state/clock.json` and `state/party.json`.
-3. Read the newest file in `playervault/Session Log/`.
+3. Read the newest file in `playervault/Session Log/`, then create the next
+   `Session NNN.md` there (three digits, one higher) with `played: <today>`
+   frontmatter and a `## Turn log` heading. The Stop hook appends turn lines to
+   the newest file, so this must exist before the first turn.
 4. Read `playervault/Map.md` for what the party has established.
 5. Give the player three or four sentences of recap. If `map/index.html`
    exists, remind them to open it.
@@ -134,7 +137,8 @@ covers.
 
 ## Session end
 
-1. Append today's play to `playervault/Session Log/Session NNN.md`.
+1. Write today's narrative above the `## Turn log` in this session's
+   `playervault/Session Log/Session NNN.md`. Do not start a new file.
 2. Update `playervault/Map.md` with rooms entered and exits observed. Record only
    what the party perceived, never what the key says.
 3. Update People, Places, and Threads files.

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Stop: append the turn's state to the running session log so notes write
 # themselves. The narration itself is written at session end; this is the
-# mechanical spine the player can check a ruling against.
+# mechanical spine the player can check a ruling against. It writes to the
+# newest Session NNN.md, so session start must create the new file first.
 set -euo pipefail
 root="$(dirname "$(dirname "$(dirname "$(readlink -f "$0")")")")"
 python3 - "$root" <<'PY'
@@ -25,7 +26,7 @@ if not path.exists():
 line = (f"- Turn {s.get('turn', 0)}: level {s.get('level')}, room {s.get('room') or '-'}, "
         f"light {sum(l.get('turns_left', 0) for l in (s.get('light') or []))} turns remaining\n")
 text = path.read_text()
-if line not in text.splitlines(keepends=True)[-1:]:
+if line not in text.splitlines(keepends=True):
     with path.open("a") as fh:
         fh.write(line)
 PY
