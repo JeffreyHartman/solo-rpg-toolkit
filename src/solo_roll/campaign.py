@@ -273,7 +273,7 @@ def _scaffold_command(args) -> int:
         )
         return 1
 
-    target = Path(args.path).expanduser()
+    target = Path(args.path).expanduser().resolve()
     if target.exists():
         print(f"error: {target} already exists", file=sys.stderr)
         return 1
@@ -362,7 +362,7 @@ def _ose_command(args) -> int:
               file=sys.stderr)
         return 1
 
-    target = Path(args.path).expanduser()
+    target = Path(args.path).expanduser().resolve()
     if target.exists():
         print(f"error: {target} already exists", file=sys.stderr)
         return 1

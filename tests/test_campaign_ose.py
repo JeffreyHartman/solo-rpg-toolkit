@@ -144,3 +144,19 @@ class TestFogMap:
         assert (target / "dungeon/map/exits.json").is_file()
         assert (target / "dungeon/map/crops/1.png").is_file()
         assert (target / "state/revealed.js").read_text() == "window.REVEALED = [];\n"
+
+
+class TestRelativeTarget:
+    """`solo-campaign ose` with a relative path writes absolute hook and data
+    paths into settings.json. Audit finding 2."""
+
+    def test_settings_use_absolute_paths(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        assert main(["ose", "X", "camp", "--module", "M"]) == 0
+        settings = json.loads((tmp_path / "camp/.claude/settings.json").read_text())
+        root = str((tmp_path / "camp").resolve())
+        assert settings["env"]["SOLO_ROLL_DATA"] == root + "/data"
+        for entries in settings["hooks"].values():
+            assert root in entries[0]["hooks"][0]["command"]
+        assert root in settings["statusLine"]["command"]
+
