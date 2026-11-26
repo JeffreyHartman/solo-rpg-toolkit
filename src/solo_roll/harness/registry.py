@@ -8,6 +8,8 @@ from .errors import PluginError
 
 __all__ = [
     "AUTO",
+    "CONFIRM",
+    "CONFIRM_LEVELS",
     "Action",
     "ActionProvider",
     "CommandContext",
@@ -18,6 +20,8 @@ __all__ = [
     "Procedure",
     "Registry",
     "StateDefault",
+    "Target",
+    "TargetSource",
     "Trigger",
     "build_registry",
 ]
@@ -46,6 +50,17 @@ ActionProvider = Callable[[dict[str, Any]], list[Action]]
 AUTO = "auto"
 """Confirm level of a procedure that runs without asking the player."""
 
+CONFIRM = "confirm"
+"""Confirm level of a procedure that the Referee must propose for the player to answer."""
+
+CONFIRM_LEVELS = (AUTO, CONFIRM)
+
+Target = dict[str, Any]
+"""A target number: `{"value": int, "source": str}`, where `source` names where it came from."""
+
+TargetSource = Callable[[dict[str, Any], dict[str, Any]], "Target | None"]
+"""Takes the state and the checked inputs of a procedure, and returns a target from plugin data or None."""
+
 Trigger = Callable[[dict[str, Any], Event, CommandContext], list[Event]]
 """Runs after an engine event of the type it was registered for.
 
@@ -64,6 +79,15 @@ class Procedure:
     name: str
     handler: CommandHandler
     confirm: str = AUTO
+    """The default confirm level. The campaign settings can change it."""
+    label: str = ""
+    inputs: dict[str, dict[str, Any]] = field(default_factory=dict)
+    """Input name to spec: `type` ("string" or "integer"), `label`, and optional `choices` and `default`.
+
+    An input with no `default` is required.
+    """
+    target: bool = False
+    """True when the procedure rolls against a target number. The handler gets it as `command["target"]`."""
 
 
 class Plugin(Protocol):
@@ -86,6 +110,7 @@ class Registry:
     procedures: dict[str, Procedure] = field(default_factory=dict)
     triggers: dict[str, list[Trigger]] = field(default_factory=dict)
     state_defaults: dict[str, StateDefault] = field(default_factory=dict)
+    target_sources: dict[str, list[TargetSource]] = field(default_factory=dict)
 
     def add_command(self, command_type: str, handler: CommandHandler) -> None:
         if command_type in self.commands:
@@ -99,13 +124,31 @@ class Registry:
         """Add markdown to the Referee's system prompt, in plugin order."""
         self.referee_guides.append(markdown)
 
-    def add_procedure(self, name: str, handler: CommandHandler, confirm: str = AUTO) -> None:
-        """Register a procedure. Only the Auto confirm level exists so far."""
+    def add_procedure(
+        self,
+        name: str,
+        handler: CommandHandler,
+        confirm: str = AUTO,
+        *,
+        label: str = "",
+        inputs: dict[str, dict[str, Any]] | None = None,
+        target: bool = False,
+    ) -> None:
+        """Register a procedure with its default confirm level, its inputs, and whether it needs a target number."""
         if name in self.procedures:
             raise PluginError(f"procedure '{name}' is already registered")
-        if confirm != AUTO:
-            raise PluginError(f"procedure '{name}': confirm level '{confirm}' is not supported")
-        self.procedures[name] = Procedure(name, handler, confirm)
+        if confirm not in CONFIRM_LEVELS:
+            raise PluginError(f"procedure '{name}': confirm level '{confirm}' is not one of {CONFIRM_LEVELS}")
+        self.procedures[name] = Procedure(name, handler, confirm, label or name, dict(inputs or {}), target)
+
+    def add_target_source(self, procedure: str, source: TargetSource) -> None:
+        """Supply target numbers for a procedure from plugin data.
+
+        Any plugin can add one, for its own procedure or another plugin's. The
+        engine asks the sources in registration order and takes the first target.
+        When none gives one, the target number is a proposal input.
+        """
+        self.target_sources.setdefault(procedure, []).append(source)
 
     def add_trigger(self, event_type: str, trigger: Trigger) -> None:
         self.triggers.setdefault(event_type, []).append(trigger)

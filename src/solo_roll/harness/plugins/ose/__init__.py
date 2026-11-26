@@ -1,11 +1,11 @@
-"""The OSE ruleset plugin: movement between areas and the dungeon turn."""
+"""The OSE ruleset plugin: movement between areas, the dungeon turn, ability checks and saving throws."""
 from pathlib import Path
 from typing import Any
 
 from ...errors import IllegalActionError
 from ...mapstate import area, exits
 from ...registry import Action, CommandContext, Event, Registry
-from . import dungeon_turn
+from . import checks, dungeon_turn
 
 __all__ = ["OsePlugin"]
 
@@ -39,6 +39,7 @@ class OsePlugin:
         registry.add_procedure("rest", dungeon_turn.rest)
         registry.add_action_provider(dungeon_turn.dungeon_actions)
         registry.add_trigger("turn", dungeon_turn.wandering_trigger(self._data_dir))
+        checks.register(registry)
 
 
 def _move(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) -> list[Event]:
