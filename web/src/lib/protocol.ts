@@ -113,6 +113,15 @@ export interface RefereeSettings {
   budget: number
 }
 
+export interface OptionRow {
+  section: string
+  key: string
+  label: string
+  choices: string[]
+  default: string
+  value: string
+}
+
 export type JudgmentOwner = 'ask' | 'referee'
 
 export interface JudgmentRow {
@@ -123,6 +132,7 @@ export interface JudgmentRow {
 
 export interface CampaignSettings {
   confirm: ConfirmRow[]
+  options?: OptionRow[]
   judgment: JudgmentRow[]
   referee: RefereeSettings
 }

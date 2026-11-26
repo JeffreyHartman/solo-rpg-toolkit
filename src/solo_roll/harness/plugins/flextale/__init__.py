@@ -6,6 +6,8 @@ from ....tables import TableNotFoundError, roll_table
 from ...errors import FlextaleDataError, IllegalActionError
 from ...mapstate import area
 from ...registry import Action, CommandContext, Event, Registry
+from . import checks, encounters, treasure
+from .tabledata import CONTEXTS
 
 __all__ = ["FlextalePlugin"]
 
@@ -14,16 +16,33 @@ AREA_W, AREA_H, GAP = 4, 3, 2
 OPPOSITE = {"n": "s", "s": "n", "e": "w", "w": "e"}
 
 
+REFEREE_GUIDE = """## Generator: FlexTale
+
+- When the party explores a new area, the engine rolls what it holds. Read `encounter.current` in the state and describe exactly that: do not add traps, obstacles, secrets or monsters.
+- A trap or obstacle with status `open` waits for a check. Propose `encounter_check` for the character; the engine sets the target number from the DC table.
+- Treasure comes only from the `treasure` procedure, and it changes the inventory in the state.
+"""
+
+
 class FlextalePlugin:
     name = "flextale"
     kind = "generator"
 
-    def __init__(self, data_dir: Path):
+    def __init__(self, data_dir: Path, system: str = "osr"):
+        """`data_dir` holds the imported tables. `system` is the importer's suffix for per-system tables."""
         self._data_dir = Path(data_dir)
+        self._system = system
 
     def register(self, registry: Registry) -> None:
         registry.add_command("explore", self._explore)
         registry.add_action_provider(_explore_actions)
+        registry.add_referee_guide(REFEREE_GUIDE)
+        checks.register(registry)
+        treasure.register(registry, self._data_dir, self._system)
+        registry.add_state_default("encounter", encounters.initial_encounter)
+        registry.add_setting("difficulty", "context", "Difficulty context", CONTEXTS, "A")
+        registry.add_trigger("area_revealed", encounters.reveal_trigger(self._data_dir, self._system))
+        registry.add_trigger("moved", encounters.backtrack_trigger(self._data_dir, self._system))
 
     def _explore(
         self, state: dict[str, Any], command: dict[str, Any], ctx: CommandContext
@@ -52,6 +71,7 @@ class FlextalePlugin:
             "description": rolled["result"],
             "x": x, "y": y, "w": AREA_W, "h": AREA_H,
             "known": True,
+            "kind": _area_kind(rolled["result"]),
         }
         state["map"]["connections"].append(
             {"id": f"{here}-{new_id}", "a": here, "b": new_id, "label": used["label"]}
@@ -83,6 +103,13 @@ class FlextalePlugin:
                 "text": f"The party moves from {source_area['name']} to {name}.",
             },
         ]
+
+
+def _area_kind(result: str) -> str:
+    low = result.lower()
+    if "dead end" in low:
+        return "dead-end"
+    return "chamber" if "chamber" in low else "hall"
 
 
 _SIDE_NAME = {"n": "north", "e": "east", "s": "south", "w": "west"}

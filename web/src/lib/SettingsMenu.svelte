@@ -1,7 +1,7 @@
 <!-- The campaign settings menu: the Referee model, effort and context budget, the confirm level of each procedure, and the owner of each judgment call category. -->
 <script lang="ts">
   import { EFFORTS, MODELS, type ConfirmLevel, type JudgmentOwner, type RefereeSettings } from './protocol'
-  import { game, setConfirmLevel, setJudgmentOwner, setRefereeSetting } from './socket.svelte'
+  import { game, setConfirmLevel, setJudgmentOwner, setOption, setRefereeSetting } from './socket.svelte'
 
   function setBudget(raw: string): void {
     const budget = Number(raw)
@@ -16,6 +16,16 @@
     <b>Campaign settings</b>
     <button onclick={onclose} aria-label="Close the campaign settings">Close</button>
   </header>
+  {#each game.settings?.options ?? [] as row (row.section + row.key)}
+    <label>
+      <span>{row.label}</span>
+      <select value={row.value} onchange={(e) => setOption(row.section, row.key, e.currentTarget.value)}>
+        {#each row.choices as choice (choice)}
+          <option value={choice}>{choice}</option>
+        {/each}
+      </select>
+    </label>
+  {/each}
   {#if game.settings?.referee}
     <h3 class="smallcaps dim">Referee</h3>
     <div class="rows">
