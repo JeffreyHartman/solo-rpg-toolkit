@@ -261,18 +261,19 @@ def attack(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) 
     inputs, target = command["inputs"], command["target"]
     member = _readymember(state, combat, inputs["member"])
     monster = _monster(combat, inputs["monster"])
-    strength = ability_modifier(member.get("abilities", {}).get("STR", 10), "STR")
+    ability, modifier = attack_ability(member)
     thac0 = _thac0(member)
     rules = optional_rules(ctx)
-    throw = attack_throw(rules, thac0, monster["ac"], strength, ctx)
+    throw = attack_throw(rules, thac0, monster["ac"], modifier, ctx)
     natural, total, result = throw["natural"], throw["total"], "Hit" if throw["hit"] else "Miss"
+    shown = f" ({natural}, {ability} {modifier:+d})" if modifier else ""
     events: list[Event] = [_card(
         "attack", "d20", [natural], total, result, attack_source(rules),
-        f"{member['name']} attacks {party.monster_label(monster)}: rolled {total}, "
+        f"{member['name']} attacks {party.monster_label(monster)}: rolled {total}{shown}, "
         f"needs {target['value']}. {result}.")]
     if throw["hit"]:
         notation, used_default_die = weapon_damage(rules, member)
-        events += _damage(monster, notation, strength, ctx, "monster", used_default_die)
+        events += _damage(monster, notation, modifier, ctx, "monster", used_default_die, ability)
     events += _finish_party_action(state, combat, member)
     return events
 
@@ -300,7 +301,8 @@ def _attack_target(state: dict[str, Any], inputs: dict[str, Any], ctx: CommandCo
     combat = _require_combat(state)
     monster = _monster(combat, inputs["monster"])
     member = party.member(state, inputs["member"])
-    return attack_target(optional_rules(ctx), _thac0(member), monster["ac"], f"AC {monster['ac']}")
+    return attack_target(optional_rules(ctx), _thac0(member), monster["ac"], f"AC {monster['ac']}",
+                         attack_ability(member))
 
 
 def optional_rules(ctx: CommandContext) -> frozenset[str]:
@@ -308,6 +310,17 @@ def optional_rules(ctx: CommandContext) -> frozenset[str]:
     if ctx.settings is None:
         return frozenset()
     return frozenset(rule for rule in OPTIONAL_RULES if ctx.settings.get("ose", rule, "off") == "on")
+
+
+def attack_ability(member: dict[str, Any]) -> tuple[str, int]:
+    """The ability that modifies a member's attack and its modifier. Only melee exists, so always STR.
+
+    The modifier is 0 for a member with no ability scores.
+    """
+    scores = member.get("abilities")
+    if not scores:
+        return "STR", 0
+    return "STR", ability_modifier(scores.get("STR", 10), "STR")
 
 
 def attack_bonus(rules: frozenset[str], thac0: int) -> int:
@@ -320,19 +333,23 @@ def attack_source(rules: frozenset[str]) -> str:
     return "OSE, ascending AC" if ASCENDING_AC in rules else "OSE"
 
 
-def attack_target(rules: frozenset[str], thac0: int, ac: int, defender: str | None = None) -> Target:
+def attack_target(rules: frozenset[str], thac0: int, ac: int, defender: str | None = None,
+                  ability: tuple[str, int] | None = None) -> Target:
     """The number an attack throw must reach. Descending AC: THAC0 minus AC. Ascending AC: 19 minus AC.
 
     `ac` is the defender's descending AC, which is how every stat block and character stores it.
     Any attacker can use it, so a Referee-driven monster attack shares the rule. `defender` names
     the defender in the descending source text; the ascending source names the bonus and the AC.
+    `ability` is the (name, modifier) added to the roll. The source names it when the modifier is
+    not 0; the target value never includes it.
     """
+    named = f", {ability[0]} {ability[1]:+d}" if ability and ability[1] else ""
     if ASCENDING_AC in rules:
         bonus = attack_bonus(rules, thac0)
         return {"value": 19 - ac,
-                "source": f"OSE attack throw, ascending AC: attack bonus {bonus:+d} vs ascending AC {19 - ac}"}
+                "source": f"OSE attack throw, ascending AC: attack bonus {bonus:+d}{named} vs ascending AC {19 - ac}"}
     return {"value": thac0 - ac,
-            "source": f"OSE attack throw: THAC0 {thac0} vs {defender or f'AC {ac}'}"}
+            "source": f"OSE attack throw: THAC0 {thac0} vs {defender or f'AC {ac}'}{named}"}
 
 
 def attack_throw(rules: frozenset[str], thac0: int, ac: int, modifier: int, ctx: CommandContext) -> dict[str, Any]:
@@ -406,7 +423,7 @@ def _decision_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) 
 # Damage and the end of the fight
 
 def _damage(victim: dict[str, Any], notation: str, bonus: int, ctx: CommandContext, side: str,
-            used_default_die: bool = False) -> list[Event]:
+            used_default_die: bool = False, ability: str = "") -> list[Event]:
     rolled = roll_dice(parse_dice(notation), ctx.dice)
     amount = max(1, rolled["total"] + bonus)
     victim["hp"] = max(0, victim["hp"] - amount)
@@ -415,7 +432,7 @@ def _damage(victim: dict[str, Any], notation: str, bonus: int, ctx: CommandConte
     label = party.monster_label(victim) if side == "monster" else name
     events: list[Event] = [
         _card("damage", rolled["dice"], rolled["rolls"], amount, f"{amount} damage", "OSE",
-              f"{label} takes {amount} damage ({notation}{bonus:+d}{default})." if bonus else f"{label} takes {amount} damage ({notation}{default})."),
+              f"{label} takes {amount} damage ({notation}{bonus:+d} {ability}{default})." if bonus else f"{label} takes {amount} damage ({notation}{default})."),
         {"type": "damage", "target": victim["id"] if side == "monster" else name, "amount": amount,
          "hp": victim["hp"], "text": f"{label} has {victim['hp']} HP left."},
     ]
