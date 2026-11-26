@@ -10,6 +10,7 @@ from typing import Any
 
 from ..rng import DiceSource
 from .campaign import CampaignPaths, load_json, write_json
+from .edits import edit
 from .errors import IllegalActionError, PluginError, SettingError, UnknownCommandError
 from .judgment import ASK, JUDGMENT_OWNERS, OWNER_LABELS, REFEREE, empty_judgments, judgment_text
 from .proposals import ANSWER_VERBS, ANSWERS, empty_proposals, prepare, proposal_text
@@ -81,6 +82,8 @@ class Engine:
             return self._raise_judgment(working, command, None)
         if kind == "answer_judgment":
             return self._answer_judgment(working, command)
+        if kind == "edit":
+            return edit(working, command, self._context)
         handler = self._registry.commands.get(command.get("type", ""))
         if handler is None:
             raise UnknownCommandError(f"no plugin handles command '{command.get('type')}'")

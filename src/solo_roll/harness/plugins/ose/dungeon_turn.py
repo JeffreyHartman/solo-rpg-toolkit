@@ -8,13 +8,14 @@ from typing import Any
 
 from ....dungeon import DungeonError, advance_clock, check_wandering
 from ....tables import TableError, load_table, roll_table
-from ...errors import PluginError
+from ...errors import IllegalActionError, PluginError
 from ...registry import Action, CommandContext, Event
 
 __all__ = [
     "DEFAULT_WANDERING",
     "dungeon_actions",
     "initial_dungeon",
+    "light_trigger",
     "listen",
     "move_trigger",
     "rest",
@@ -24,6 +25,7 @@ __all__ = [
 
 DEFAULT_WANDERING = {"table": "ose/wandering-generic", "interval": 2, "die": 6, "chance": 1}
 TORCH_TURNS = 6  # OSE: a torch burns for 1 hour, which is 6 turns
+LIGHT_TURNS = {"torch": TORCH_TURNS, "lantern": 24}  # OSE: a lantern flask of oil burns for 4 hours
 
 PROCEDURE_LABELS = {"search": "Search", "listen": "Listen at the door", "rest": "Rest"}
 
@@ -107,6 +109,23 @@ def wandering_trigger(data_dir: Path):
         return events
 
     return run
+
+
+def light_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> list[Event]:
+    """A lit torch or lantern that an edit gives a member leaves the member's items and burns in the party's light."""
+    if not event.get("lit") or event.get("side") != "member":
+        return []
+    kind = event["item"]
+    if kind not in LIGHT_TURNS:
+        raise IllegalActionError(f"OSE has no burn time for '{kind}' (known: {', '.join(LIGHT_TURNS)})")
+    member = next(m for m in state["party"]["members"] if m["name"] == event["who"])
+    held = next(i for i in member["items"] if i["name"] == kind)
+    held["quantity"] -= 1
+    if held["quantity"] <= 0:
+        member["items"].remove(held)
+    source = {"kind": kind, "bearer": member["name"], "turns_left": LIGHT_TURNS[kind]}
+    state["dungeon"]["light"].append(source)
+    return [{"type": "light_lit", **source, "text": f"{member['name']}'s {kind} burns for {source['turns_left']} turns."}]
 
 
 def _roll_then_turn(

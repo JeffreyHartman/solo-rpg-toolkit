@@ -10,8 +10,10 @@ result text names the monsters: the first bestiary key found in it picks the sta
 a leading number or number word gives the count. Text with no bestiary key becomes a
 generic block (HD 1, AC 9, THAC0 19, 1d6) flagged `generic`.
 
-Monster actions are chosen by another plugin. This module fires `monster_turn` for each
-living monster and resolves the `monster_decision` event that answers it.
+This module fires `monster_turn` for each living monster and resolves the `monster_decision`
+event that answers it. When a plugin triggers on `monster_turn` (the FlexTale Simple AI), it
+decides. When none does, the monsters' turns wait in `combat["waiting"]` until the Referee picks
+each one's action with the `monster_action` command (ADR 0004).
 """
 import json
 import re
@@ -20,6 +22,7 @@ from typing import Any
 
 from ....character import UNARMORED_AC, ability_modifier
 from ....dice import parse_dice, roll_dice
+from ...edits import edit_card
 from ...errors import IllegalActionError
 from ... import party
 from ...registry import AUTO, CONFIRM, Action, CommandContext, Event, Registry, Target
@@ -57,7 +60,9 @@ def register(registry: Registry, data_dir: Path) -> None:
     )
     registry.add_trigger("combat_encounter", _start_trigger(Path(data_dir)))
     registry.add_trigger("wandering_encounter", _wandering_trigger(Path(data_dir)))
-    registry.add_trigger("phase_changed", _phase_trigger)
+    registry.add_trigger("phase_changed", _phase_trigger(registry))
+    registry.add_command("monster_action", monster_action)
+    registry.add_trigger("hp_changed", _hp_trigger)
     registry.add_trigger("monsters_done", _monsters_done_trigger)
     registry.add_trigger("round_ended", _round_trigger)
     registry.add_trigger("monster_decision", _decision_trigger)
@@ -127,7 +132,7 @@ def _initiative(state: dict[str, Any], ctx: CommandContext) -> list[Event]:
     combat = state["combat"]
     party, monsters = ctx.dice.roll(1, 6), ctx.dice.roll(1, 6)
     first = "monsters" if monsters > party else "party"
-    combat.update(round=combat["round"] + 1, first=first, phase=first, acted=[])
+    combat.update(round=combat["round"] + 1, first=first, phase=first, acted=[], waiting=[])
     side = "The monsters" if first == "monsters" else "The party"
     return [
         {"type": "mechanics", "procedure": "initiative", "dice": "d6", "rolls": [party, monsters],
@@ -138,16 +143,85 @@ def _initiative(state: dict[str, Any], ctx: CommandContext) -> list[Event]:
     ]
 
 
-def _phase_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> list[Event]:
-    combat = state.get("combat")
-    if combat is None or event["phase"] != "monsters":
+def _phase_trigger(registry: Registry):
+    def trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> list[Event]:
+        combat = state.get("combat")
+        if combat is None or event["phase"] != "monsters":
+            return []
+        living = [m for m in combat["monsters"] if m["status"] == "alive"]
+        if registry.triggers.get("monster_turn"):
+            out: list[Event] = [
+                {"type": "monster_turn", "monster": m["id"], "text": f"{m['name']} {m['id']} acts."} for m in living
+            ]
+            return [*out, {"type": "monsters_done", "text": "The monsters have acted."}]
+        combat["waiting"] = [m["id"] for m in living]
+        return [
+            {"type": "monster_turn", "monster": m["id"], "referee": True,
+             "text": f"{m['name']} {m['id']} acts: the Referee picks its action with monster_action."}
+            for m in living
+        ]
+    return trigger
+
+
+def monster_action(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) -> list[Event]:
+    """The Referee's choice for a waiting monster: `kind` attack (at `target`), flee, or other.
+
+    The `monster_decision` trigger resolves it, so an attack rolls with the engine's dice and the
+    campaign's attack rules. The monsters' side ends when no monster is left waiting.
+    """
+    combat = _require_combat(state)
+    monster_id = str(command.get("monster") or "")
+    if monster_id not in combat.get("waiting", []):
+        raise IllegalActionError(f"monster '{monster_id}' is not waiting for the Referee to act")
+    monster = _monster(combat, monster_id)
+    reason = str(command.get("reason") or "").strip()
+    if not reason:
+        raise IllegalActionError("a monster action needs a reason")
+    kind = command.get("kind")
+    if kind not in ("attack", "flee", "other"):
+        raise IllegalActionError(f"kind must be attack, flee or other, got {kind!r}")
+    action = str(command.get("action") or "").strip() or str(kind)
+    target = str(command.get("target") or "") if kind == "attack" else None
+    who = f"{monster['name']} {monster['id']}"
+    if target is not None:
+        member = party.member(state, target)
+        if member.get("hp", 1) <= 0:
+            raise IllegalActionError(f"{target} is down")
+        did = f"{who} attacks {target}: {action}"
+    else:
+        did = f"{who} {'flees' if kind == 'flee' else 'acts'}: {action}"
+    combat["waiting"].remove(monster_id)
+    decision: Event = {"type": "monster_decision", "monster": monster_id, "kind": kind, "action": action,
+                       "target": target, "text": f"{who} chooses: {action}."}
+    return [edit_card(did, reason), decision, *_waiting_done(combat)]
+
+
+def _waiting_done(combat: dict[str, Any]) -> list[Event]:
+    """`monsters_done` once no living monster waits for the Referee."""
+    alive = {m["id"] for m in combat["monsters"] if m["status"] == "alive"}
+    combat["waiting"] = [m for m in combat.get("waiting", []) if m in alive]
+    if combat["phase"] != "monsters" or combat["waiting"]:
         return []
-    out: list[Event] = [
-        {"type": "monster_turn", "monster": m["id"], "text": f"{m['name']} {m['id']} acts."}
-        for m in combat["monsters"] if m["status"] == "alive"
-    ]
-    out.append({"type": "monsters_done", "text": "The monsters have acted."})
-    return out
+    return [{"type": "monsters_done", "text": "The monsters have acted."}]
+
+
+def _hp_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> list[Event]:
+    """An edit that takes a member or a monster to 0 HP drops it, as damage does."""
+    combat = state.get("combat")
+    if event["hp"] > 0 or combat is None:
+        return []
+    if event["side"] == "monster":
+        monster = _monster(combat, event["who"])
+        monster["status"] = "dead"
+        label = f"{monster['name']} {monster['id']}"
+        events: list[Event] = [{"type": "monster_down", "monster": monster["id"], "text": f"{label} is dead."}]
+    else:
+        events = [{"type": "member_down", "member": event["who"], "text": f"{event['who']} falls."}]
+    waited = bool(combat.get("waiting"))
+    ended = _end_if_over(state)
+    if ended or not waited:
+        return [*events, *ended]
+    return [*events, *_waiting_done(combat)]
 
 
 def _monsters_done_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> list[Event]:
@@ -166,7 +240,7 @@ def _side_done(combat: dict[str, Any], side: str) -> Event:
     if side != combat["first"]:
         return {"type": "round_ended", "round": combat["round"], "text": f"Round {combat['round']} ends."}
     other = "party" if side == "monsters" else "monsters"
-    combat.update(phase=other, acted=[])
+    combat.update(phase=other, acted=[], waiting=[])
     return {"type": "phase_changed", "phase": other, "round": combat["round"], "text": f"Round {combat['round']}: {other} act."}
 
 

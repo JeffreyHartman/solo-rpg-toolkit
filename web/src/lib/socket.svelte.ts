@@ -23,6 +23,7 @@ export interface MechanicsCard {
   result: string
   source: string
   target?: Target
+  reason?: string
 }
 
 export type ChatEntry =
@@ -102,11 +103,11 @@ function receive(message: ServerMessage): void {
     case 'events':
       for (const event of message.events) {
         if (event.type === 'mechanics') {
-          const { dice, rolls, total, result, source, target } = event as unknown as MechanicsCard
+          const { dice, rolls, total, result, source, target, reason } = event as unknown as MechanicsCard
           game.chat.push({
             kind: 'mechanics',
             text: event.text ?? event.type,
-            card: { dice, rolls, total, result, source, target },
+            card: { dice, rolls, total, result, source, target, reason },
           })
         } else if (event.type === 'ooc_note') {
           game.chat.push({ kind: 'ooc', text: event.text ?? '' })

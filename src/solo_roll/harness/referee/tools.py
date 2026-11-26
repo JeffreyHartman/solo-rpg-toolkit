@@ -92,6 +92,18 @@ def _create_character(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
         }, events=events)
 
 
+def _edit(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
+    command = {"type": "edit", **{key: args.get(key) for key in ("who", "change", "value", "reason")}}
+    events = engine.act(command)
+    return ToolOutcome(output={"events": events}, events=events)
+
+
+def _monster_action(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
+    command = {"type": "monster_action", **{k: args.get(k) for k in ("monster", "kind", "action", "target", "reason")}}
+    events = engine.act(command)
+    return ToolOutcome(output={"events": events, "combat": engine.state().get("combat")}, events=events)
+
+
 def _out_of_character_note(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
     text = str(args.get("text") or "").strip()
     if not text:
@@ -167,6 +179,29 @@ ENGINE_TOOLS: tuple[EngineTool, ...] = (
         input_schema={"class": str, "character_name": str, "description": str},
         label=lambda engine, args: f"Creating {args.get('character_name') or 'a character'}",
         run=_create_character,
+    ),
+    EngineTool(
+        name="edit",
+        description=(
+            "Change a party member or a monster when no procedure fits, with a one-line reason the player sees. "
+            "`who` is a member's name or a monster id. `change` is add_item, remove_item, light (a lit torch or "
+            "lantern that joins the party's light), hp, condition, or clear_condition. `value` is the item, the "
+            "condition, or for hp a signed change such as -3 or -1d6: the engine rolls any dice. Never pass a die result."
+        ),
+        input_schema={"who": str, "change": str, "value": str, "reason": str},
+        label=lambda engine, args: f"Changing {args.get('who') or 'the state'}",
+        run=_edit,
+    ),
+    EngineTool(
+        name="monster_action",
+        description=(
+            "Take the turn of a monster listed in `combat.waiting`, when no plugin runs the monsters. `kind` is "
+            "attack (name the party member in `target`), flee, or other (pass target \"\"). `action` says what it "
+            "does, and `reason` why. The engine rolls any attack and damage with the campaign's rules."
+        ),
+        input_schema={"monster": str, "kind": str, "action": str, "target": str, "reason": str},
+        label=lambda engine, args: f"Acting for monster {args.get('monster') or ''}".strip(),
+        run=_monster_action,
     ),
     EngineTool(
         name="out_of_character_note",

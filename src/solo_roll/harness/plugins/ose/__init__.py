@@ -14,7 +14,8 @@ REFEREE_GUIDE = """## Ruleset: Old-School Essentials (OSE)
 
 - Play in the spirit of OSE: a dangerous dungeon, scarce light, and choices with consequences.
 - Move the party between areas only with the `move` engine tool, by area id.
-- In combat, propose the owner's `attack` and `special_action` for the character the player describes. The engine rolls initiative and attacks, applies all damage, and runs the monsters. Read `combat` in the state and narrate its events; never invent damage, hit points or monster actions.
+- In combat, propose the owner's `attack` and `special_action` for the character the player describes. The engine rolls initiative and attacks and applies all damage. A plugin such as the FlexTale Simple AI runs the monsters; with none, the monsters in `combat.waiting` wait for you to pick each action with `monster_action`. Read `combat` in the state and narrate its events; never invent damage or hit points.
+- A torch or lantern the party lights goes into the light with `edit` and change `light`: a torch burns 6 turns, a lantern 24.
 - When the party is empty, help the player pick a class, a name and a short description. Then call `create_character`; the engine rolls the 3d6 abilities in order.
 """
 
@@ -59,6 +60,7 @@ class OsePlugin:
         registry.add_action_provider(dungeon_turn.dungeon_actions)
         registry.add_trigger("turn", dungeon_turn.wandering_trigger(self._data_dir))
         registry.add_trigger("moved", dungeon_turn.move_trigger)
+        registry.add_trigger("item_added", dungeon_turn.light_trigger)
         checks.register(registry)
         combat.register(registry, self._data_dir)
 
