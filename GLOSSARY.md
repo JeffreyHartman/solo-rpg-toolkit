@@ -62,6 +62,14 @@ _Avoid_: option, command
 
 ## Plugins
 
+**Plugin**:
+A package that adds rules or content to the harness. Each plugin is a ruleset, a generator, or a module.
+_Avoid_: extension, add-on, system
+
+**Trigger**:
+Plugin code that the engine runs on an engine event, for example a wandering-monster check every two turns.
+_Avoid_: hook, listener
+
 **Ruleset**:
 A plugin that holds the mechanics for the player character: stats, checks, combat, rest. A campaign has exactly one.
 _Avoid_: system, game system
