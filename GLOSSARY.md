@@ -80,6 +80,14 @@ _Avoid_: room (when it means any area), node, tile
 An action that the engine offers for the current state, for example "go through the north door". The player can start it with a click. Free text is always available beside it.
 _Avoid_: option, command
 
+**Direct action**:
+A change that the player makes to their own party through the engine with no Referee turn, for example an edit to the sheet, a move of gear, or a move of the token to a known area.
+_Avoid_: manual edit, override
+
+**Referee turn**:
+One reply of the Referee: narration, rulings, or moves of the world, after which it waits for the player.
+_Avoid_: GM turn, AI turn
+
 ## Plugins
 
 **Plugin**:
