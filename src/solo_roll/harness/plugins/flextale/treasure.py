@@ -9,6 +9,7 @@ from typing import Any
 
 from ....rng import DiceSource
 from ...errors import FlextaleDataError
+from ...judgment import judgment_request
 from ...registry import Action, CommandContext, Event, Registry
 from .encounters import pending_combat
 from .tabledata import CONTEXTS, card, context_letter, roll
@@ -27,6 +28,7 @@ def initial_inventory(_state: dict[str, Any]) -> dict[str, Any]:
 
 def register(registry: Registry, data_dir: Path, system: str) -> None:
     registry.add_state_default("inventory", initial_inventory)
+    registry.add_judgment_category("treasure", "Treasure choices the book leaves to the player")
     registry.add_procedure("treasure", _treasure(data_dir, system), label="Collect treasure")
     registry.add_action_provider(treasure_actions)
 
@@ -41,34 +43,61 @@ def treasure_actions(state: dict[str, Any]) -> list[Action]:
 
 def _treasure(data_dir: Path, system: str):
     def run(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) -> list[Event]:
-        letter = context_letter(ctx.settings)
         events: list[Event] = []
         notes: list[str] = []
-        gain = _draw(data_dir, letter, system, ctx.dice, events, notes, 0)
+        if "judgment" in command:
+            gain = command["judgment"]["data"]["gain"]
+            _settle(gain, command["judgment"]["answer"])
+        else:
+            gain = _draw(data_dir, context_letter(ctx.settings), system, ctx.dice, events, notes, 0)
+            for outcome in (state.get("encounter", {}).get("current") or {}).get("outcomes", []):
+                if outcome["kind"] == "treasure" and outcome["status"] == "pending":
+                    outcome["status"] = "resolved"
+                    break
+        if gain["choices"]:
+            first, second = gain["choices"][0]
+            options = [f"First draw: {_describe(first)}", f"Second draw: {_describe(second)}"]
+            events.append(
+                judgment_request(
+                    "treasure",
+                    "Favorable Treasure: which draw does the party keep?",
+                    suggestion=options[0] if first["first"] >= second["first"] else options[1],
+                    reason="The draw with the higher first roll is the better treasure.",
+                    options=options,
+                    data={"gain": gain},
+                )
+            )
+            return events
         inventory = state["inventory"]
         inventory["gp"] += gain["gp"]
         for key in ("gems", "items"):
             for name, count in gain[key].items():
                 inventory[key][name] = inventory[key].get(name, 0) + count
-        for outcome in (state.get("encounter", {}).get("current") or {}).get("outcomes", []):
-            if outcome["kind"] == "treasure" and outcome["status"] == "pending":
-                outcome["status"] = "resolved"
-                break
-        parts = [f"{gain['gp']} gp"] if gain["gp"] else []
-        parts += [f"{n} x {name}" for name, n in {**gain["gems"], **gain["items"]}.items()]
-        text = "Treasure: " + (", ".join(parts) if parts else "nothing") + "." + "".join(f" {n}" for n in notes)
-        events.append({"type": "treasure", "gain": gain, "text": text})
+        events.append({"type": "treasure", "gain": gain, "text": f"Treasure: {_describe(gain)}." + "".join(f" {n}" for n in notes)})
         return events
 
     return run
 
 
+def _describe(gain: dict[str, Any]) -> str:
+    parts = [f"{gain['gp']} gp"] if gain["gp"] else []
+    parts += [f"{n} x {name}" if n != 1 or name in gain["gems"] else name for name, n in {**gain["gems"], **gain["items"]}.items()]
+    return ", ".join(parts) if parts else "nothing"
+
+
+def _settle(gain: dict[str, Any], answer: str) -> None:
+    """Replace the first open Favorable choice of `gain` with the draw the answer names."""
+    first, second = gain["choices"].pop(0)
+    _merge(gain, first if answer.startswith("First draw") else second)
+
+
 def _empty() -> dict[str, Any]:
-    return {"gp": 0, "gems": {}, "items": {}, "first": 0}
+    return {"gp": 0, "gems": {}, "items": {}, "first": 0, "choices": []}
 
 
 def _merge(into: dict[str, Any], other: dict[str, Any]) -> None:
     into["gp"] += other["gp"]
+    into["choices"].extend(other["choices"])
     for key in ("gems", "items"):
         for name, count in other[key].items():
             into[key][name] = into[key].get(name, 0) + count
@@ -96,8 +125,7 @@ def _draw(data_dir, letter, system, dice, events, notes, depth) -> dict[str, Any
                 _merge(gain, first)
                 _merge(gain, second)
             else:
-                # The book lets the player pick; the engine keeps the draw with the higher first roll.
-                _merge(gain, first if first["first"] >= second["first"] else second)
+                gain["choices"].append([first, second])
             return gain
         _resolve(low, rolled["result"], data_dir, letter, system, dice, events, gain)
         return gain

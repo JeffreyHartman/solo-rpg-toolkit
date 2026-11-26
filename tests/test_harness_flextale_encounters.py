@@ -219,11 +219,29 @@ def test_no_treasure_and_contact_poison_reroll(tmp_path):
     assert "contact poison" in next(e for e in events if e["type"] == "treasure")["text"].lower()
 
 
-def test_additional_treasure_applies_both_rolls_and_favorable_keeps_the_higher(tmp_path):
+def test_additional_treasure_applies_both_rolls(tmp_path):
     engine = make_engine(tmp_path, [11, 9, 7, 1])  # scroll and potion
     treasure(engine)
     assert inventory(engine)["items"] == {"Scroll": 1, "Fake Healing": 1}
-    engine = make_engine(tmp_path / "b", [13, 9, 7, 1])  # scroll (9) against potion (7): keeps the 9
+
+
+def test_favorable_treasure_asks_the_player_to_pick_a_draw(tmp_path):
+    engine = make_engine(tmp_path, [13, 9, 7, 1])  # draws: scroll (9) and potion (7)
+    events = treasure(engine)
+    assert inventory(engine)["items"] == {}
+    card = engine.state()["judgments"]["pending"][0]
+    assert card["category"] == "treasure"
+    assert card["options"] == ["First draw: Scroll", "Second draw: Fake Healing"]
+    assert card["suggestion"] == "First draw: Scroll"  # the higher first roll
+    assert not any(e["type"] == "treasure" for e in events)
+    engine.act({"type": "answer_judgment", "id": card["id"], "answer": "Second draw: Fake Healing"})
+    assert inventory(engine)["items"] == {"Fake Healing": 1}
+    assert engine.state()["judgments"]["pending"] == []
+
+
+def test_the_referee_owning_treasure_picks_its_suggestion(tmp_path):
+    engine = make_engine(tmp_path, [13, 9, 7, 1])
+    engine.change_setting("judgment", "treasure", "referee")
     treasure(engine)
     assert inventory(engine)["items"] == {"Scroll": 1}
 
