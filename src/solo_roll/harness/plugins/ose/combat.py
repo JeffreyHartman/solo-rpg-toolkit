@@ -1,7 +1,7 @@
 """OSE narrative combat: side initiative, attack throws and damage, with no grid.
 
 State lives in `state["combat"]`, which is None outside a fight:
-`{area, outcome, round, phase, first, acted, monsters}`. `phase` is "party" or "monsters".
+`{area, outcome, round, phase, first, acted, monsters}`. `outcome` is the index of the encounter outcome behind the fight, or None for a wandering encounter. `phase` is "party" or "monsters".
 `monsters` holds `{id, name, hp, max_hp, ac, thac0, damage, status, generic}` where `status` is
 "alive", "dead" or "fled".
 
@@ -49,6 +49,7 @@ def register(registry: Registry, data_dir: Path) -> None:
                 "description": {"type": "string", "label": "What the character does"}},
     )
     registry.add_trigger("combat_encounter", _start_trigger(Path(data_dir)))
+    registry.add_trigger("wandering_encounter", _wandering_trigger(Path(data_dir)))
     registry.add_trigger("phase_changed", _phase_trigger)
     registry.add_trigger("monsters_done", _monsters_done_trigger)
     registry.add_trigger("round_ended", _round_trigger)
@@ -62,15 +63,23 @@ def _start_trigger(data_dir: Path):
     def trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> list[Event]:
         if state.get("combat"):
             return []
-        outcomes = state["encounter"]["current"]["outcomes"]
-        outcome = outcomes[event["outcome"]]
         monsters = _monsters(event["monsters"], _bestiary(data_dir), ctx)
-        outcome["status"] = "started"
-        state["combat"] = {"area": event["area"], "outcome": event["outcome"], "round": 0,
+        if event.get("outcome") is not None:
+            state["encounter"]["current"]["outcomes"][event["outcome"]]["status"] = "started"
+        state["combat"] = {"area": event["area"], "outcome": event.get("outcome"), "round": 0,
                            "phase": "party", "first": "party", "acted": [], "monsters": monsters}
         names = ", ".join(f"{m['name']} ({m['hp']} HP)" for m in monsters)
         return [{"type": "combat_started", "monsters": monsters, "text": f"Combat begins against {names}."},
                 *_initiative(state, ctx)]
+    return trigger
+
+
+def _wandering_trigger(data_dir: Path):
+    """A wandering encounter starts a fight in the party's area, with no encounter outcome behind it."""
+    start = _start_trigger(data_dir)
+
+    def trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> list[Event]:
+        return start(state, {"area": state["party"]["area"], "outcome": None, "monsters": event["monster"]}, ctx)
     return trigger
 
 
@@ -277,7 +286,8 @@ def _end_if_over(state: dict[str, Any]) -> list[Event]:
         result = "victory"
     else:
         return []
-    state["encounter"]["current"]["outcomes"][combat["outcome"]]["status"] = "resolved"
+    if combat["outcome"] is not None:
+        state["encounter"]["current"]["outcomes"][combat["outcome"]]["status"] = "resolved"
     state["combat"] = None
     return [{"type": "combat_ended", "result": result, "text": f"Combat ends: {result}."}]
 

@@ -258,3 +258,18 @@ def test_moving_runs_the_wandering_check_on_the_second_turn(tmp_path, data_dir):
     events = engine.act({"type": "move", "to": "hall"})
 
     assert [e["procedure"] for e in events if e["type"] == "mechanics"] == ["wandering_check"]
+
+
+def test_a_wandering_encounter_starts_combat_with_the_rolled_monsters(tmp_path, data_dir):
+    # search, search, check 1 (hit), monster 3, distance 3+4, surprise 6 and 2, reaction 3+3, hp d8 4, initiative 5 vs 2
+    rolls = [2, 2, 1, 3, 3, 4, 6, 2, 3, 3, 4, 5, 2]
+    engine = engine_with(tmp_path, data_dir, rolls, wandering={"table": "ose/w", "interval": 2})
+    run(engine, "search")
+
+    events = run(engine, "search")
+
+    combat = engine.state()["combat"]
+    assert "combat_started" in [e["type"] for e in events]
+    assert combat["area"] == "gate"
+    assert [(m["name"], m["hp"]) for m in combat["monsters"]] == [("goblins", 4)]
+    assert combat["outcome"] is None
