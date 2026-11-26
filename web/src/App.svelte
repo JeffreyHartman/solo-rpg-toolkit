@@ -3,6 +3,7 @@
   import CharacterCreation from './lib/CharacterCreation.svelte'
   import CharacterPanel from './lib/CharacterPanel.svelte'
   import ChatPanel from './lib/ChatPanel.svelte'
+  import JudgmentCard from './lib/JudgmentCard.svelte'
   import LibraryScreen from './lib/LibraryScreen.svelte'
   import MapView from './lib/MapView.svelte'
   import ProposalCard from './lib/ProposalCard.svelte'
@@ -11,6 +12,7 @@
 
   let settingsOpen = $state(false)
   let pending = $derived(game.state?.proposals?.pending ?? [])
+  let judgments = $derived(game.state?.judgments?.pending ?? [])
 
   let light = $derived(
     game.state?.dungeon
@@ -35,8 +37,9 @@
   {#if settingsOpen}
     <div class="panel settings"><SettingsMenu onclose={() => (settingsOpen = false)} /></div>
   {/if}
-  {#if pending.length}
+  {#if pending.length || judgments.length}
     <div class="panel proposals">
+      {#each judgments as judgment (judgment.id)}<JudgmentCard {judgment} />{/each}
       {#each pending as proposal (proposal.id)}<ProposalCard {proposal} />{/each}
     </div>
   {/if}

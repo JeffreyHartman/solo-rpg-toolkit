@@ -35,6 +35,7 @@ class OsePlugin:
         registry.add_command("move", _move)
         registry.add_action_provider(_move_actions)
         registry.add_referee_guide(REFEREE_GUIDE)
+        registry.add_judgment_category("ruling", "Rulings the OSE rules leave open")
         registry.add_state_default("dungeon", dungeon_turn.initial_dungeon(self._wandering))
         registry.add_procedure(
             "create_character", create_character, label="Create a character", inputs=CREATE_CHARACTER_INPUTS

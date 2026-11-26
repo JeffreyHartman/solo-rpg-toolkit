@@ -7,6 +7,7 @@ import type {
   ConfirmLevel,
   EngineState,
   PluginsByKind,
+  JudgmentOwner,
   ProposalAnswer,
   RefereeEvent,
   ServerMessage,
@@ -157,6 +158,14 @@ export function say(text: string): void {
 
 export function answer(id: string, reply: ProposalAnswer, inputs?: Record<string, string | number>): void {
   send({ type: 'answer', id, answer: reply, inputs })
+}
+
+export function answerJudgment(id: string, reply: string): void {
+  send({ type: 'answer_judgment', id, answer: reply })
+}
+
+export function setJudgmentOwner(category: string, owner: JudgmentOwner): void {
+  send({ type: 'set_setting', section: 'judgment', key: category, value: owner })
 }
 
 export function setConfirmLevel(procedure: string, level: ConfirmLevel): void {

@@ -61,6 +61,24 @@ def _propose(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
     return ToolOutcome(output=output, events=events)
 
 
+def _judgment_call(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
+    events = engine.act(
+        {
+            "type": "judgment",
+            "category": args.get("category"),
+            "question": args.get("question", ""),
+            "suggestion": args.get("suggestion", ""),
+            "reason": args.get("reason", ""),
+            "options": args.get("options") or [],
+        }
+    )
+    if events[0]["type"] == "judgment_decided":
+        output = {"status": "decided", "answer": events[0]["answer"], "reason": events[0]["reason"]}
+    else:
+        output = {"status": "waiting for the player", "judgment": events[0]["judgment"]}
+    return ToolOutcome(output=output, events=events)
+
+
 def _procedure_label(engine: Engine, name: Any) -> str:
     return next((p["label"] for p in engine.procedures() if p["name"] == name), str(name))
 
@@ -81,6 +99,7 @@ ENGINE_TOOLS: tuple[EngineTool, ...] = (
                 "state": engine.state(),
                 "actions": engine.available_actions(),
                 "procedures": engine.procedures(),
+                "judgment_categories": engine.settings()["judgment"],
             }
         ),
     ),
@@ -94,6 +113,17 @@ ENGINE_TOOLS: tuple[EngineTool, ...] = (
         input_schema={"procedure": str, "inputs": dict, "reason": str},
         label=lambda engine, args: f"Proposing {_procedure_label(engine, args.get('procedure'))}",
         run=_propose,
+    ),
+    EngineTool(
+        name="judgment_call",
+        description=(
+            "Raise a judgment call for a decision the rules leave open, with your suggested answer and the reason. "
+            "When the player owns the category, a card waits for the player's answer. When the Referee "
+            "owns it, your suggestion is the decision and the log records your reason."
+        ),
+        input_schema={"category": str, "question": str, "suggestion": str, "reason": str},
+        label=lambda engine, args: "Raising a judgment call",
+        run=_judgment_call,
     ),
     EngineTool(
         name="move",
