@@ -20,7 +20,7 @@ from ..dice import DiceError, parse_dice, roll_dice
 from .errors import IllegalActionError
 from .registry import CommandContext, Event
 
-__all__ = ["CHANGES", "edit", "edit_card"]
+__all__ = ["CHANGES", "edit", "edit_card", "remove_item"]
 
 CHANGES = ("add_item", "remove_item", "light", "hp", "condition", "clear_condition")
 EDIT_SOURCE = "Referee edit"
@@ -47,7 +47,7 @@ def edit(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) ->
         did = f"{label} lights a {value}" if lit else f"{label} gains {value}"
         return [edit_card(did, reason), {"type": "item_added", **base, "item": value, "lit": lit, "text": f"{did}."}]
     if change == "remove_item":
-        _remove_item(who, label, value)
+        remove_item(who, label, value)
         did = f"{label} loses {value}"
         return [edit_card(did, reason), {"type": "item_removed", **base, "item": value, "text": f"{did}."}]
     conditions = who.setdefault("conditions", [])
@@ -82,7 +82,8 @@ def _add_item(who: dict[str, Any], name: str) -> None:
         items.append({"name": name, "quantity": 1})
 
 
-def _remove_item(who: dict[str, Any], label: str, name: str) -> None:
+def remove_item(who: dict[str, Any], label: str, name: str) -> None:
+    """Take one `name` from `who["items"]`, dropping the entry at 0. `label` names `who` in the error when none is held."""
     items = who.get("items", [])
     held = next((i for i in items if i["name"] == name), None)
     if held is None:

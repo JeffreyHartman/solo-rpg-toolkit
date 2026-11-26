@@ -8,6 +8,8 @@ from typing import Any
 
 from ....dungeon import DungeonError, advance_clock, check_wandering
 from ....tables import TableError, load_table, roll_table
+from ... import party
+from ...edits import remove_item
 from ...errors import IllegalActionError, PluginError
 from ...registry import Action, CommandContext, Event
 
@@ -118,11 +120,8 @@ def light_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> l
     kind = event["item"]
     if kind not in LIGHT_TURNS:
         raise IllegalActionError(f"OSE has no burn time for '{kind}' (known: {', '.join(LIGHT_TURNS)})")
-    member = next(m for m in state["party"]["members"] if m["name"] == event["who"])
-    held = next(i for i in member["items"] if i["name"] == kind)
-    held["quantity"] -= 1
-    if held["quantity"] <= 0:
-        member["items"].remove(held)
+    member = party.member(state, event["who"])
+    remove_item(member, member["name"], kind)
     source = {"kind": kind, "bearer": member["name"], "turns_left": LIGHT_TURNS[kind]}
     state["dungeon"]["light"].append(source)
     return [{"type": "light_lit", **source, "text": f"{member['name']}'s {kind} burns for {source['turns_left']} turns."}]
