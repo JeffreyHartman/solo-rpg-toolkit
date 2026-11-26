@@ -58,6 +58,7 @@ from .engine import Engine
 from .errors import HarnessError
 from .library import Library
 from .referee.base import Referee, end_session_request
+from .playerview import player_events, player_state
 from .vault import session_note
 
 __all__ = ["create_app"]
@@ -79,7 +80,7 @@ class _Hub:
 
     def snapshot(self) -> dict[str, Any]:
         assert self.engine is not None
-        return {"state": self.engine.state(), "actions": self.engine.available_actions()}
+        return {"state": player_state(self.engine.state()), "actions": self.engine.available_actions()}
 
     def snapshot_message(self) -> dict[str, Any]:
         assert self.engine is not None
@@ -208,7 +209,7 @@ class _Hub:
         ok = True
         try:
             async for event in self.referee.turn(player_input):
-                await self._broadcast({"type": "referee", "event": event})
+                await self._broadcast({"type": "referee", "event": _player_referee_event(event)})
                 if event["type"] == "tool_result" and event.get("events"):
                     await self._broadcast_events(event["events"])
                 if event["type"] == "done" and event.get("error"):
@@ -284,7 +285,7 @@ class _Hub:
         await self._broadcast({"type": "session", "session": self.engine.state()["session"], "note": note})
 
     async def _broadcast_events(self, events: list[dict[str, Any]]) -> None:
-        await self._broadcast({"type": "events", "events": events, **self.snapshot()})
+        await self._broadcast({"type": "events", "events": player_events(events), **self.snapshot()})
 
     async def _broadcast(self, payload: dict[str, Any]) -> None:
         for socket in list(self.sockets):
@@ -305,6 +306,13 @@ async def _send(ws: WebSocket, payload: dict[str, Any]) -> None:
         await ws.send_json(payload)
     except (WebSocketDisconnect, RuntimeError):
         pass
+
+
+def _player_referee_event(event: dict[str, Any]) -> dict[str, Any]:
+    """A Referee stream event for the browser: a tool result loses its output and its hidden events."""
+    if event["type"] != "tool_result":
+        return event
+    return {**{k: v for k, v in event.items() if k != "output"}, "events": player_events(event.get("events", []))}
 
 
 def _narration_request(lead: str, events: list[dict[str, Any]]) -> str:

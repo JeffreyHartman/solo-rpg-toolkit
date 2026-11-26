@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from .playerview import visible_outcomes
 from .registry import Event
 
 if TYPE_CHECKING:
@@ -84,7 +85,12 @@ def _encounter_section(encounter: dict[str, Any]) -> str:
     current = encounter.get("current")
     if not current:
         return ""
-    lines = [f"{o['kind']} ({o['status']}): {(o['detail'] or {}).get('result') or o['result']}" for o in current["outcomes"]]
+    lines = [
+        f"{o['kind']} ({o['status']}): {(o['detail'] or {}).get('result') or o['result']}"
+        for o in visible_outcomes(current["outcomes"])
+    ]
+    if not lines:
+        return ""
     return "\n## Encounter\n\n" + "\n".join(f"- {line}" for line in lines) + "\n"
 
 

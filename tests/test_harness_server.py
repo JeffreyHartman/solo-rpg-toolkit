@@ -283,3 +283,16 @@ def test_an_unexpected_error_in_a_command_returns_an_error_and_the_socket_stays_
     assert error["type"] == "error"
     assert "boom" in error["message"]
     assert reply["type"] == "events"
+
+
+def test_the_snapshot_leaves_out_unknown_areas_and_hidden_outcomes(tmp_path):
+    engine = open_engine(make_campaign(tmp_path))
+    state = engine.state()
+    secret = {"kind": "secret", "status": "noted", "hidden": True, "result": "x", "detail": None}
+    state["map"]["areas"]["crypt"]["known"] = False
+    state["encounter"] = {"current": {"area": "gate", "outcomes": [secret]}, "visited": [], "backtracks": 0}
+    engine._state = state
+    with TestClient(create_app(engine)).websocket_connect("/ws") as ws:
+        hello = ws.receive_json()
+    assert "crypt" not in hello["state"]["map"]["areas"]
+    assert hello["state"]["encounter"]["current"]["outcomes"] == []
