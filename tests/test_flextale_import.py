@@ -2,11 +2,18 @@
 
 The extractor is injected, so no PDF or `pdftotext` is involved.
 """
+import json
 from pathlib import Path
 
 import pytest
 
-from solo_roll.flextale_import import default_output_dir, import_flextale, main
+from solo_roll.flextale_import import (
+    FlextaleImportError,
+    default_output_dir,
+    import_flextale,
+    load_overrides,
+    main,
+)
 from solo_roll.rng import ScriptedDice
 from solo_roll.tables import load_table, roll_table
 
@@ -200,3 +207,137 @@ def test_main_refuses_an_output_folder_inside_a_git_work_tree(tmp_path: Path, ca
     assert code == 2
     assert not (repo / "data").exists()
     assert "git" in capsys.readouterr().err
+
+
+GAP_RAW = "Table 6: Simple AI Targeting\nD20 Outcome\n01-10 Near\n12-20 Far\n"
+TARGET = "quickstart/simple-ai-target"
+
+
+def _fix(*ops: dict, table: str = TARGET) -> dict:
+    return {table: list(ops)}
+
+
+def test_add_op_fills_a_gap_so_the_table_loads(tmp_path: Path):
+    overrides = _fix({"op": "add", "min": 11, "max": 11, "result": "Between"})
+
+    result = import_flextale(PDF, tmp_path, fake_extractor(raw=GAP_RAW), overrides=overrides)
+
+    assert result.skipped == {}
+    assert roll_table(TARGET, tmp_path, ScriptedDice([11]))["result"] == "Between"
+    assert roll_table(TARGET, tmp_path, ScriptedDice([12]))["result"] == "Far"
+
+
+def test_set_op_corrects_an_overlap_and_trims_a_result(tmp_path: Path):
+    raw = "Table 6: Simple AI Targeting\nD20 Outcome\n01-11 Near page 40\n11-20 Far\n"
+    overrides = _fix(
+        {"op": "set", "match": [1, 11], "max": 10, "result": "Near"},
+    )
+
+    result = import_flextale(PDF, tmp_path, fake_extractor(raw=raw), overrides=overrides)
+
+    assert result.skipped == {}
+    assert roll_table(TARGET, tmp_path, ScriptedDice([10]))["result"] == "Near"
+    assert roll_table(TARGET, tmp_path, ScriptedDice([11]))["result"] == "Far"
+
+
+def test_remove_op_drops_a_band(tmp_path: Path):
+    raw = "Table 6: Simple AI Targeting\nD20 Outcome\n01-20 Whole\n05-06 Stray\n"
+
+    result = import_flextale(
+        PDF, tmp_path, fake_extractor(raw=raw), overrides=_fix({"op": "remove", "match": [5, 6]})
+    )
+
+    assert result.skipped == {}
+    assert roll_table(TARGET, tmp_path, ScriptedDice([5]))["result"] == "Whole"
+
+
+def test_replace_op_swaps_all_bands_and_can_create_a_missing_table(tmp_path: Path):
+    bands = [{"min": 1, "max": 20, "result": "Only"}]
+    overrides = {"quickstart/never-parsed": [{"op": "replace", "ranges": bands}]}
+
+    result = import_flextale(PDF, tmp_path, fake_extractor(), overrides=overrides)
+
+    assert result.written == ["quickstart/never-parsed"]
+    assert roll_table("quickstart/never-parsed", tmp_path, ScriptedDice([7]))["result"] == "Only"
+
+
+def test_override_that_leaves_a_table_broken_still_reports_it_skipped(tmp_path: Path):
+    overrides = _fix({"op": "add", "min": 11, "max": 11, "result": "x"}, {"op": "add", "min": 12, "max": 12, "result": "y"})
+
+    result = import_flextale(PDF, tmp_path, fake_extractor(raw=GAP_RAW), overrides=overrides)
+
+    assert TARGET in result.skipped
+
+
+def test_set_that_matches_no_band_raises(tmp_path: Path):
+    with pytest.raises(FlextaleImportError, match="no band 3-4"):
+        import_flextale(
+            PDF, tmp_path, fake_extractor(raw=GAP_RAW),
+            overrides=_fix({"op": "set", "match": [3, 4], "result": "x"}),
+        )
+
+
+def test_override_for_a_table_the_import_did_not_produce_raises(tmp_path: Path):
+    with pytest.raises(FlextaleImportError, match="quickstart/nope"):
+        import_flextale(
+            PDF, tmp_path, fake_extractor(raw=GAP_RAW),
+            overrides=_fix({"op": "add", "min": 1, "max": 1, "result": "x"}, table="quickstart/nope"),
+        )
+
+
+def test_unknown_op_raises(tmp_path: Path):
+    with pytest.raises(FlextaleImportError, match="unknown op"):
+        import_flextale(PDF, tmp_path, fake_extractor(raw=GAP_RAW), overrides=_fix({"op": "frob"}))
+
+
+def test_load_overrides_rejects_bad_json_and_wrong_shape(tmp_path: Path):
+    bad = tmp_path / "o.json"
+    bad.write_text("{nope")
+    with pytest.raises(FlextaleImportError, match="not valid JSON"):
+        load_overrides(bad)
+    bad.write_text("[]")
+    with pytest.raises(FlextaleImportError, match="object"):
+        load_overrides(bad)
+
+
+def _run_main(tmp_path: Path, *extra: str, raw: str = GAP_RAW, overrides_text: str | None = None):
+    pdf = tmp_path / "book.pdf"
+    pdf.write_bytes(b"")
+    out = tmp_path / "out"
+    if overrides_text is not None:
+        out.mkdir()
+        (out / "overrides.json").write_text(overrides_text)
+    return main([str(pdf), str(out), *extra], extract=fake_extractor(raw=raw), env={}, home=tmp_path), out
+
+
+FIX_TEXT = json.dumps(_fix({"op": "add", "min": 11, "max": 11, "result": "Between"}))
+
+
+def test_main_applies_overrides_json_from_the_output_folder(tmp_path: Path):
+    code, out = _run_main(tmp_path, overrides_text=FIX_TEXT)
+
+    assert code == 0
+    assert roll_table(TARGET, out, ScriptedDice([11]))["result"] == "Between"
+
+
+def test_main_overrides_flag_names_a_file_elsewhere(tmp_path: Path):
+    elsewhere = tmp_path / "mine.json"
+    elsewhere.write_text(FIX_TEXT)
+
+    code, _ = _run_main(tmp_path, "--overrides", str(elsewhere))
+
+    assert code == 0
+
+
+def test_main_exits_two_when_the_named_overrides_file_is_missing(tmp_path: Path, capsys):
+    code, _ = _run_main(tmp_path, "--overrides", str(tmp_path / "none.json"))
+
+    assert code == 2
+    assert "none.json" in capsys.readouterr().err
+
+
+def test_main_exits_two_on_a_bad_override_op(tmp_path: Path, capsys):
+    code, _ = _run_main(tmp_path, overrides_text=json.dumps(_fix({"op": "frob"})))
+
+    assert code == 2
+    assert "unknown op" in capsys.readouterr().err

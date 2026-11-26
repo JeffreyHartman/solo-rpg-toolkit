@@ -19,7 +19,7 @@ def roll(data_dir: Path, name: str, dice: DiceSource) -> dict[str, Any]:
     except TableNotFoundError as exc:
         raise FlextaleDataError(
             f"FlexTale table quickstart/{name} not found in {data_dir}; run `solo-flextale-import <pdf>`. "
-            "The importer skips a table whose book ranges are wrong."
+            "The importer skips a table whose book ranges are wrong; correct it in overrides.json and import again."
         ) from exc
 
 
