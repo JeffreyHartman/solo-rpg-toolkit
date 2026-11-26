@@ -140,6 +140,19 @@ class Engine:
         """The confirm level from the campaign settings, or the procedure's default."""
         return self._settings.get("confirm", procedure, self._procedure(procedure).confirm)
 
+    def procedures(self) -> list[dict[str, Any]]:
+        """Each procedure with its label, inputs, whether it needs a target, and its current confirm level."""
+        return [
+            {
+                "name": p.name,
+                "label": p.label,
+                "inputs": p.inputs,
+                "target": p.target,
+                "confirm": self.confirm_level(p.name),
+            }
+            for p in self._registry.procedures.values()
+        ]
+
     def settings(self) -> dict[str, Any]:
         """The campaign settings the engine owns, one list of rows per section, for the settings menu."""
         return {
