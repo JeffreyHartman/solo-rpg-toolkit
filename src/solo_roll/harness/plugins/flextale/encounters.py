@@ -31,7 +31,7 @@ BACKTRACK_INTERVAL = 4
 """FlexTale re-rolls a random encounter on every fourth move into an area the party already knows."""
 
 DETAIL_TABLES = {
-    "trap": "trap-{c}-{system}",
+    "trap": "trap-{c}-{ruleset}",
     "obstacle": "obstacle-{c}",
     "secret": "secret-door-{c}",
     "combat": "combat-encounter-{c}",
@@ -59,17 +59,17 @@ def pending_combat(state: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
 
-def reveal_trigger(data_dir: Path, system: str):
+def reveal_trigger(data_dir: Path, ruleset: str):
     def trigger(state: dict[str, Any], event: Event, ctx) -> list[Event]:
         area = state["map"]["areas"][event["area"]]
         if "kind" not in area:
             return []
-        return roll_encounter(state, event["area"], data_dir, system, ctx, "new area")
+        return roll_encounter(state, event["area"], data_dir, ruleset, ctx, "new area")
 
     return trigger
 
 
-def backtrack_trigger(data_dir: Path, system: str):
+def backtrack_trigger(data_dir: Path, ruleset: str):
     def trigger(state: dict[str, Any], event: Event, ctx) -> list[Event]:
         enc = state["encounter"]
         visited = enc["visited"]
@@ -81,23 +81,23 @@ def backtrack_trigger(data_dir: Path, system: str):
         enc["backtracks"] += 1
         if enc["backtracks"] % BACKTRACK_INTERVAL:
             return []
-        return roll_encounter(state, event["to"], data_dir, system, ctx, "backtracking")
+        return roll_encounter(state, event["to"], data_dir, ruleset, ctx, "backtracking")
 
     return trigger
 
 
-def rest_trigger(data_dir: Path, system: str):
+def rest_trigger(data_dir: Path, ruleset: str):
     """The QuickStart rest rule: a rest rolls the encounter table of the area the party is in."""
     def trigger(state: dict[str, Any], event: Event, ctx) -> list[Event]:
         if not event.get("rested"):
             return []
-        return roll_encounter(state, state["party"]["area"], data_dir, system, ctx, "rest")
+        return roll_encounter(state, state["party"]["area"], data_dir, ruleset, ctx, "rest")
 
     return trigger
 
 
 def roll_encounter(
-    state: dict[str, Any], area_id: str, data_dir: Path, system: str, ctx, source: str
+    state: dict[str, Any], area_id: str, data_dir: Path, ruleset: str, ctx, source: str
 ) -> list[Event]:
     """Roll the encounter table of the area's kind, store the outcomes, and return the events."""
     letter = context_letter(ctx.settings)
@@ -106,7 +106,7 @@ def roll_encounter(
     events: list[Event] = []
     outcomes: list[dict[str, Any]] = []
     for kind, rolled in _draw(data_dir, table, ctx.dice, events):
-        outcomes.extend(_outcomes(kind, rolled, data_dir, letter, system, ctx.dice, events))
+        outcomes.extend(_outcomes(kind, rolled, data_dir, letter, ruleset, ctx.dice, events))
     state["encounter"]["current"] = {
         "area": area_id, "table": f"quickstart/{table}", "source": source, "outcomes": outcomes,
     }
@@ -164,14 +164,14 @@ def _draw(data_dir: Path, table: str, dice: DiceSource, events: list[Event]):
             raise FlextaleDataError(f"table {table} kept rolling Roll Twice")
 
 
-def _outcomes(kind, rolled, data_dir, letter, system, dice, events) -> list[dict[str, Any]]:
+def _outcomes(kind, rolled, data_dir, letter, ruleset, dice, events) -> list[dict[str, Any]]:
     base = {"roll": rolled["roll"], "result": rolled["result"], "detail": None, "dc": None, "edge": 0}
     if kind == "none":
         return [{**base, "kind": "none", "status": "noted"}]
     if kind == "combat+treasure":
-        combat = _detailed("combat", base, data_dir, letter, system, dice, events)
+        combat = _detailed("combat", base, data_dir, letter, ruleset, dice, events)
         return [combat, {**base, "kind": "treasure", "status": "pending"}]
-    return [_detailed(kind, base, data_dir, letter, system, dice, events)]
+    return [_detailed(kind, base, data_dir, letter, ruleset, dice, events)]
 
 
 def _card_for(kind: str, event: Event) -> Event:
@@ -179,25 +179,25 @@ def _card_for(kind: str, event: Event) -> Event:
     return {**event, "hidden": True} if kind in HIDDEN_KINDS else event
 
 
-def _detailed(kind, base, data_dir, letter, system, dice, events) -> dict[str, Any]:
+def _detailed(kind, base, data_dir, letter, ruleset, dice, events) -> dict[str, Any]:
     first_card = len(events)
-    outcome = _detail_outcome(kind, base, data_dir, letter, system, dice, events)
+    outcome = _detail_outcome(kind, base, data_dir, letter, ruleset, dice, events)
     if outcome["kind"] in HIDDEN_KINDS:
         outcome["hidden"] = True
         events[first_card:] = [{**e, "hidden": True} for e in events[first_card:]]
     return outcome
 
 
-def _detail_outcome(kind, base, data_dir, letter, system, dice, events) -> dict[str, Any]:
+def _detail_outcome(kind, base, data_dir, letter, ruleset, dice, events) -> dict[str, Any]:
     edge = 0
     for _ in range(MAX_REROLLS):
-        table = DETAIL_TABLES[kind].format(c=letter, system=system)
+        table = DETAIL_TABLES[kind].format(c=letter, ruleset=ruleset)
         rolled = roll(data_dir, table, dice)
         events.append(card("encounter", rolled, kind.capitalize()))
         text = rolled["result"]
         if kind == "trap" and text.lower().startswith("monster"):
             via = _detail(rolled)
-            outcome = _detailed("combat", base, data_dir, letter, system, dice, events)
+            outcome = _detailed("combat", base, data_dir, letter, ruleset, dice, events)
             outcome["via"] = via
             return outcome
         if re.match(r"^[^:]*:\s*reroll", text, re.IGNORECASE):
@@ -209,7 +209,7 @@ def _detail_outcome(kind, base, data_dir, letter, system, dice, events) -> dict[
     outcome = {**base, "kind": kind, "detail": _detail(rolled), "edge": edge}
     if kind in ("trap", "obstacle"):
         outcome["status"] = "open"
-        outcome["dc"] = _roll_dc(data_dir, letter, system, dice, events)
+        outcome["dc"] = _roll_dc(data_dir, letter, ruleset, dice, events)
         outcome["edge"] = max(-1, min(1, edge + outcome["dc"]["edge"]))
     elif kind == "combat":
         outcome["status"] = "pending"
@@ -228,9 +228,9 @@ def _edge_of(text: str) -> int:
     return 1 if "advantage" in text.lower() else 0
 
 
-def _roll_dc(data_dir, letter, system, dice, events) -> dict[str, Any]:
+def _roll_dc(data_dir, letter, ruleset, dice, events) -> dict[str, Any]:
     """Roll the DC table for a trap or obstacle: a modifier added to the d20, plus an advantage edge."""
-    table = f"difficulty-class-{letter}-{system}"
+    table = f"difficulty-class-{letter}-{ruleset}"
     edge = 0
     for _ in range(MAX_REROLLS):
         rolled = roll(data_dir, table, dice)
