@@ -86,11 +86,27 @@ export interface JudgmentCall {
   options: string[]
 }
 
+export interface Monster {
+  id: string
+  name: string
+  hp: number
+  max_hp: number
+  ac: number
+  status: 'alive' | 'dead' | 'fled'
+}
+
+export interface Combat {
+  round: number
+  phase: 'party' | 'monsters'
+  monsters: Monster[]
+}
+
 export interface EngineState {
   session: number
   party: { members: Member[]; area: string }
   map: { areas: Record<string, Area>; connections: Connection[]; open_exits?: OpenExit[] }
   dungeon?: Dungeon
+  combat?: Combat | null
   proposals?: { pending: Proposal[] }
   judgments?: { pending: JudgmentCall[] }
 }
