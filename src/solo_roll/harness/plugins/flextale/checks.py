@@ -9,11 +9,8 @@ from typing import Any
 from ....character import ABILITIES
 from ...errors import IllegalActionError
 from ...registry import CONFIRM, CommandContext, Event, Registry, Target
-from ..ose.checks import SAVES
 
 __all__ = ["register"]
-
-AGAINST = list(ABILITIES) + list(SAVES)
 
 
 def register(registry: Registry) -> None:
@@ -24,7 +21,7 @@ def register(registry: Registry) -> None:
         label="Check against the encounter",
         inputs={
             "member": {"type": "string", "label": "Character"},
-            "against": {"type": "string", "label": "Ability or save", "choices": AGAINST},
+            "against": {"type": "string", "label": "Ability or the name of a save"},
             "modifier": {"type": "integer", "label": "Modifier added to the d20", "default": 0},
         },
         target=True,
@@ -46,6 +43,8 @@ def _score(state: dict[str, Any], inputs: dict[str, Any]) -> tuple[dict[str, Any
     if member is None:
         raise IllegalActionError(f"no party member named '{inputs['member']}'")
     field = "abilities" if inputs["against"] in ABILITIES else "saves"
+    if inputs["against"] not in ABILITIES and inputs["against"] not in member.get("saves", {}):
+        raise IllegalActionError(f"{member['name']} has no ability or save named '{inputs['against']}'")
     return member, member.get(field, {}).get(inputs["against"])
 
 
@@ -83,6 +82,7 @@ def encounter_check(state: dict[str, Any], command: dict[str, Any], ctx: Command
         need = f"{target['value']} or more"
     result = "Success" if success else "Failure"
     challenge["status"] = "resolved" if success else "failed"
+    challenge.pop("hidden", None)
     return [
         {
             "type": "mechanics", "procedure": "encounter_check", "dice": "d20", "rolls": rolls,
