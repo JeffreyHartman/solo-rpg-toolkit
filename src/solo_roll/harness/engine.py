@@ -11,6 +11,7 @@ from typing import Any
 from ..rng import DiceSource
 from .campaign import CampaignPaths, load_json, write_json
 from .errors import IllegalActionError, PluginError, SettingError, UnknownCommandError
+from .judgment import ASK, JUDGMENT_OWNERS, OWNER_LABELS, REFEREE, empty_judgments, judgment_text
 from .proposals import ANSWER_VERBS, ANSWERS, empty_proposals, prepare, proposal_text
 from .registry import (
     AUTO,
@@ -45,6 +46,7 @@ class Engine:
             if key not in state:
                 state[key] = factory(state)
         state.setdefault("proposals", empty_proposals())
+        state.setdefault("judgments", empty_judgments())
         self._state = state
         self._registry = registry
         self._context = CommandContext(dice=dice)
@@ -75,6 +77,10 @@ class Engine:
             return self._propose(working, command)
         if kind == "answer_proposal":
             return self._answer(working, command)
+        if kind == "judgment":
+            return self._raise_judgment(working, command, None)
+        if kind == "answer_judgment":
+            return self._answer_judgment(working, command)
         handler = self._registry.commands.get(command.get("type", ""))
         if handler is None:
             raise UnknownCommandError(f"no plugin handles command '{command.get('type')}'")
@@ -87,18 +93,111 @@ class Engine:
         return procedure
 
     def _run_procedure(
-        self, working: dict[str, Any], procedure: Procedure, inputs: dict[str, Any], target: Target | None
+        self,
+        working: dict[str, Any],
+        procedure: Procedure,
+        inputs: dict[str, Any],
+        target: Target | None,
+        judgment: dict[str, Any] | None = None,
     ) -> list[Event]:
-        """Run a procedure. Each of its mechanics cards names its target number and the source."""
+        """Run a procedure. Each of its mechanics cards names its target number and the source.
+
+        A handler that ends with a `judgment_request` event raises a judgment call, which
+        this method turns into a pending card or a Referee decision. `judgment` is the
+        answer when the handler continues from one.
+        """
         command: dict[str, Any] = {"type": "procedure", "name": procedure.name, "inputs": inputs}
         if target is not None:
             command["target"] = {"value": target["value"], "source": target["source"]}
+        if judgment is not None:
+            command["judgment"] = judgment
         events = procedure.handler(working, command, self._context)
         if target is not None:
             for event in events:
                 if event["type"] == "mechanics":
                     event.setdefault("target", dict(command["target"]))
+        if events and events[-1]["type"] == "judgment_request":
+            request = events.pop()
+            resume = {"procedure": procedure.name, "inputs": inputs, "target": target, "data": request["data"]}
+            events.extend(self._raise_judgment(working, request, resume))
         return events
+
+    def _raise_judgment(
+        self, working: dict[str, Any], request: dict[str, Any], resume: dict[str, Any] | None
+    ) -> list[Event]:
+        """Keep a pending card when the player owns the category, or log the Referee's decision and go on."""
+        category = str(request.get("category") or "")
+        if category not in self._registry.judgment_categories:
+            known = ", ".join(self._registry.judgment_categories) or "none registered"
+            raise IllegalActionError(f"no judgment call category '{category}' (known: {known})")
+        options = [str(o) for o in request.get("options") or []]
+        suggestion = str(request.get("suggestion") or "")
+        if not suggestion:
+            raise IllegalActionError("a judgment call needs a suggestion")
+        if options and suggestion not in options:
+            raise IllegalActionError(f"the suggestion must be one of {', '.join(options)}, got {suggestion!r}")
+        question = str(request.get("question") or "")
+        reason = str(request.get("reason") or "")
+        if self.judgment_owner(category) == REFEREE:
+            decided: Event = {
+                "type": "judgment_decided",
+                "category": category,
+                "question": question,
+                "answer": suggestion,
+                "reason": reason,
+                "text": f"The Referee decided ({category}): {question} Answer: {suggestion}. Reason: {reason}",
+            }
+            return [decided, *self._resume(working, resume, category, suggestion)]
+        judgments = working["judgments"]
+        card = {
+            "id": f"j{judgments['next_id']}",
+            "category": category,
+            "question": question,
+            "suggestion": suggestion,
+            "reason": reason,
+            "options": options,
+            "resume": resume,
+        }
+        judgments["next_id"] += 1
+        judgments["pending"].append(card)
+        return [{"type": "judgment_call", "judgment": card, "text": judgment_text(card)}]
+
+    def _resume(
+        self, working: dict[str, Any], resume: dict[str, Any] | None, category: str, answer: str
+    ) -> list[Event]:
+        if resume is None:
+            return []
+        return self._run_procedure(
+            working,
+            self._procedure(resume["procedure"]),
+            resume["inputs"],
+            resume["target"],
+            {"category": category, "answer": answer, "data": resume["data"]},
+        )
+
+    def _answer_judgment(self, working: dict[str, Any], command: dict[str, Any]) -> list[Event]:
+        pending = working["judgments"]["pending"]
+        card = next((c for c in pending if c["id"] == command.get("id")), None)
+        if card is None:
+            raise IllegalActionError(f"no pending judgment call '{command.get('id')}'")
+        answer = str(command.get("answer") or "").strip()
+        if not answer:
+            raise IllegalActionError("a judgment call needs an answer")
+        if card["options"] and answer not in card["options"]:
+            raise IllegalActionError(f"the answer must be one of {', '.join(card['options'])}, got {answer!r}")
+        pending.remove(card)
+        answered: Event = {
+            "type": "judgment_answered",
+            "id": card["id"],
+            "category": card["category"],
+            "answer": answer,
+            "text": f"The player answered ({card['category']}): {card['question']} Answer: {answer}.",
+        }
+        return [answered, *self._resume(working, card["resume"], card["category"], answer)]
+
+    def judgment_owner(self, category: str) -> str:
+        """Who decides a category, from the campaign settings: "ask" (the player, the default) or "referee"."""
+        return self._settings.get("judgment", category, ASK)
 
     def _propose(self, working: dict[str, Any], command: dict[str, Any]) -> list[Event]:
         """Run an Auto procedure at once, or keep a Confirm one as a pending proposal."""
@@ -172,11 +271,18 @@ class Engine:
             "confirm": [
                 {"procedure": p.name, "label": p.label, "default": p.confirm, "level": self.confirm_level(p.name)}
                 for p in self._registry.procedures.values()
-            ]
+            ],
+            "judgment": [
+                {"category": name, "label": label, "owner": self.judgment_owner(name)}
+                for name, label in self._registry.judgment_categories.items()
+            ],
         }
 
     def change_setting(self, section: str, key: str, value: Any) -> None:
         """Check and save one campaign setting. Raises `SettingError` and saves nothing for a bad one."""
+        if section == "judgment":
+            self._change_judgment_owner(key, value)
+            return
         if section != "confirm":
             raise SettingError(f"no campaign setting section '{section}'")
         if key not in self._registry.procedures:
@@ -184,6 +290,14 @@ class Engine:
         if value not in CONFIRM_LEVELS:
             raise SettingError(f"confirm level must be one of {', '.join(CONFIRM_LEVELS)}, got {value!r}")
         self._settings.set(section, key, value)
+
+    def _change_judgment_owner(self, category: str, owner: Any) -> None:
+        if category not in self._registry.judgment_categories:
+            raise SettingError(f"no judgment call category '{category}'")
+        if owner not in JUDGMENT_OWNERS:
+            options = ", ".join(f"{o} ({OWNER_LABELS[o]})" for o in JUDGMENT_OWNERS)
+            raise SettingError(f"a judgment call owner must be one of {options}, got {owner!r}")
+        self._settings.set("judgment", category, owner)
 
     def _with_triggers(self, events: list[Event], working: dict[str, Any], depth: int = 0) -> list[Event]:
         """Insert the events of each trigger right after the event that fired it."""

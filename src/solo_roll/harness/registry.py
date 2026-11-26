@@ -111,6 +111,7 @@ class Registry:
     triggers: dict[str, list[Trigger]] = field(default_factory=dict)
     state_defaults: dict[str, StateDefault] = field(default_factory=dict)
     target_sources: dict[str, list[TargetSource]] = field(default_factory=dict)
+    judgment_categories: dict[str, str] = field(default_factory=dict)
 
     def add_command(self, command_type: str, handler: CommandHandler) -> None:
         if command_type in self.commands:
@@ -149,6 +150,12 @@ class Registry:
         When none gives one, the target number is a proposal input.
         """
         self.target_sources.setdefault(procedure, []).append(source)
+
+    def add_judgment_category(self, name: str, label: str) -> None:
+        """Name a category of judgment call. The campaign settings give each category an owner."""
+        if name in self.judgment_categories:
+            raise PluginError(f"judgment category '{name}' is already registered")
+        self.judgment_categories[name] = label
 
     def add_trigger(self, event_type: str, trigger: Trigger) -> None:
         self.triggers.setdefault(event_type, []).append(trigger)
