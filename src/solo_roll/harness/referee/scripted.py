@@ -19,7 +19,7 @@ from .base import ContextPart, TurnInput, context_part, prompt_parts, session_op
 from .guard import ENGINE_TOOL_PREFIX
 from .tools import RefereeTools
 
-__all__ = ["Call", "Say", "ScriptedReferee"]
+__all__ = ["Call", "Say", "ScriptedReferee", "turns_from_json"]
 
 
 @dataclass(frozen=True)
@@ -34,6 +34,14 @@ class Call:
 
 
 Step = Union[Say, Call]
+
+
+def turns_from_json(turns: Sequence[Sequence[dict[str, Any]]]) -> list[list[Step]]:
+    """Build turns from JSON: each step is `{"say": text}` or `{"call": {"tool": name, "input": {...}}}`."""
+    return [
+        [Say(s["say"]) if "say" in s else Call(s["call"]["tool"], s["call"].get("input", {})) for s in turn]
+        for turn in turns
+    ]
 
 
 class ScriptedReferee:

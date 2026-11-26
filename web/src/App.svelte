@@ -49,19 +49,21 @@
   {#if drawerOpen}
     <div class="panel drawer"><ContextDrawer onclose={() => (drawerOpen = false)} /></div>
   {/if}
+  <div class="dock">
   {#if pending.length || judgments.length}
     <div class="panel proposals">
       {#each judgments as judgment (judgment.id)}<JudgmentCard {judgment} />{/each}
       {#each pending as proposal (proposal.id)}<ProposalCard {proposal} />{/each}
     </div>
   {/if}
-  {#if game.state.party.members.length === 0}<CharacterCreation />{/if}
   <nav class="panel actions">
     <button onclick={listCampaigns}>Campaigns</button>
     {#each game.actions as a (a.id)}
       <button onclick={() => act(a.command)}>{a.label}</button>
     {/each}
   </nav>
+  </div>
+  {#if game.state.party.members.length === 0}<CharacterCreation />{/if}
 {:else if !game.library}
   <p class="waiting dim">Connecting to the harness…</p>
 {/if}
@@ -73,11 +75,13 @@
   .party { top: 12px; left: 12px; }
   .combat { top: 12px; left: 50%; transform: translateX(-50%); min-width: 220px; max-width: calc(100vw - 24px); }
   .log { left: 12px; bottom: 12px; width: min(460px, calc(100vw - 24px)); height: 45vh; font-size: 14px; }
-  .actions { right: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px; max-width: min(480px, calc(100vw - 24px)); }
+  .dock { position: fixed; right: 12px; bottom: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-width: calc(100vw - 24px); }
+  .dock > .panel { position: static; }
+  .actions { display: flex; flex-wrap: wrap; gap: 6px; max-width: min(480px, calc(100vw - 24px)); }
   .offline { top: 64px; left: 12px; color: var(--warn); }
   .top { top: 12px; right: 12px; max-width: calc(100vw - 24px); z-index: 3; }
   .settings { top: 72px; right: 12px; width: min(340px, calc(100vw - 24px)); z-index: 2; }
   .drawer { top: 72px; right: 12px; bottom: 12px; width: min(520px, calc(100vw - 24px)); z-index: 2; }
-  .proposals { right: 12px; bottom: 72px; width: min(380px, calc(100vw - 24px)); display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
+  .proposals { width: min(380px, calc(100vw - 24px)); display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
   .waiting { padding: 24px; }
 </style>

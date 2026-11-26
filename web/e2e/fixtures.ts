@@ -1,5 +1,5 @@
 import { test as base } from '@playwright/test'
-import { startHarness, type Harness, type HarnessOptions } from './harness.ts'
+import { startHarness, startScriptedHarness, type Harness, type HarnessOptions, type ScriptedHarness } from './harness.ts'
 
 /** Sends one browser-to-server message from Node; the server broadcasts its results to the page too. */
 export async function sendMessage(harness: Harness, message: Record<string, unknown>): Promise<void> {
@@ -19,6 +19,8 @@ export async function sendMessage(harness: Harness, message: Record<string, unkn
 }
 
 type Fixtures = {
+  /** Starts a harness with the scripted Referee and dice; each one stops at the end of the test. */
+  launchScripted: (script: Record<string, unknown>) => Promise<ScriptedHarness>
   /** Starts a demo harness; each one stops at the end of the test. */
   launch: (options?: HarnessOptions) => Promise<Harness>
 }
@@ -28,6 +30,15 @@ export const test = base.extend<Fixtures>({
     const started: Harness[] = []
     await use(async (options) => {
       const harness = await startHarness(options)
+      started.push(harness)
+      return harness
+    })
+    await Promise.all(started.map((h) => h.stop()))
+  },
+  launchScripted: async ({}, use) => {
+    const started: ScriptedHarness[] = []
+    await use(async (script) => {
+      const harness = await startScriptedHarness(script)
       started.push(harness)
       return harness
     })

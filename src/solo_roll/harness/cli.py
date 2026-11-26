@@ -1,5 +1,6 @@
 """solo-harness: create a demo campaign, or serve a campaign to the browser."""
 import argparse
+import json
 import os
 import random
 import socket
@@ -7,7 +8,7 @@ import sys
 from collections.abc import Callable, Mapping
 from pathlib import Path
 
-from ..rng import RandomDice
+from ..rng import RandomDice, ScriptedDice
 from .campaign import CampaignPaths, create_campaign
 from .demo import DEMO_MAP, DEMO_PARTY, DEMO_START
 from .engine import open_campaign
@@ -41,6 +42,12 @@ def _uvicorn_run(app, host: str, port: int) -> None:
     uvicorn.run(app, host=host, port=port)
 
 
+def _load_script(args) -> dict:
+    if not args.script:
+        raise HarnessError("--referee scripted needs --script FILE")
+    return json.loads(Path(args.script).read_text())
+
+
 def _serve(
     args, run: Callable, find_ip: Callable[[], str], plugins: Mapping[str, PluginFactory], web_dist: Path
 ) -> int:
@@ -49,7 +56,14 @@ def _serve(
     if not args.campaign and not args.campaigns:
         raise HarnessError("give a campaign folder, or --campaigns for a folder of campaigns")
 
+    script = _load_script(args) if args.referee == "scripted" else {}
+    turns = script.get("referee", [])
+
     def make_referee(engine, paths):
+        if args.referee == "scripted":
+            from .referee.scripted import ScriptedReferee, turns_from_json
+
+            return ScriptedReferee(engine, paths, turns_from_json(turns))
         if args.referee != "sdk":
             return None
         from .referee import sdk
@@ -62,7 +76,11 @@ def _serve(
 
     seeds = random.Random(args.seed)
 
+    scripted_dice = ScriptedDice(script["dice"]) if "dice" in script else None
+
     def dice():
+        if scripted_dice is not None:
+            return scripted_dice
         return RandomDice(seed=seeds.getrandbits(64))
 
     engine = referee = library = None
@@ -101,8 +119,12 @@ def main(
     serve.add_argument("--seed", type=int, default=None,
                        help="seed for the dice; each opened campaign draws its own dice seed from it")
     serve.add_argument("--web-dist", default=None, help="built web app folder (default: web/dist in this checkout)")
-    serve.add_argument("--referee", choices=["sdk", "none"], default="sdk",
-                       help="sdk: Claude through the Agent SDK on your plan; none: no Referee")
+    serve.add_argument("--referee", choices=["sdk", "none", "scripted"], default="sdk",
+                       help="sdk: Claude through the Agent SDK on your plan; none: no Referee; "
+                            "scripted: the turns of --script, for tests")
+    serve.add_argument("--script", default=None,
+                       help='JSON {"dice": [...], "referee": [[{"say": text} | {"call": {tool, input}}, ...], ...]}: '
+                            "fixed dice for every campaign, and one list of steps per Referee turn")
     serve.add_argument("--model", default=None, help="set the campaign's Referee model (default: keep it)")
     serve.add_argument("--effort", default=None, help="set the campaign's Referee effort (default: keep it)")
     demo = sub.add_parser("demo", help="create a campaign with a small hand-made map")
