@@ -157,6 +157,9 @@ class _Hub:
         except HarnessError as exc:
             await ws.send_json({"type": "error", "message": str(exc)})
             return
+        except Exception as exc:  # noqa: BLE001 - a plugin bug must not close the socket
+            await ws.send_json({"type": "error", "message": f"{type(exc).__name__}: {exc}"})
+            return
         await self._broadcast_events(events)
         if self.referee is not None and events:
             self._start_turn(_narration_request(lead, events))

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from ... import party
+from ...errors import IllegalActionError
 from ...registry import AUTO, CommandContext, Event, Registry
 from .tabledata import card, roll
 
@@ -51,6 +52,8 @@ def decide(state: dict[str, Any], monster_id: str, data_dir: Path, ctx: CommandC
 
 def _pick_member(state: dict[str, Any], text: str) -> str:
     members = party.standing(state)
+    if not members:
+        raise IllegalActionError("no party member is standing to be attacked")
     low = text.lower()
     if "weak" in low or "lowest" in low:
         return min(members, key=lambda m: m.get("hp", 0))["name"]

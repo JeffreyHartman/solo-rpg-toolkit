@@ -259,3 +259,27 @@ def test_act_with_no_campaign_open_returns_an_error(library_client):
         error = ws.receive_json()
 
     assert error["type"] == "error"
+
+
+def test_an_unexpected_error_in_a_command_returns_an_error_and_the_socket_stays_open(tmp_path):
+    engine = open_engine(make_campaign(tmp_path))
+    real_act = engine.act
+    calls = []
+
+    def act(command):
+        calls.append(command)
+        if len(calls) == 1:
+            raise RuntimeError("boom")
+        return real_act(command)
+
+    engine.act = act
+    with TestClient(create_app(engine)).websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "act", "command": {"type": "move", "to": "hall"}})
+        error = ws.receive_json()
+        ws.send_json({"type": "act", "command": {"type": "move", "to": "hall"}})
+        reply = ws.receive_json()
+
+    assert error["type"] == "error"
+    assert "boom" in error["message"]
+    assert reply["type"] == "events"
