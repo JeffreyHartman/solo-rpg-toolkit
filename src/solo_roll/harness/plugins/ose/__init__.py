@@ -1,6 +1,6 @@
 """The OSE ruleset plugin: movement between areas, the dungeon turn, ability checks and saving throws."""
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from ...errors import IllegalActionError
 from ...mapstate import area, exits
@@ -23,22 +23,15 @@ REFEREE_GUIDE = """## Ruleset: Old-School Essentials (OSE)
 class OsePlugin:
     name = "ose"
     kind = "ruleset"
+    campaign_settings = {"ose": {rule: "on" for rule in combat.OPTIONAL_RULES}}
+    """The settings a new campaign starts with: both optional rules, as `templates/ose/rules/combat.md` chooses."""
 
     def __init__(
         self,
         data_dir: Path,
         wandering: dict[str, Any] | None = dungeon_turn.DEFAULT_WANDERING,
-        optional_rules: Iterable[str] = (),
     ):
-        """`data_dir` holds `tables/ose/`. `wandering` is the starting wandering config, or None for no checks.
-
-        `optional_rules` names the optional rules the campaign uses, from `combat.OPTIONAL_RULES`.
-        A new campaign starts with them in `state["ose_rules"]`.
-        """
-        unknown = set(optional_rules) - set(combat.OPTIONAL_RULES)
-        if unknown:
-            raise ValueError(f"unknown OSE optional rule: {', '.join(sorted(unknown))}")
-        self._optional_rules = [rule for rule in combat.OPTIONAL_RULES if rule in set(optional_rules)]
+        """`data_dir` holds `tables/ose/`. `wandering` is the starting wandering config, or None for no checks."""
         self._data_dir = Path(data_dir)
         self._wandering = wandering
 
@@ -48,7 +41,6 @@ class OsePlugin:
         registry.add_referee_guide(REFEREE_GUIDE)
         registry.add_judgment_category("rules", "Rules the OSE book leaves open")
         registry.add_character_schema(CHARACTER_SCHEMA)
-        registry.add_state_default("ose_rules", lambda _state: list(self._optional_rules))
         registry.add_state_default("dungeon", dungeon_turn.initial_dungeon(self._wandering))
         registry.add_state_default("kept_roll", lambda _state: None)
         registry.add_procedure(

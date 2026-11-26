@@ -17,6 +17,7 @@ from .library import Library
 from .. import OSE_DATA_DIR
 from ..flextale_import import default_output_dir
 from .plugins import builtin_plugins
+from .plugins.ose import OsePlugin
 from .registry import PluginFactory
 
 __all__ = ["main", "lan_ip"]
@@ -96,7 +97,8 @@ def _serve(
 
 def _demo(args) -> int:
     root = create_campaign(
-        Path(args.campaign), plugins=["ose", "flextale"], map_data=DEMO_MAP, start=DEMO_START, party=DEMO_PARTY
+        Path(args.campaign), plugins=["ose", "flextale"], map_data=DEMO_MAP, start=DEMO_START, party=DEMO_PARTY,
+        settings=OsePlugin.campaign_settings,
     )
     print(f"Demo campaign created at {root}. Run: solo-harness serve {root}")
     return 0

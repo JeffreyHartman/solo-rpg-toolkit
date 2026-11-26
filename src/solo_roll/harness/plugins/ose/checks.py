@@ -62,7 +62,7 @@ def saving_throw(state: dict[str, Any], command: dict[str, Any], ctx: CommandCon
 
 
 def _score_target(field: str, input_name: str, source: str):
-    def find(state: dict[str, Any], inputs: dict[str, Any]) -> Target | None:
+    def find(state: dict[str, Any], inputs: dict[str, Any], ctx: CommandContext) -> Target | None:
         member = party.member(state, inputs["member"])
         key = inputs[input_name]
         value = member.get(field, {}).get(key)

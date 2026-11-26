@@ -67,7 +67,7 @@ def test_a_bad_difficulty_context_is_refused(tmp_path):
     engine = make_engine(tmp_path, [])
     with pytest.raises(SettingError):
         engine.change_setting("difficulty", "context", "E")
-    assert engine.settings()["options"][0]["value"] == "A"
+    assert next(r for r in engine.settings()["options"] if r["section"] == "difficulty")["value"] == "A"
 
 
 def trap_engine(tmp_path, rolls, **kw):
@@ -324,7 +324,7 @@ def test_state_note_lists_the_inventory_and_the_current_encounter(tmp_path):
 def test_the_settings_list_the_difficulty_context_as_an_option(tmp_path):
     engine = make_engine(tmp_path, [])
     engine.change_setting("difficulty", "context", "D")
-    row = engine.settings()["options"][0]
+    row = next(r for r in engine.settings()["options"] if r["section"] == "difficulty")
     assert (row["section"], row["choices"], row["value"], row["default"]) == ("difficulty", ["A", "B", "C", "D"], "D", "A")
 
 

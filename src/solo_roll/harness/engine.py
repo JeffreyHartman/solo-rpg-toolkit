@@ -72,7 +72,7 @@ class Engine:
         kind = command.get("type")
         if kind == "procedure":
             procedure = self._procedure(command.get("name"))
-            inputs, target = prepare(self._registry, procedure, working, command.get("inputs") or {}, "player")
+            inputs, target = prepare(self._registry, procedure, working, command.get("inputs") or {}, "player", self._context)
             return self._run_procedure(working, procedure, inputs, target)
         if kind == "propose":
             return self._propose(working, command)
@@ -205,7 +205,7 @@ class Engine:
     def _propose(self, working: dict[str, Any], command: dict[str, Any]) -> list[Event]:
         """Run an Auto procedure at once, or keep a Confirm one as a pending proposal."""
         procedure = self._procedure(command.get("procedure"))
-        inputs, target = prepare(self._registry, procedure, working, command.get("inputs") or {}, "referee")
+        inputs, target = prepare(self._registry, procedure, working, command.get("inputs") or {}, "referee", self._context)
         if self.confirm_level(procedure.name) == AUTO:
             return self._run_procedure(working, procedure, inputs, target)
         proposals = working["proposals"]
@@ -247,7 +247,7 @@ class Engine:
             if fallback and str(changes.get("target")) == str(fallback["value"]):
                 del changes["target"]
             inputs, target = prepare(
-                self._registry, procedure, working, {**inputs, **changes}, "player", fallback
+                self._registry, procedure, working, {**inputs, **changes}, "player", self._context, fallback
             )
         return [answered, *self._run_procedure(working, procedure, inputs, target)]
 

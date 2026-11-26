@@ -36,8 +36,9 @@ def make(tmp_path, rolls, drop=(), party=None, rules=frozenset()):
     data = tmp_path / "data"
     write_tables(data, TABLES, drop)
     (data / "bestiary.json").write_text(json.dumps(BESTIARY))
-    root = create_campaign(tmp_path / "campaign", ["ose", "flextale"], MAP, "start", [dict(BRANNOC)] if party is None else party)
-    factories = {"ose": lambda: OsePlugin(data_dir=data, wandering=None, optional_rules=rules), "flextale": lambda: FlextalePlugin(data)}
+    root = create_campaign(tmp_path / "campaign", ["ose", "flextale"], MAP, "start", [dict(BRANNOC)] if party is None else party,
+                           settings={"ose": {rule: "on" for rule in rules}})
+    factories = {"ose": lambda: OsePlugin(data_dir=data, wandering=None), "flextale": lambda: FlextalePlugin(data)}
     return open_campaign(root, ScriptedDice(rolls), factories)
 
 

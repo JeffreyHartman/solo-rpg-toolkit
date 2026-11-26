@@ -1,7 +1,8 @@
 """The campaign settings store: `section -> key -> value`, saved to `settings.json` on every change.
 
 Sections in use: `confirm` (procedure name to confirm level) and `referee`
-(`model`, `effort`, and the context `budget` in tokens). The store does
+(`model`, `effort`, and the context `budget` in tokens), plus the sections plugins
+register, such as `ose` for the OSE optional rules. The store does
 not check values; the owner of each section does that before it calls `set`.
 """
 import copy

@@ -105,12 +105,12 @@ PARTY_FIRST = [5, 2]
 
 def ose_fight(tmp_path, rolls, rules=()):
     """An OSE campaign with no FlexTale, in a fight with one goblin, after an initiative roll."""
-    root = create_campaign(tmp_path / "campaign", ["ose"], HAND_MADE_MAP, "gate", [dict(BRANNOC)])
+    root = create_campaign(tmp_path / "campaign", ["ose"], HAND_MADE_MAP, "gate", [dict(BRANNOC)],
+                           settings={"ose": {rule: "on" for rule in rules}})
     paths = CampaignPaths(root)
     state = load_json(paths.state)
     state["combat"] = {"area": "gate", "outcome": None, "round": 0, "phase": "party", "first": "party",
                        "acted": [], "monsters": [dict(GOBLIN)]}
-    state["ose_rules"] = list(rules)
     write_json(paths.state, state)
     factories = {"ose": lambda: OsePlugin(OSE_DATA_DIR, wandering=None)}
     engine = open_campaign(root, ScriptedDice(rolls), factories)
