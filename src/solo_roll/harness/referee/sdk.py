@@ -28,6 +28,7 @@ from claude_agent_sdk import (
 from ..campaign import CampaignPaths
 from ..engine import Engine
 from ..errors import HarnessError
+from ..settings import REFEREE_DEFAULTS
 from . import events
 from .base import ContextPart, context_part, prompt_parts, session_opening, turn_prompt
 from .guard import ENGINE_TOOL_PREFIX, FILE_TOOLS
@@ -35,8 +36,8 @@ from .tools import EngineTool, RefereeTools, ToolOutcome
 
 __all__ = ["AgentSdkReferee", "RefereeConfigError", "system_prompt"]
 
-DEFAULT_MODEL = "sonnet"
-DEFAULT_EFFORT = "low"
+DEFAULT_MODEL = REFEREE_DEFAULTS["model"]
+DEFAULT_EFFORT = REFEREE_DEFAULTS["effort"]
 
 ClientFactory = Callable[[ClaudeAgentOptions], Any]
 

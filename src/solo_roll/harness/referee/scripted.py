@@ -13,6 +13,7 @@ from typing import Any, Union
 from ..campaign import CampaignPaths
 from ..engine import Engine
 from ..errors import HarnessError
+from ..settings import REFEREE_DEFAULTS
 from . import events
 from .base import ContextPart, TurnInput, context_part, prompt_parts, session_opening, turn_prompt
 from .guard import ENGINE_TOOL_PREFIX
@@ -47,8 +48,8 @@ class ScriptedReferee:
         self._fresh = True
         self.turns_seen: list[TurnInput] = []
         self.closed = False
-        self.model = "sonnet"
-        self.effort = "low"
+        self.model = REFEREE_DEFAULTS["model"]
+        self.effort = REFEREE_DEFAULTS["effort"]
         self.compacts = 0
         self.context_tokens: int | None = None
         """What `context_usage` returns; a test sets it."""
