@@ -93,6 +93,10 @@ cd web && npm install && npm run build      # the server serves web/dist
 npm run dev                                 # or Vite on 0.0.0.0:5199, proxies /ws to :8765
 ```
 
+#### Looking at the UI
+
+After any change under `web/`, run `cd web && npm run screenshots`. It builds the app, starts `solo-harness serve --referee none --seed 7` on a free port against a temp demo campaign, and saves `map`, `proposal`, `judgment` and `combat` PNGs to `web/e2e-output/screenshots/` (gitignored). Open them with the Read tool and check them before you report. It is headless and uses no plan usage. `web/e2e/harness.ts` (`startHarness`) and `web/e2e/fixtures.ts` (`launch`) are the reusable server start and stop for other Playwright specs; `npm run e2e` runs all of them.
+
 ## Conventions
 
 - **TDD** + frequent commits (one logical change per commit)
