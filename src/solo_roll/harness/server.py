@@ -19,7 +19,9 @@ Messages from the server, each a JSON object with a `type`:
                                       what the Referee got that turn (`Referee.turn_context`)
   session   {session, note}           sent to every connection when the next session
                                       starts; `note` is the clean note End session wrote
-  error     {message}                 sent only to the connection that caused it
+  error     {message}                 sent only to the connection that caused it; an error of
+                                      the End session flow that the Referee's end_session
+                                      tool started goes to every connection
 
 Pending judgment calls reach the browser in `state.judgments.pending`. Pending proposals reach it in `state.proposals.pending`; the events of
 a proposal include a `proposal` event.
@@ -37,7 +39,8 @@ Messages from the browser:
   new_session {}                      start the next session and a new Referee conversation
   end_session {}                      the Referee writes the clean session note and updates
                                       records, then the next session starts; with no note
-                                      written, the session stays open and the sender gets an error
+                                      written, the session stays open and the sender gets an error;
+                                      the Referee's end_session tool runs the same flow after its turn
   list_campaigns {}                   ask for the library
   new_campaign {name, ruleset, generators, module?}  create a campaign and open it
   open_campaign {id}                  open a saved campaign
@@ -47,6 +50,7 @@ accepted while a turn streams; a `say` waits for the turn before it. Referee
 setting changes, compact, and the session messages wait for the turn too.
 """
 import asyncio
+from collections.abc import Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -59,6 +63,7 @@ from .engine import Engine
 from .errors import HarnessError
 from .library import Library
 from .referee.base import Referee, end_session_request
+from .referee.tools import END_SESSION_TOOL
 from .vault import session_note
 
 __all__ = ["create_app"]
@@ -77,6 +82,8 @@ class _Hub:
         self._turn_lock = asyncio.Lock()
         self._turns: set[asyncio.Task] = set()
         self._context: dict[str, Any] | None = None
+        self._end_requested = False
+        """Set when the latest turn called the Referee's end_session tool."""
 
     def snapshot(self) -> dict[str, Any]:
         assert self.engine is not None
@@ -198,6 +205,8 @@ class _Hub:
     async def _run_turn(self, player_input: str) -> None:
         async with self._turn_lock:
             await self._stream_turn(player_input, log=True)
+            if self._end_requested:
+                await self._end_session_locked(self._broadcast)
 
     async def _stream_turn(self, player_input: str, log: bool = False) -> bool:
         """Run one Referee turn and send the context reading after it. Call with the turn lock held.
@@ -207,6 +216,7 @@ class _Hub:
         """
         assert self.referee is not None
         ok = True
+        self._end_requested = False
         narration: list[str] = []
         try:
             async for event in self.referee.turn(player_input):
@@ -217,6 +227,8 @@ class _Hub:
                     narration.clear()
                 if event["type"] == "tool_result" and event.get("events"):
                     await self._broadcast_events(event["events"])
+                if event["type"] == "tool_result" and event["tool"] == END_SESSION_TOOL and event["ok"]:
+                    self._end_requested = True
                 if event["type"] == "done" and event.get("error"):
                     ok = False
             if log:
@@ -264,23 +276,32 @@ class _Hub:
             await self._next_session(note=None)
 
     async def _end_session(self, ws: WebSocket) -> None:
-        paths = self.engine.paths
         async with self._turn_lock:
-            session = self.engine.state()["session"]
-            if not paths.raw_log(session).exists():
-                await _send(ws, {"type": "error", "message": f"Session {session} has no play to write up yet."})
-                return
-            if not await self._stream_turn(end_session_request(paths, session)):
-                await _send(ws, {"type": "error", "message": "End session failed; the session stays open."})
-                return
-            note = session_note(paths, session)
-            if note is None:
-                await _send(ws, {
-                    "type": "error",
-                    "message": "The Referee did not write the session note, so the session stays open. Try End session again.",
-                })
-                return
-            await self._next_session(note=note.relative_to(paths.vault).as_posix())
+            await self._end_session_locked(lambda payload: _send(ws, payload))
+
+    async def _end_session_locked(self, reply: Callable[[dict[str, Any]], Awaitable[None]]) -> None:
+        """Run End session: the Referee writes the note, then the next session starts. Call with the turn lock held.
+
+        `reply` gets the errors. An end_session tool call inside the write-up turn does not start another one.
+        """
+        paths = self.engine.paths
+        session = self.engine.state()["session"]
+        if not paths.raw_log(session).exists():
+            await reply({"type": "error", "message": f"Session {session} has no play to write up yet."})
+            return
+        ok = await self._stream_turn(end_session_request(paths, session))
+        self._end_requested = False
+        if not ok:
+            await reply({"type": "error", "message": "End session failed; the session stays open."})
+            return
+        note = session_note(paths, session)
+        if note is None:
+            await reply({
+                "type": "error",
+                "message": "The Referee did not write the session note, so the session stays open. Try End session again.",
+            })
+            return
+        await self._next_session(note=note.relative_to(paths.vault).as_posix())
 
     async def _next_session(self, note: str | None) -> None:
         """Start the next session and a new Referee conversation. Call with the turn lock held."""

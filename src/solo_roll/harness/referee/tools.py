@@ -14,7 +14,7 @@ from ..errors import HarnessError
 from ..registry import Event
 from .guard import ENGINE_TOOL_PREFIX, PathGuard
 
-__all__ = ["ENGINE_TOOLS", "EngineTool", "RefereeTools", "ToolOutcome"]
+__all__ = ["END_SESSION_TOOL", "ENGINE_TOOLS", "EngineTool", "RefereeTools", "ToolOutcome"]
 
 
 @dataclass(frozen=True)
@@ -88,6 +88,19 @@ def _create_character(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
     return ToolOutcome(output={"events": events, "party": engine.state()["party"]["members"]}, events=events)
 
 
+END_SESSION_TOOL = ENGINE_TOOL_PREFIX + "end_session"
+
+
+def _end_session(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
+    session = engine.state()["session"]
+    if not engine.paths.raw_log(session).exists():
+        raise HarnessError(f"Session {session} has no play to write up yet.")
+    return ToolOutcome(
+        output={"status": "The session ends after this turn. Say goodbye and end your turn; "
+                "the harness then asks you to write the session note."}
+    )
+
+
 ENGINE_TOOLS: tuple[EngineTool, ...] = (
     EngineTool(
         name="state",
@@ -142,6 +155,16 @@ ENGINE_TOOLS: tuple[EngineTool, ...] = (
         input_schema={"class": str, "character_name": str, "description": str},
         label=lambda engine, args: f"Creating {args.get('character_name') or 'a character'}",
         run=_create_character,
+    ),
+    EngineTool(
+        name="end_session",
+        description=(
+            "End the session when the player asks to stop. After this turn the harness runs End session: "
+            "you write the clean session note and update the records, then the next session starts."
+        ),
+        input_schema={},
+        label=lambda engine, args: "Ending the session",
+        run=_end_session,
     ),
 )
 

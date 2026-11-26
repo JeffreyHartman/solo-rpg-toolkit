@@ -1,4 +1,6 @@
 """Tests for the session and context messages of `harness.server.create_app`, with `ScriptedReferee`."""
+import asyncio
+
 import pytest
 
 pytest.importorskip("fastapi")
@@ -219,3 +221,37 @@ def test_the_raw_log_holds_the_player_text_and_the_narration_so_a_chat_only_sess
     assert "Checking." not in logged
     assert "Wrote the note." not in raw_log.read_text()
     assert messages[-1] == {"type": "session", "session": 2, "note": NOTE}
+
+
+def test_the_referee_end_session_tool_runs_the_end_session_flow(tmp_path):
+    write_note = Call("Write", {"file_path": NOTE, "content": "---\ntype: session\nsession: 1\n---\n# The Gate\n"})
+    client, referee, engine = referee_client(
+        tmp_path,
+        [Call("mcp__engine__end_session"), Say("We stop here.")],
+        [write_note, Call("mcp__engine__end_session"), Say("Wrote it.")],
+    )
+    with client.websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "say", "text": "Let's stop for tonight."})
+        messages = receive_until(ws, "session")
+
+    first = [m["event"] for m in messages if m["type"] == "referee" and m["event"]["type"] == "tool_result"][0]
+    assert first["ok"] is True
+    assert "Sessions/Raw/Session 001.md" in referee.turns_seen[1].player_input
+    assert len(referee.turns_seen) == 2
+    assert messages[-1] == {"type": "session", "session": 2, "note": NOTE}
+    assert engine.state()["session"] == 2
+
+
+def test_the_end_session_tool_refuses_a_session_with_no_play(tmp_path):
+    campaign = make_campaign(tmp_path)
+    engine = open_engine(campaign)
+    referee = ScriptedReferee(engine, CampaignPaths(campaign), turns=[[Call("mcp__engine__end_session")]])
+
+    async def collect():
+        return [e async for e in referee.turn("Done.")]
+
+    [result] = [e for e in asyncio.run(collect()) if e["type"] == "tool_result"]
+
+    assert result["ok"] is False and "no play" in result["error"]
+    assert engine.state()["session"] == 1
