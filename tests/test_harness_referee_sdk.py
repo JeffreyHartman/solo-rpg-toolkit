@@ -25,12 +25,17 @@ class FakeClient:
         self.queries = []
         self.connected = False
         self.disconnected = False
+        self.models = []
+        self.total_tokens = 3700
 
     async def connect(self):
         self.connected = True
 
     async def get_context_usage(self):
-        return {"totalTokens": 3700, "memoryFiles": self.memory_files}
+        return {"totalTokens": self.total_tokens, "memoryFiles": self.memory_files}
+
+    async def set_model(self, model=None):
+        self.models.append(model)
 
     async def query(self, prompt):
         self.queries.append(prompt)
@@ -249,3 +254,86 @@ def test_the_client_connects_once_per_session_and_closes(engine, paths):
 
     assert len(clients) == 1
     assert clients[0].disconnected
+
+
+def run(coro):
+    return asyncio.run(coro)
+
+
+def test_a_new_session_starts_a_new_conversation_that_opens_from_the_vault(engine, paths):
+    referee, clients = make_referee(engine, paths, [result()], [result()], [result()])
+
+    run_turn(referee, "one")
+    run_turn(referee, "two")
+    run(referee.new_session())
+    run_turn(referee, "three")
+
+    assert len(clients) == 2
+    assert clients[0].disconnected
+    assert "<session>" in clients[0].queries[0] and "<session>" not in clients[0].queries[1]
+    assert "<session>" in clients[1].queries[0] and clients[1].queries[0].endswith("three")
+
+
+def test_model_and_effort_changes_apply_to_the_open_conversation(engine, paths):
+    referee, clients = make_referee(engine, paths, [result()], [result()], [result()])
+    run_turn(referee)
+
+    run(referee.set_model("opus"))
+    run(referee.set_effort("high"))
+    run_turn(referee)
+
+    assert len(clients) == 1
+    assert clients[0].models == ["opus"]
+    assert clients[0].queries[1] == "/effort high"
+    assert clients[0].queries[2].endswith("I look around.")
+
+
+def test_model_and_effort_set_before_the_first_turn_go_into_the_options(engine, paths):
+    referee, clients = make_referee(engine, paths, [result()])
+
+    run(referee.set_model("opus"))
+    run(referee.set_effort("medium"))
+    run_turn(referee)
+
+    assert (clients[0].options.model, clients[0].options.effort) == ("opus", "medium")
+    assert clients[0].models == []
+
+
+def test_a_new_conversation_keeps_the_changed_model_and_effort(engine, paths):
+    referee, clients = make_referee(engine, paths, [result()], [result()], [result()])
+    run_turn(referee)
+    run(referee.set_model("opus"))
+    run(referee.set_effort("high"))
+
+    run(referee.new_session())
+    run_turn(referee)
+
+    assert (clients[1].options.model, clients[1].options.effort) == ("opus", "high")
+
+
+def test_compact_sends_the_compact_command_and_waits_for_it(engine, paths):
+    referee, clients = make_referee(engine, paths, [result()], [result()])
+    run_turn(referee)
+
+    run(referee.compact())
+
+    assert clients[0].queries[-1] == "/compact"
+    assert clients[0].script == []
+
+
+def test_compact_before_the_first_turn_does_nothing(engine, paths):
+    referee, clients = make_referee(engine, paths)
+
+    run(referee.compact())
+
+    assert clients == []
+
+
+def test_the_context_reading_is_none_until_the_conversation_starts(engine, paths):
+    referee, clients = make_referee(engine, paths, [result()])
+    assert run(referee.context_usage()) is None
+
+    run_turn(referee)
+    clients[0].total_tokens = 12345
+
+    assert run(referee.context_usage()) == 12345

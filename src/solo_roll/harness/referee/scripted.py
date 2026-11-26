@@ -46,6 +46,11 @@ class ScriptedReferee:
         self._fresh = True
         self.turns_seen: list[TurnInput] = []
         self.closed = False
+        self.model = "sonnet"
+        self.effort = "low"
+        self.compacts = 0
+        self.context_tokens: int | None = None
+        """What `context_usage` returns; a test sets it."""
 
     async def turn(self, player_input: str) -> AsyncIterator[events.RefereeEvent]:
         snapshot = self._tools.engine.state()
@@ -70,6 +75,18 @@ class ScriptedReferee:
     async def new_session(self) -> None:
         self._conversation += 1
         self._fresh = True
+
+    async def set_model(self, model: str) -> None:
+        self.model = model
+
+    async def set_effort(self, effort: str) -> None:
+        self.effort = effort
+
+    async def compact(self) -> None:
+        self.compacts += 1
+
+    async def context_usage(self) -> int | None:
+        return self.context_tokens
 
     def _run(self, call_id: str, call: Call) -> events.RefereeEvent:
         reason = self._tools.guard.check(call.tool, call.input)

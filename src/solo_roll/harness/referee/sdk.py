@@ -29,7 +29,7 @@ from ..campaign import CampaignPaths
 from ..engine import Engine
 from ..errors import HarnessError
 from . import events
-from .base import turn_prompt
+from .base import session_opening, turn_prompt
 from .guard import ENGINE_TOOL_PREFIX, FILE_TOOLS
 from .tools import EngineTool, RefereeTools, ToolOutcome
 
@@ -87,6 +87,7 @@ class AgentSdkReferee:
         self._denied: dict[str, str] = {}
         self._outcomes: dict[str, deque[ToolOutcome | HarnessError]] = defaultdict(deque)
         self._started: dict[str, str] = {}
+        self._fresh = True
 
     def options(self) -> ClaudeAgentOptions:
         server = create_sdk_mcp_server("engine", tools=[self._mcp_tool(t) for t in self._tools.engine_tools.values()])
@@ -111,7 +112,10 @@ class AgentSdkReferee:
 
     async def turn(self, player_input: str) -> AsyncIterator[events.RefereeEvent]:
         client = await self._connect()
-        await client.query(turn_prompt(player_input, self._tools.engine.state()))
+        snapshot = self._tools.engine.state()
+        opening = session_opening(self._tools.paths, snapshot["session"]) if self._fresh else None
+        self._fresh = False
+        await client.query(turn_prompt(player_input, snapshot, opening))
         async for message in client.receive_response():
             for event in self._translate(message):
                 yield event
@@ -120,6 +124,36 @@ class AgentSdkReferee:
         if self._client is not None:
             await self._client.disconnect()
             self._client = None
+
+    async def new_session(self) -> None:
+        """End the conversation; the next turn connects a new one, which opens from the vault."""
+        await self.close()
+        self._fresh = True
+
+    async def set_model(self, model: str) -> None:
+        self._model = model
+        if self._client is not None:
+            await self._client.set_model(model)
+
+    async def set_effort(self, effort: str) -> None:
+        self._effort = effort
+        if self._client is not None:
+            await self._command(f"/effort {effort}")
+
+    async def compact(self) -> None:
+        if self._client is not None:
+            await self._command("/compact")
+
+    async def context_usage(self) -> int | None:
+        """Tokens in the open conversation, or None before the first turn of a session."""
+        if self._client is None:
+            return None
+        return (await self._client.get_context_usage()).get("totalTokens")
+
+    async def _command(self, slash_command: str) -> None:
+        await self._client.query(slash_command)
+        async for _ in self._client.receive_response():
+            pass
 
     async def _connect(self) -> Any:
         if self._client is None:

@@ -20,15 +20,31 @@ class TurnInput:
 
 
 class Referee(Protocol):
-    """One Referee conversation for one campaign.
+    """The Referee of one campaign, one conversation per session.
 
     `turn` reads a fresh state snapshot from the engine, sends it with the
     player's input, and yields `events.RefereeEvent`s until a `done` event.
+    The first turn of each conversation also sends `session_opening`.
     """
 
     def turn(self, player_input: str) -> AsyncIterator[RefereeEvent]: ...
 
     async def close(self) -> None: ...
+
+    async def new_session(self) -> None:
+        """End the conversation. The next turn starts a new one from the engine state and the vault."""
+
+    async def set_model(self, model: str) -> None:
+        """Use `model` from the next turn on, in the same conversation."""
+
+    async def set_effort(self, effort: str) -> None:
+        """Use `effort` from the next turn on, in the same conversation."""
+
+    async def compact(self) -> None:
+        """Summarize the conversation now. The harness never compacts unless the player asks."""
+
+    async def context_usage(self) -> int | None:
+        """Tokens in the current conversation, or None before its first turn."""
 
 
 def turn_prompt(player_input: str, snapshot: dict[str, Any], opening: str | None = None) -> str:
