@@ -2,6 +2,7 @@
 
 The engine writes the raw session logs and the read-only `State.md`.
 """
+import json
 import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -125,7 +126,7 @@ def _mechanical_block(member: dict[str, Any], area: str) -> str:
         if key != "name":
             lines.append(f"> - {key.replace('_', ' ').capitalize()}: {_plain(value)}")
     body = "\n".join(lines)
-    return f"{BLOCK_BEGIN}\n> [!abstract] Mechanics (written by the engine)\n{body}\n{BLOCK_END}"
+    return f"{BLOCK_BEGIN}\n\n> [!abstract] Mechanics (written by the engine)\n{body}\n\n{BLOCK_END}"
 
 
 def _plain(value: Any) -> str:
@@ -136,9 +137,16 @@ def _plain(value: Any) -> str:
     return str(value)
 
 
+def _yaml_text(text: str) -> str:
+    """Quote `text` as a YAML scalar when it holds characters YAML would read as syntax."""
+    if re.fullmatch(r"[\w][\w .'-]*", text):
+        return text
+    return json.dumps(text)
+
+
 def _character_note(name: str, block: str) -> str:
     return (
-        f"---\nname: {name}\ntype: character\nstatus: active\n---\n"
+        f"---\nname: {_yaml_text(name)}\ntype: character\nstatus: active\n---\n"
         f"# {name}\n\n{block}\n\n"
         "## Backstory\n\n## Appearance\n\n## Goals\n"
     )
@@ -187,7 +195,7 @@ def _home(name: str) -> str:
 def _campaign_note(name: str, plugins: list[str]) -> str:
     plugin_list = ", ".join(plugins)
     return (
-        f"---\ntype: campaign\nname: {name}\nplugins: [{plugin_list}]\nstatus: active\n---\n"
+        f"---\ntype: campaign\nname: {_yaml_text(name)}\nplugins: [{plugin_list}]\nstatus: active\n---\n"
         f"# {name}\n\n"
         f"## The party\n\nSee {_index_link('Characters')}.\n\n"
         f"## Sessions\n\nSee {_index_link('Sessions')}.\n"

@@ -199,3 +199,14 @@ def test_the_raw_log_index_links_each_session_log(tmp_path):
     index = (vault / "Sessions" / "Raw" / "_index.md").read_text()
     assert index.count("[[Sessions/Raw/Session 001|Session 001]]") == 1
     assert unresolved_links(vault) == []
+
+
+def test_a_name_with_path_or_yaml_characters_still_gets_a_linked_character_note(tmp_path):
+    campaign = create_campaign(
+        tmp_path / "campaign", plugins=["ose"], map_data=HAND_MADE_MAP, start="gate", party=[{"name": "Mag: of/Rope"}]
+    )
+    vault = CampaignPaths(campaign).vault
+
+    note = vault / "Characters" / "Mag- of-Rope.md"
+    assert frontmatter(note)["name"] == '"Mag: of/Rope"'
+    assert unresolved_links(vault) == []
