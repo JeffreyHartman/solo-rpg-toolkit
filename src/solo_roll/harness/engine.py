@@ -47,8 +47,8 @@ class Engine:
         state.setdefault("proposals", empty_proposals())
         self._state = state
         self._registry = registry
-        self._context = CommandContext(dice=dice)
         self._settings = CampaignSettings(paths.campaign_settings)
+        self._context = CommandContext(dice=dice, settings=self._settings)
 
     def act(self, command: dict[str, Any]) -> list[Event]:
         """Run one command and return its events in order.
@@ -172,11 +172,24 @@ class Engine:
             "confirm": [
                 {"procedure": p.name, "label": p.label, "default": p.confirm, "level": self.confirm_level(p.name)}
                 for p in self._registry.procedures.values()
-            ]
+            ],
+            "options": [
+                {
+                    "section": section, "key": key, "label": spec["label"], "choices": spec["choices"],
+                    "default": spec["default"], "value": self._settings.get(section, key, spec["default"]),
+                }
+                for (section, key), spec in self._registry.settings.items()
+            ],
         }
 
     def change_setting(self, section: str, key: str, value: Any) -> None:
         """Check and save one campaign setting. Raises `SettingError` and saves nothing for a bad one."""
+        spec = self._registry.settings.get((section, key))
+        if spec is not None:
+            if value not in spec["choices"]:
+                raise SettingError(f"{section}.{key} must be one of {', '.join(spec['choices'])}, got {value!r}")
+            self._settings.set(section, key, value)
+            return
         if section != "confirm":
             raise SettingError(f"no campaign setting section '{section}'")
         if key not in self._registry.procedures:

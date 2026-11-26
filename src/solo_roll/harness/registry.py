@@ -36,6 +36,8 @@ Action = dict[str, Any]
 @dataclass(frozen=True)
 class CommandContext:
     dice: DiceSource
+    settings: Any = None
+    """The campaign settings store (`CampaignSettings`), for plugin code that reads a setting it registered."""
 
 
 CommandHandler = Callable[[dict[str, Any], dict[str, Any], CommandContext], list[Event]]
@@ -111,6 +113,7 @@ class Registry:
     triggers: dict[str, list[Trigger]] = field(default_factory=dict)
     state_defaults: dict[str, StateDefault] = field(default_factory=dict)
     target_sources: dict[str, list[TargetSource]] = field(default_factory=dict)
+    settings: dict[tuple[str, str], dict[str, Any]] = field(default_factory=dict)
 
     def add_command(self, command_type: str, handler: CommandHandler) -> None:
         if command_type in self.commands:
@@ -149,6 +152,14 @@ class Registry:
         When none gives one, the target number is a proposal input.
         """
         self.target_sources.setdefault(procedure, []).append(source)
+
+    def add_setting(self, section: str, key: str, label: str, choices: list[str], default: str) -> None:
+        """Register a campaign setting with a fixed list of choices. The player changes it in the settings menu."""
+        if (section, key) in self.settings:
+            raise PluginError(f"setting '{section}.{key}' is already registered")
+        if default not in choices:
+            raise PluginError(f"setting '{section}.{key}': default '{default}' is not one of its choices")
+        self.settings[(section, key)] = {"label": label, "choices": list(choices), "default": default}
 
     def add_trigger(self, event_type: str, trigger: Trigger) -> None:
         self.triggers.setdefault(event_type, []).append(trigger)
