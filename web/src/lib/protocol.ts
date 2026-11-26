@@ -78,8 +78,33 @@ export interface ConfirmRow {
   level: ConfirmLevel
 }
 
+export const MODELS = ['sonnet', 'opus', 'haiku'] as const
+export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const
+
+export interface RefereeSettings {
+  model: (typeof MODELS)[number]
+  effort: (typeof EFFORTS)[number]
+  budget: number
+}
+
 export interface CampaignSettings {
   confirm: ConfirmRow[]
+  referee: RefereeSettings
+}
+
+// One thing the Referee got in its latest turn, from Referee.turn_context.
+export interface ContextPart {
+  label: string
+  chars: number
+  text: string
+}
+
+export interface ContextReading {
+  type: 'context'
+  tokens: number | null
+  budget: number
+  over: boolean
+  parts: ContextPart[]
 }
 
 export interface Command {
@@ -117,11 +142,19 @@ export type RefereeEvent =
   | { type: 'done'; error?: string }
 
 export type ServerMessage =
-  | { type: 'snapshot'; state: EngineState; actions: Action[]; settings: CampaignSettings }
+  | {
+      type: 'snapshot'
+      state: EngineState
+      actions: Action[]
+      settings: CampaignSettings
+      context: ContextReading | null
+    }
   | { type: 'events'; events: EngineEvent[]; state: EngineState; actions: Action[] }
   | { type: 'player'; text: string }
   | { type: 'referee'; event: RefereeEvent }
   | { type: 'settings'; settings: CampaignSettings }
+  | ContextReading
+  | { type: 'session'; session: number; note: string | null }
   | { type: 'error'; message: string }
 
 export type ProposalAnswer = 'confirm' | 'change' | 'reject'
@@ -131,3 +164,6 @@ export type ClientMessage =
   | { type: 'say'; text: string }
   | { type: 'answer'; id: string; answer: ProposalAnswer; inputs?: Record<string, string | number> }
   | { type: 'set_setting'; section: string; key: string; value: unknown }
+  | { type: 'compact' }
+  | { type: 'new_session' }
+  | { type: 'end_session' }
