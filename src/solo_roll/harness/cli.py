@@ -6,7 +6,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from ..rng import RandomDice
-from .campaign import create_campaign
+from .campaign import CampaignPaths, create_campaign
 from .demo import DEMO_MAP, DEMO_PARTY, DEMO_START
 from .engine import open_campaign
 from .errors import HarnessError
@@ -39,9 +39,14 @@ def _serve(args, run: Callable, find_ip: Callable[[], str]) -> int:
     from .server import create_app
 
     engine = open_campaign(Path(args.campaign), RandomDice(seed=args.seed), BUILTIN_PLUGINS)
+    referee = None
+    if args.referee == "sdk":
+        from .referee.sdk import AgentSdkReferee
+
+        referee = AgentSdkReferee(engine, CampaignPaths(Path(args.campaign)), model=args.model, effort=args.effort)
     web_dist = Path(args.web_dist) if args.web_dist else Path(__file__).resolve().parents[3] / "web" / "dist"
     print(f"Harness for {args.campaign}: http://{find_ip()}:{args.port}/", flush=True)
-    run(create_app(engine, web_dist=web_dist), host=BIND_HOST, port=args.port)
+    run(create_app(engine, web_dist=web_dist, referee=referee), host=BIND_HOST, port=args.port)
     return 0
 
 
@@ -65,6 +70,10 @@ def main(
     serve.add_argument("--port", type=int, default=DEFAULT_PORT)
     serve.add_argument("--seed", type=int, default=None)
     serve.add_argument("--web-dist", default=None, help="built web app folder (default: web/dist in this checkout)")
+    serve.add_argument("--referee", choices=["sdk", "none"], default="sdk",
+                       help="sdk: Claude through the Agent SDK on your plan; none: no Referee")
+    serve.add_argument("--model", default="sonnet")
+    serve.add_argument("--effort", default="low")
     demo = sub.add_parser("demo", help="create a campaign with a small hand-made map")
     demo.add_argument("campaign")
     args = parser.parse_args(argv)

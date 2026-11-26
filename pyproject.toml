@@ -13,7 +13,7 @@ solo-flextale-import = "solo_roll.flextale_import:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=7", "httpx2>=2"]
-harness = ["fastapi>=0.115", "uvicorn[standard]>=0.30"]
+harness = ["fastapi>=0.115", "uvicorn[standard]>=0.30", "claude-agent-sdk==0.2.189"]
 
 [build-system]
 requires = ["hatchling"]
