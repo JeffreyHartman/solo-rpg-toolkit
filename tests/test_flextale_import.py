@@ -341,3 +341,42 @@ def test_main_exits_two_on_a_bad_override_op(tmp_path: Path, capsys):
 
     assert code == 2
     assert "unknown op" in capsys.readouterr().err
+
+
+COIN_LAYOUT = """\
+FlexTable 3: QuickStart Treasure Low Coin
+
+      A          B         C        D       OSR
+    1-10       1-20      1-20     1-20      1d4 gp / 2d4 gp / 3d4 gp
+    11-20        -         -        -       1d6 gp / 2d6 gp / 3d6 gp / 4d6 x 2 gp
+"""
+COIN_TABLE = "quickstart/treasure-low-coin-a-osr"
+
+
+def _coin_import(tmp_path: Path, overrides=None):
+    return import_flextale(PDF, tmp_path, fake_extractor(layout=COIN_LAYOUT), overrides=overrides)
+
+
+def test_coin_band_that_fails_for_some_context_is_kept_and_flagged(tmp_path: Path):
+    result = _coin_import(tmp_path)
+
+    assert COIN_TABLE in result.written
+    assert result.flagged[COIN_TABLE] == ["1-10"]
+
+
+def test_coin_band_every_context_can_read_is_not_flagged(tmp_path: Path):
+    ok = "1d4 gp / 2d4 gp / 3d4 gp / 4d4 gp"
+    fix = {COIN_TABLE: [{"op": "set", "match": [1, 10], "result": ok}]}
+
+    assert COIN_TABLE not in _coin_import(tmp_path, fix).flagged
+
+
+def test_main_warns_about_a_flagged_coin_band_but_exits_zero(tmp_path: Path, capsys):
+    pdf = tmp_path / "book.pdf"
+    pdf.write_bytes(b"")
+
+    code = main([str(pdf), str(tmp_path / "out")], extract=fake_extractor(layout=COIN_LAYOUT), env={}, home=tmp_path)
+
+    err = capsys.readouterr().err
+    assert code == 0
+    assert COIN_TABLE in err and "1-10" in err
