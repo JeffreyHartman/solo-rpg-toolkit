@@ -226,4 +226,13 @@ A browser harness for solo play: an engine that owns mechanical state and dice, 
 - [x] Design grilling, ADR 0001 and 0002, AI GM harness survey (`docs/research/`)
 - [x] UI layout prototype (branch `prototype/ui-shell`)
 - [x] Referee loop spike (branch `prototype/referee-loop`)
-- [ ] First slice: FlexTale Quick Start delve on OSE ([spec, issue #2](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/2))
+- [x] First slice: FlexTale Quick Start delve on OSE ([spec, issue #2](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/2)), `v0.7.0` (PR #18)
+- [x] ADR 0003 (player controls the character, Referee controls the world) and ADR 0004 (Referee rolls only when the outcome is uncertain)
+
+The phase plan from here to a fully playable harness is the [roadmap map, issue #25](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/25). The map is still a draft. When it is locked, its phase plan replaces this section.
+
+- [x] Phase 1, Solid ground: the first slice works on real data. FlexTale table overrides, GM voice and out-of-character notes, Referee edit tools and monster turns, OSE optional combat rules, a kept class roll, headless screenshots, and an end-to-end smoke test. `v0.8.0` (PR #34)
+- [ ] Phase 2, The table: the player-controlled VTT. Direct actions, scenes (#35), usability research, visual design, dockable panels, rule citations
+- [ ] Phase 3, The full arc: character creation and import, inventory and gear (#20), the settlement, travel, character death (#39), the return to town, XP, and levels
+- [ ] Phase 4, Modules: Claude Code converts an adventure PDF into a campaign, and the harness plays it
+- [ ] Phase 5, Later, unordered: hexcrawl, tactical grid, other Referee providers, the Ironsworn ruleset
