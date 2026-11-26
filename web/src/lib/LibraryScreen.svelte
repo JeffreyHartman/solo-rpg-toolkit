@@ -46,7 +46,7 @@
       <fieldset>
         <legend>Generators</legend>
         {#each plugins.generator as p (p)}
-          <label><input type="checkbox" value={p} bind:group={generators} /> {p}</label>
+          <label class="check"><input type="checkbox" value={p} bind:group={generators} /> {p}</label>
         {:else}<span class="dim">None installed.</span>{/each}
       </fieldset>
       <label>Module
@@ -66,5 +66,7 @@
   section, form { flex: 1 1 320px; display: flex; flex-direction: column; gap: 8px; max-width: 480px; }
   .row { display: flex; flex-direction: column; text-align: left; }
   label, fieldset { display: flex; flex-direction: column; gap: 2px; border: 0; padding: 0; }
+  label.check { flex-direction: row; align-items: center; gap: 8px; }
+  label.check input { width: auto; margin: 0; }
   .err { color: var(--bad); }
 </style>
