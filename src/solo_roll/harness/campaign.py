@@ -5,6 +5,7 @@ Layout under the campaign folder:
   engine/state.json      engine state, written only by the engine
   vault/State.md         read-only state note, rewritten after every command
   vault/Sessions/Raw/    one raw log per session
+  referee/               the Referee's secret notes, outside the vault
 """
 import json
 from dataclasses import dataclass
@@ -36,8 +37,17 @@ class CampaignPaths:
     def state_note(self) -> Path:
         return self.vault / "State.md"
 
+    @property
+    def referee(self) -> Path:
+        return self.root / "referee"
+
     def raw_log(self, session: int) -> Path:
         return self.vault / "Sessions" / "Raw" / f"Session {session:03d}.md"
+
+    def is_engine_written(self, resolved: Path) -> bool:
+        """True for a vault file that only the engine writes. `resolved` must be a resolved path."""
+        vault = self.vault.resolve()
+        return resolved == vault / "State.md" or resolved.is_relative_to(vault / "Sessions" / "Raw")
 
 
 def load_json(path: Path) -> dict[str, Any]:
