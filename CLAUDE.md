@@ -95,7 +95,7 @@ npm run dev                                 # or Vite on 0.0.0.0:5199, proxies /
 
 #### Looking at the UI
 
-After any change under `web/`, run `cd web && npm run screenshots`. It builds the app, starts `solo-harness serve --referee none --seed 7` on a free port against a temp demo campaign, and saves `map`, `proposal`, `judgment` and `combat` PNGs to `web/e2e-output/screenshots/` (gitignored). Open them with the Read tool and check them before you report. It is headless and uses no plan usage. `web/e2e/harness.ts` (`startHarness`) and `web/e2e/fixtures.ts` (`launch`) are the reusable server start and stop for other Playwright specs; `npm run e2e` runs all of them.
+After any change under `web/`, run `cd web && npm run screenshots`. It builds the app, starts `solo-harness serve --referee none --seed 7` on a free port against a temp demo campaign, and saves `map`, `proposal`, `judgment` and `combat` PNGs to `web/e2e-output/screenshots/` (gitignored). Open them with the Read tool and check them before you report. It is headless and uses no plan usage. `web/e2e/harness.ts` (`startHarness`) and `web/e2e/fixtures.ts` (`launch`) are the reusable server start and stop for other Playwright specs; `npm run e2e` runs all of them, including `e2e/smoke.spec.ts`, a whole short delve. That one uses `startScriptedHarness` and the `launchScripted` fixture: `solo-harness serve --campaigns DIR --referee scripted --script FILE`, where the JSON script holds the fixed `dice` and one list of Referee steps per turn, and `web/e2e/data/flextale` holds synthetic generator tables. When the engine asks for dice in a new order, the smoke test's `DICE` list needs the same edit.
 
 ## Conventions
 

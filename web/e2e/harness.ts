@@ -1,5 +1,5 @@
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -69,17 +69,29 @@ export async function startHarness(options: HarnessOptions = {}): Promise<Harnes
     writeFileSync(file, JSON.stringify(state, null, 2))
   }
 
+  const { url, child } = await serve(bin, dir, ['serve', campaign, '--referee', 'none', '--seed', String(options.seed ?? 7)])
+  return { url, campaign, stop: () => stopServer(child, dir) }
+}
+
+async function stopServer(child: ChildProcess, dir: string): Promise<void> {
+  if (child.exitCode === null) {
+    const exited = new Promise((r) => child.once('exit', r))
+    child.kill('SIGTERM')
+    await exited
+  }
+  rmSync(dir, { recursive: true, force: true })
+}
+
+/** Starts `solo-harness` with `args` plus a free port and the built web app; removes `dir` if it fails. */
+async function serve(bin: string, dir: string, args: string[], env: Record<string, string> = {}) {
   const port = await freePort()
-  const child = spawn(
-    bin,
-    ['serve', campaign, '--referee', 'none', '--seed', String(options.seed ?? 7), '--port', String(port),
-     '--web-dist', join(repo, 'web', 'dist')],
-    { stdio: ['ignore', 'pipe', 'pipe'] },
-  )
+  const child = spawn(bin, [...args, '--port', String(port), '--web-dist', join(repo, 'web', 'dist')], {
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, ...env },
+  })
   let output = ''
   child.stdout?.on('data', (chunk) => (output += chunk))
   child.stderr?.on('data', (chunk) => (output += chunk))
-
   const url = `http://127.0.0.1:${port}/`
   try {
     await waitFor(url, child, () => output)
@@ -88,16 +100,32 @@ export async function startHarness(options: HarnessOptions = {}): Promise<Harnes
     rmSync(dir, { recursive: true, force: true })
     throw error
   }
-  return {
-    url,
-    campaign,
-    stop: async () => {
-      if (child.exitCode === null) {
-        const exited = new Promise((r) => child.once('exit', r))
-        child.kill('SIGTERM')
-        await exited
-      }
-      rmSync(dir, { recursive: true, force: true })
-    },
-  }
+  return { url, child, output }
+}
+
+export interface ScriptedHarness {
+  url: string
+  /** The folder that holds the campaigns the browser creates. */
+  campaigns: string
+  stop: () => Promise<void>
+}
+
+/**
+ * Serves an empty campaign folder with the `ScriptedReferee` and fixed dice from `script`
+ * (`solo-harness serve --script`). The synthetic FlexTale tables in `e2e/data/flextale` are the
+ * generator's data, so no book text is involved.
+ */
+export async function startScriptedHarness(script: Record<string, unknown>): Promise<ScriptedHarness> {
+  const dir = mkdtempSync(join(tmpdir(), 'harness-e2e-'))
+  const campaigns = join(dir, 'campaigns')
+  const data = join(dir, 'xdg')
+  mkdirSync(campaigns)
+  cpSync(join(here, 'data', 'flextale'), join(data, 'solo-rpg-toolkit', 'flextale'), { recursive: true })
+  const scriptFile = join(dir, 'script.json')
+  writeFileSync(scriptFile, JSON.stringify(script))
+  const { url, child } = await serve(
+    harnessBin(), dir, ['serve', '--campaigns', campaigns, '--referee', 'scripted', '--script', scriptFile],
+    { XDG_DATA_HOME: data },
+  )
+  return { url, campaigns, stop: () => stopServer(child, dir) }
 }
