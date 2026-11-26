@@ -16,6 +16,10 @@ _Avoid_: backend, game server
 One continuous game with its state, journal, and the plugins it uses.
 _Avoid_: game, save, world
 
+**Party**:
+The player characters of a campaign. It can hold one character or several.
+_Avoid_: group, team, PC (when it means all of them)
+
 **Session**:
 One sitting of play. Each session starts a new Referee conversation from campaign state, and the player can end it and start a new one at any time.
 _Avoid_: game night, run

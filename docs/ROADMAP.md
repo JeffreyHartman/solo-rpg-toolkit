@@ -217,3 +217,13 @@ Make it easy to hand this to someone else.
 - [ ] Versioned skill releases (zip each skill dir, tag)
 - [ ] `solo-roll` PyPI publish or pipx-from-git instructions
 - [ ] Example campaign folder with a complete played session log included
+
+---
+
+## Sub-project 4: Browser Harness
+A browser harness for solo play: an engine that owns mechanical state and dice, an AI Referee through the Agent SDK, and ruleset, generator, and module plugins. Vocabulary in `GLOSSARY.md`, decisions in `docs/adr/`.
+
+- [x] Design grilling, ADR 0001 and 0002, AI GM harness survey (`docs/research/`)
+- [x] UI layout prototype (branch `prototype/ui-shell`)
+- [x] Referee loop spike (branch `prototype/referee-loop`)
+- [ ] First slice: FlexTale Quick Start delve on OSE ([spec, issue #2](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/2))
