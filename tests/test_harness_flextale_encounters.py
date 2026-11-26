@@ -140,3 +140,35 @@ def test_a_check_with_disadvantage_rolls_two_dice_and_keeps_the_worse(tmp_path):
     events = check(engine, "breath")  # needs 15 or more; the worse die is 10
     assert events[0]["rolls"] == [16, 10]
     assert engine.state()["encounter"]["current"]["outcomes"][0]["status"] == "failed"
+
+
+def test_a_combat_result_leaves_a_pending_combat_and_a_combat_event_for_ticket_12(tmp_path):
+    from solo_roll.harness.plugins.flextale.encounters import pending_combat
+
+    engine = make_engine(tmp_path, [1, 16, 1, 1])  # combat, then monsters table roll 1
+    events = explore(engine)
+    outcome = pending_combat(engine.state())
+    assert (outcome["kind"], outcome["status"], outcome["detail"]["result"]) == ("combat", "pending", "Two fake goblins")
+    hook = next(e for e in events if e["type"] == "combat_encounter")
+    assert (hook["area"], hook["outcome"], hook["monsters"]) == ("area-2", 0, "Two fake goblins")
+
+
+def test_a_trap_that_is_a_monster_becomes_combat(tmp_path):
+    tables = {**DEFAULT_TABLES, "trap-a-osr": [(1, 20, "Monster: Change the threat to combat")]}
+    engine = make_engine(tmp_path, [1, 9, 1, 12], tables=tables)
+    explore(engine)
+    outcome = encounter(engine)["outcomes"][0]
+    assert (outcome["kind"], outcome["via"]["result"].split(":")[0]) == ("combat", "Monster")
+
+
+def test_combat_and_treasure_keeps_the_treasure_pending(tmp_path):
+    engine = make_engine(tmp_path, [1, 19, 11])  # monsters roll 11
+    explore(engine)
+    kinds = [(o["kind"], o["status"]) for o in encounter(engine)["outcomes"]]
+    assert kinds == [("combat", "pending"), ("treasure", "pending")]
+
+
+def test_roll_twice_resolves_two_more_results_and_skips_further_roll_twice(tmp_path):
+    engine = make_engine(tmp_path, [1, 18, 18, 3, 13, 1])  # twice; (twice again ignored); none; secret
+    explore(engine)
+    assert [o["kind"] for o in encounter(engine)["outcomes"]] == ["none", "secret"]
