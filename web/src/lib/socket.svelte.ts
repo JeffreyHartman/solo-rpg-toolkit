@@ -1,10 +1,12 @@
 import type {
   Action,
   CampaignSettings,
+  CampaignSummary,
   ClientMessage,
   Command,
   ConfirmLevel,
   EngineState,
+  PluginsByKind,
   ProposalAnswer,
   RefereeEvent,
   ServerMessage,
@@ -32,6 +34,8 @@ export const game = $state({
   chat: [] as ChatEntry[],
   refereeBusy: false,
   settings: null as CampaignSettings | null,
+  // Set while the New and Open campaign screen is showing; null while a campaign is open.
+  library: null as { campaigns: CampaignSummary[]; plugins: PluginsByKind } | null,
 })
 
 // Index in game.chat of the narration this turn is streaming into, or -1.
@@ -51,6 +55,14 @@ export function connect(): void {
 
 function receive(message: ServerMessage): void {
   switch (message.type) {
+    case 'library':
+      game.library = { campaigns: message.campaigns, plugins: message.plugins }
+      return
+    case 'snapshot':
+      if (game.library) game.chat = []
+      game.library = null
+      game.settings = message.settings
+      break
     case 'error':
       game.chat.push({ kind: 'error', text: message.message })
       return
@@ -64,9 +76,6 @@ function receive(message: ServerMessage): void {
     case 'settings':
       game.settings = message.settings
       return
-    case 'snapshot':
-      game.settings = message.settings
-      break
     case 'events':
       for (const event of message.events) {
         if (event.type === 'mechanics') {
@@ -122,6 +131,24 @@ function send(message: ClientMessage): void {
 
 export function act(command: Command): void {
   send({ type: 'act', command })
+}
+
+export function listCampaigns(): void {
+  send({ type: 'list_campaigns' })
+}
+
+export function newCampaign(name: string, ruleset: string, generators: string[], module?: string): void {
+  send({ type: 'new_campaign', name, ruleset, generators, module })
+}
+
+export function openCampaign(id: string): void {
+  send({ type: 'open_campaign', id })
+}
+
+export const OSE_CLASSES = ['Fighter', 'Cleric', 'Magic-User', 'Thief', 'Dwarf', 'Elf', 'Halfling']
+
+export function createCharacter(characterClass: string, name: string, description: string): void {
+  act({ type: 'procedure', name: 'create_character', inputs: { class: characterClass, character_name: name, description } })
 }
 
 export function say(text: string): void {

@@ -94,7 +94,7 @@ def create_campaign(
     }
     if start not in areas:
         raise CampaignFileError(f"start area '{start}' is not on the map")
-    write_json(paths.settings, {"plugins": list(plugins)})
+    write_json(paths.settings, {"plugins": list(plugins), "name": name or paths.root.name})
     state = {
         "session": 1,
         "party": {"members": list(party), "area": start},

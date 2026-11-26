@@ -38,3 +38,24 @@ def test_demo_creates_a_campaign_the_engine_can_walk(tmp_path):
     engine.act(first["command"])
 
     assert engine.state()["party"]["area"] == first["command"]["to"]
+
+
+def test_serve_with_a_campaign_folder_and_no_campaign_starts_on_the_library(tmp_path, capsys):
+    apps = []
+
+    code = main(
+        ["serve", "--campaigns", str(tmp_path / "campaigns"), "--referee", "none"],
+        run=lambda app, host, port: apps.append(app),
+        lan_ip=lambda: "10.0.0.2",
+    )
+
+    assert code == 0
+    from fastapi.testclient import TestClient
+
+    with TestClient(apps[0]).websocket_connect("/ws") as ws:
+        assert ws.receive_json()["type"] == "library"
+
+
+def test_serve_needs_a_campaign_or_a_campaign_folder(capsys):
+    assert main(["serve"], run=lambda *a, **k: None) == 1
+    assert "--campaigns" in capsys.readouterr().err

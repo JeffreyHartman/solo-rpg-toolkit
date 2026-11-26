@@ -132,7 +132,9 @@ def test_options_load_no_user_settings_and_turn_off_memory_and_auto_compact(engi
     assert options.env["CLAUDE_CODE_DISABLE_AUTO_MEMORY"] == "1"
     assert options.env["DISABLE_AUTO_COMPACT"] == "1"
     assert options.tools == ["Read", "Write", "Edit", "Glob", "Grep"]
-    assert sorted(options.allowed_tools) == ["mcp__engine__move", "mcp__engine__propose", "mcp__engine__state"]
+    assert sorted(options.allowed_tools) == [
+        "mcp__engine__create_character", "mcp__engine__move", "mcp__engine__propose", "mcp__engine__state"
+    ]
     assert options.cwd == str(paths.vault)
     assert options.add_dirs == [str(paths.referee)]
     assert (options.model, options.effort) == ("sonnet", "low")

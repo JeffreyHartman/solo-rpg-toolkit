@@ -25,7 +25,23 @@ export interface OpenExit {
 
 export interface Member {
   name: string
+  class?: string
+  level?: number
+  description?: string
+  abilities?: Record<string, number>
+  hp?: number
+  max_hp?: number
 }
+
+export interface CampaignSummary {
+  id: string
+  name: string
+  plugins: string[]
+  members: string[]
+  session: number
+}
+
+export type PluginsByKind = Record<'ruleset' | 'generator' | 'module', string[]>
 
 export interface LightSource {
   kind: string
@@ -119,6 +135,7 @@ export type RefereeEvent =
 export type ServerMessage =
   | { type: 'snapshot'; state: EngineState; actions: Action[]; settings: CampaignSettings }
   | { type: 'events'; events: EngineEvent[]; state: EngineState; actions: Action[] }
+  | { type: 'library'; campaigns: CampaignSummary[]; plugins: PluginsByKind }
   | { type: 'player'; text: string }
   | { type: 'referee'; event: RefereeEvent }
   | { type: 'settings'; settings: CampaignSettings }
@@ -131,3 +148,6 @@ export type ClientMessage =
   | { type: 'say'; text: string }
   | { type: 'answer'; id: string; answer: ProposalAnswer; inputs?: Record<string, string | number> }
   | { type: 'set_setting'; section: string; key: string; value: unknown }
+  | { type: 'list_campaigns' }
+  | { type: 'new_campaign'; name: string; ruleset: string; generators: string[]; module?: string }
+  | { type: 'open_campaign'; id: string }
