@@ -13,7 +13,7 @@ from ..campaign import CampaignPaths
 from ..engine import Engine
 from ..errors import HarnessError
 from . import events
-from .base import TurnInput, turn_prompt
+from .base import TurnInput, session_opening, turn_prompt
 from .guard import ENGINE_TOOL_PREFIX
 from .tools import RefereeTools
 
@@ -42,12 +42,17 @@ class ScriptedReferee:
         self._tools = RefereeTools(engine, paths)
         self._turns = [list(t) for t in turns]
         self._calls = 0
+        self._conversation = 1
+        self._fresh = True
         self.turns_seen: list[TurnInput] = []
         self.closed = False
 
     async def turn(self, player_input: str) -> AsyncIterator[events.RefereeEvent]:
         snapshot = self._tools.engine.state()
-        self.turns_seen.append(TurnInput(player_input, snapshot, turn_prompt(player_input, snapshot)))
+        opening = session_opening(self._tools.paths, snapshot["session"]) if self._fresh else None
+        self._fresh = False
+        prompt = turn_prompt(player_input, snapshot, opening)
+        self.turns_seen.append(TurnInput(player_input, snapshot, prompt, self._conversation))
         steps = self._turns.pop(0) if self._turns else []
         for step in steps:
             if isinstance(step, Say):
@@ -61,6 +66,10 @@ class ScriptedReferee:
 
     async def close(self) -> None:
         self.closed = True
+
+    async def new_session(self) -> None:
+        self._conversation += 1
+        self._fresh = True
 
     def _run(self, call_id: str, call: Call) -> events.RefereeEvent:
         reason = self._tools.guard.check(call.tool, call.input)

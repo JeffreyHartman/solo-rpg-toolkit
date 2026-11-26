@@ -8,6 +8,7 @@ import pytest
 from harness_fixtures import make_campaign, open_engine
 
 from solo_roll.harness.campaign import CampaignPaths
+from solo_roll.harness.referee import ScriptedReferee
 
 
 @pytest.fixture
@@ -36,3 +37,39 @@ def test_a_new_session_after_play_ends_the_raw_log_and_starts_the_next_session(e
 def test_a_new_session_with_nothing_played_keeps_the_session_number(engine, paths):
     assert engine.new_session() == []
     assert engine.state()["session"] == 1
+
+
+def run_turn(referee, text="I look around."):
+    async def collect():
+        return [event async for event in referee.turn(text)]
+
+    return asyncio.run(collect())
+
+
+def test_the_first_turn_of_a_conversation_opens_the_session_from_the_vault(engine, paths):
+    referee = ScriptedReferee(engine, paths)
+
+    run_turn(referee, "first")
+    run_turn(referee, "second")
+
+    first, second = referee.turns_seen
+    assert "<session>" in first.prompt and "Home.md" in first.prompt
+    assert '"area": "gate"' in first.prompt and first.prompt.endswith("first")
+    assert "<session>" not in second.prompt
+
+
+def test_a_new_conversation_reads_the_last_clean_session_note(engine, paths):
+    engine.act({"type": "move", "to": "hall"})
+    (paths.vault / "Sessions" / "Session 001 - The Gate.md").write_text("# The Gate\n")
+    engine.new_session()
+    referee = ScriptedReferee(engine, paths)
+    run_turn(referee, "before")
+
+    asyncio.run(referee.new_session())
+    run_turn(referee, "after")
+
+    after = referee.turns_seen[-1]
+    assert after.conversation == referee.turns_seen[0].conversation + 1
+    assert "Session 2" in after.prompt
+    assert "Sessions/Session 001 - The Gate.md" in after.prompt
+    assert '"area": "hall"' in after.prompt
