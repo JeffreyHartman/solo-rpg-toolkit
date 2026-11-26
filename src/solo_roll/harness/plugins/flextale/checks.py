@@ -83,6 +83,7 @@ def encounter_check(state: dict[str, Any], command: dict[str, Any], ctx: Command
         need = f"{target['value']} or more"
     result = "Success" if success else "Failure"
     challenge["status"] = "resolved" if success else "failed"
+    challenge.pop("hidden", None)
     return [
         {
             "type": "mechanics", "procedure": "encounter_check", "dice": "d20", "rolls": rolls,

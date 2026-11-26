@@ -308,3 +308,47 @@ def test_the_settings_list_the_difficulty_context_as_an_option(tmp_path):
     engine.change_setting("difficulty", "context", "D")
     row = engine.settings()["options"][0]
     assert (row["section"], row["choices"], row["value"], row["default"]) == ("difficulty", ["A", "B", "C", "D"], "D", "A")
+
+
+def _visible(engine):
+    from solo_roll.harness.playerview import player_state
+    return player_state(engine.state())
+
+
+def test_an_unfound_trap_and_a_secret_stay_out_of_state_note_and_player_view(tmp_path):
+    engine = make_engine(tmp_path, [1, 9, 1, 3])  # trap with a DC
+    events = explore(engine)
+    assert encounter(engine)["outcomes"][0]["kind"] == "trap"
+    note = (tmp_path / "campaign" / "vault" / "State.md").read_text()
+    assert "trap" not in note.lower() and "Dart" not in note and "Pit" not in note
+    assert _visible(engine)["encounter"]["current"]["outcomes"] == []
+    hidden = [e for e in events if e.get("hidden")]
+    assert hidden and all(e["type"] == "mechanics" for e in hidden)
+    text = next(e for e in events if e["type"] == "encounter")["text"]
+    assert "trap" not in text.lower()
+
+    engine = make_engine(tmp_path / "b", [1, 13, 1])
+    explore(engine)
+    assert "hidden latch" not in (tmp_path / "b" / "campaign" / "vault" / "State.md").read_text()
+    assert _visible(engine)["encounter"]["current"]["outcomes"] == []
+
+
+def test_a_trap_shows_after_its_check_is_made(tmp_path):
+    engine = make_engine(tmp_path, [1, 9, 1, 3, 5])  # trap with DC +2, then a save roll
+    explore(engine)
+    check(engine, "breath")
+    assert [o["kind"] for o in _visible(engine)["encounter"]["current"]["outcomes"]] == ["trap"]
+    assert "trap (" in (tmp_path / "campaign" / "vault" / "State.md").read_text()
+
+
+def test_the_player_view_drops_unknown_areas_with_their_links_and_exits():
+    from solo_roll.harness.playerview import player_state
+    state = {"map": {
+        "areas": {"a": {"known": True}, "b": {"known": False}},
+        "connections": [{"a": "a", "b": "b"}],
+        "open_exits": [{"id": "x", "area": "a"}, {"id": "y", "area": "b"}],
+    }}
+    seen = player_state(state)["map"]
+    assert list(seen["areas"]) == ["a"] and seen["connections"] == []
+    assert [e["id"] for e in seen["open_exits"]] == ["x"]
+    assert len(state["map"]["areas"]) == 2

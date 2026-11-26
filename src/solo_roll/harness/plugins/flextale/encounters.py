@@ -13,6 +13,7 @@ from typing import Any
 
 from ....rng import DiceSource
 from ...errors import FlextaleDataError
+from ...playerview import visible_outcomes
 from ...registry import Event
 from .tabledata import card, context_letter, roll
 
@@ -36,6 +37,8 @@ DETAIL_TABLES = {
 }
 KIND_PREFIXES = [("trap", "trap"), ("obstacle", "obstacle"), ("secret", "secret"), ("combat", "combat")]
 MAX_REROLLS = 10
+HIDDEN_KINDS = ("trap", "secret")
+"""Outcome kinds the player has not found when they are rolled."""
 
 
 def initial_encounter(_state: dict[str, Any]) -> dict[str, Any]:
@@ -97,7 +100,7 @@ def roll_encounter(
         "area": area_id, "table": f"quickstart/{table}", "source": source, "outcomes": outcomes,
     }
     name = area["name"]
-    summary = ", ".join(o["kind"] for o in outcomes)
+    summary = ", ".join(o["kind"] for o in visible_outcomes(outcomes)) or "nothing obvious"
     events.append(
         {
             "type": "encounter", "area": area_id, "source": source, "outcomes": outcomes,
@@ -133,16 +136,16 @@ def classify(text: str) -> str:
 def _draw(data_dir: Path, table: str, dice: DiceSource, events: list[Event]):
     """Yield `(kind, rolled)` for one table roll; a Roll Twice result yields two plain rolls instead."""
     rolled = roll(data_dir, table, dice)
-    events.append(card("encounter", rolled, "Encounter"))
     kind = classify(rolled["result"])
+    events.append(_card_for(kind, card("encounter", rolled, "Encounter")))
     if kind != "twice":
         yield kind, rolled
         return
     for _ in range(2):
         for _attempt in range(MAX_REROLLS):
             again = roll(data_dir, table, dice)
-            events.append(card("encounter", again, "Encounter"))
             again_kind = classify(again["result"])
+            events.append(_card_for(again_kind, card("encounter", again, "Encounter")))
             if again_kind != "twice":
                 yield again_kind, again
                 break
@@ -160,7 +163,21 @@ def _outcomes(kind, rolled, data_dir, letter, system, dice, events) -> list[dict
     return [_detailed(kind, base, data_dir, letter, system, dice, events)]
 
 
+def _card_for(kind: str, event: Event) -> Event:
+    """Flag a card of a trap or secret so the browser does not show it."""
+    return {**event, "hidden": True} if kind in HIDDEN_KINDS else event
+
+
 def _detailed(kind, base, data_dir, letter, system, dice, events) -> dict[str, Any]:
+    first_card = len(events)
+    outcome = _detail_outcome(kind, base, data_dir, letter, system, dice, events)
+    if outcome["kind"] in HIDDEN_KINDS:
+        outcome["hidden"] = True
+        events[first_card:] = [{**e, "hidden": True} for e in events[first_card:]]
+    return outcome
+
+
+def _detail_outcome(kind, base, data_dir, letter, system, dice, events) -> dict[str, Any]:
     edge = 0
     for _ in range(MAX_REROLLS):
         table = DETAIL_TABLES[kind].format(c=letter, system=system)
