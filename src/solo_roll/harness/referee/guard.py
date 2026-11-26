@@ -78,31 +78,37 @@ class PathGuard:
 
 
 def _changes_block(tool: str, resolved: Path, tool_input: dict[str, Any]) -> bool:
-    """True if this Write or Edit could change, remove, move out of place or forge a mechanical block."""
+    """True if this Write or Edit could change, remove, move out of place or forge a mechanical block.
+
+    It checks the file content the call would leave, so markers built from pieces across calls count.
+    """
     current = resolved.read_text(errors="replace") if resolved.is_file() else ""
     span = find_block(current)
     if tool == "Write":
-        content = tool_input.get("content")
-        if not isinstance(content, str):
+        result = tool_input.get("content")
+        if not isinstance(result, str):
             return True
-        if span is None:
-            return BLOCK_BEGIN in content or BLOCK_END in content
-        if content.count(BLOCK_BEGIN) != 1 or content.count(BLOCK_END) != 1:
+    else:
+        old, new = tool_input.get("old_string"), tool_input.get("new_string")
+        if not isinstance(old, str) or not isinstance(new, str) or not old:
             return True
-        new_span = find_block(content)
-        return new_span is None or content[slice(*new_span)] != current[slice(*span)]
-    old, new = tool_input.get("old_string"), tool_input.get("new_string")
-    if not isinstance(old, str) or not isinstance(new, str) or not old:
-        return True
-    if BLOCK_BEGIN in new or BLOCK_END in new:
-        return True
+        if span is not None and _overlaps(current, old, span):
+            return True
+        result = current.replace(old, new, -1 if tool_input.get("replace_all") else 1)
     if span is None:
-        return False
-    start = current.find(old)
+        return BLOCK_BEGIN in result or BLOCK_END in result
+    if result.count(BLOCK_BEGIN) != 1 or result.count(BLOCK_END) != 1:
+        return True
+    new_span = find_block(result)
+    return new_span is None or result[slice(*new_span)] != current[slice(*span)]
+
+
+def _overlaps(text: str, old: str, span: tuple[int, int]) -> bool:
+    start = text.find(old)
     while start >= 0:
         if start < span[1] and start + len(old) > span[0]:
             return True
-        start = current.find(old, start + 1)
+        start = text.find(old, start + 1)
     return False
 
 
