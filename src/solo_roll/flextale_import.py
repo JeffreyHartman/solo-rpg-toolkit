@@ -23,6 +23,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .coins import parse_coin_slot
 from .tables import TableError, load_table
 
 Extractor = Callable[[Path, str, int, int], str]
@@ -209,17 +210,17 @@ def _simple_ai_tables(raw: str) -> dict[str, dict]:
 
 
 _COIN_TABLE = re.compile(r"quickstart/treasure-[a-z]+-coin-")
-COIN_SLOTS = len(CONTEXTS)
+
 
 
 def _short_coin_bands(name: str, payload: dict) -> list[str]:
-    """Returns the bands of a coin table with fewer than one slot per context, as `min-max`."""
+    """Returns the bands of a coin table that fail to roll for at least one context, as `min-max`."""
     if not _COIN_TABLE.match(name):
         return []
     return [
         f"{band['min']}-{band['max']}"
         for band in payload["ranges"]
-        if len(str(band["result"]).split("/")) < COIN_SLOTS
+        if any(parse_coin_slot(str(band["result"]), i) is None for i in range(len(CONTEXTS)))
     ]
 
 
@@ -381,11 +382,11 @@ def main(
         print(f"skipped {name}: {reason}", file=sys.stderr)
     for name, bands in result.flagged.items():
         print(
-            f"warning {name}: bands {', '.join(bands)} have fewer than {COIN_SLOTS} coin slots; "
-            "rolling them fails until a 'set' override fixes the result",
+            f"warning {name}: bands {', '.join(bands)} cannot be rolled for every context; "
+            "add a 'set' override to fix the result",
             file=sys.stderr,
         )
-    return 1 if result.skipped or result.flagged else 0
+    return 1 if result.skipped else 0
 
 
 if __name__ == "__main__":
