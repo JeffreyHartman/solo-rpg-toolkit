@@ -200,3 +200,13 @@ def test_an_hp_edit_that_takes_a_waiting_monster_to_zero_kills_it_and_ends_the_f
 
     assert [e["type"] for e in result["events"]][-3:] == ["hp_changed", "monster_down", "combat_ended"]
     assert engine.state()["combat"] is None
+
+
+def test_the_referee_guide_gives_the_rule_for_when_to_roll(tmp_path):
+    from solo_roll.harness.referee.sdk import system_prompt
+
+    prompt = system_prompt(open_engine(make_campaign(tmp_path)).referee_guides(), CampaignPaths(tmp_path / "campaign"))
+
+    assert "outcome is obvious" in prompt and "outcome is uncertain" in prompt
+    assert "mcp__engine__edit" in prompt and "mcp__engine__monster_action" in prompt
+    assert "the player's own choices" in prompt
