@@ -60,8 +60,13 @@ BASE_PROMPT = """You are the Referee of a solo tabletop RPG campaign. One player
 
 
 def system_prompt(guides: list[str], paths: CampaignPaths) -> str:
-    """The Referee's system prompt: the base rules, then each plugin's Referee guide."""
-    return "\n\n".join([BASE_PROMPT.format(referee=paths.referee), *guides])
+    """The Referee's system prompt: the base rules, each plugin's Referee guide, then the vault's conventions note.
+
+    The conventions note is read when the session starts, so the owner's edits apply from the next session.
+    """
+    conventions = paths.vault / "Conventions.md"
+    notes = [conventions.read_text()] if conventions.is_file() else []
+    return "\n\n".join([BASE_PROMPT.format(referee=paths.referee), *guides, *notes])
 
 
 class AgentSdkReferee:

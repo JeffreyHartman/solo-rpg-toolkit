@@ -4,6 +4,7 @@ Layout under the campaign folder:
   campaign.json          plugin list
   settings.json          campaign settings, changed by the player during play
   engine/state.json      engine state, written only by the engine
+  vault/                 the Obsidian vault, laid out by `vault.create_vault`
   vault/State.md         read-only state note, rewritten after every command
   vault/Sessions/Raw/    one raw log per session
   referee/               the Referee's secret notes, outside the vault
@@ -14,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from .errors import CampaignFileError
+from .vault import create_vault, write_character_notes, write_state_note
 
 __all__ = ["CampaignPaths", "create_campaign", "load_json", "write_json"]
 
@@ -77,8 +79,12 @@ def create_campaign(
     map_data: dict[str, Any],
     start: str,
     party: list[dict[str, Any]],
+    name: str | None = None,
 ) -> Path:
-    """Write a new campaign folder with the party in `start`, the only known area."""
+    """Write a new campaign folder with the party in `start`, the only known area.
+
+    It also writes the vault and the referee folder. `name` defaults to the folder name.
+    """
     paths = CampaignPaths(Path(root))
     if paths.settings.exists():
         raise CampaignFileError(f"a campaign already exists at {paths.root}")
@@ -89,16 +95,17 @@ def create_campaign(
     if start not in areas:
         raise CampaignFileError(f"start area '{start}' is not on the map")
     write_json(paths.settings, {"plugins": list(plugins)})
-    write_json(
-        paths.state,
-        {
-            "session": 1,
-            "party": {"members": list(party), "area": start},
-            "map": {
-                "areas": areas,
-                "connections": list(map_data.get("connections", [])),
-                "open_exits": list(map_data.get("open_exits", [])),
-            },
+    state = {
+        "session": 1,
+        "party": {"members": list(party), "area": start},
+        "map": {
+            "areas": areas,
+            "connections": list(map_data.get("connections", [])),
+            "open_exits": list(map_data.get("open_exits", [])),
         },
-    )
+    }
+    write_json(paths.state, state)
+    create_vault(paths, name or paths.root.name, list(plugins))
+    write_state_note(paths, state)
+    write_character_notes(paths, state)
     return paths.root

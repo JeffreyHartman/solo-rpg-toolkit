@@ -98,7 +98,6 @@ def test_the_state_tool_returns_the_snapshot(engine, paths):
 
 
 def test_reading_a_vault_note_is_allowed_and_labelled_with_its_vault_path(engine, paths):
-    (paths.vault / "NPCs").mkdir(parents=True)
     (paths.vault / "NPCs" / "Old Mag.md").write_text("Mag sells rope.")
     referee = scripted(engine, paths, [Call("Read", {"file_path": str(paths.vault / "NPCs" / "Old Mag.md")})])
 
@@ -196,8 +195,8 @@ def test_a_symlink_out_of_the_vault_is_denied(engine, paths, tmp_path):
 def test_a_symlinked_folder_out_of_the_vault_is_denied(engine, paths, tmp_path):
     (tmp_path / "elsewhere").mkdir()
     paths.vault.mkdir(parents=True, exist_ok=True)
-    (paths.vault / "Lore & World").symlink_to(tmp_path / "elsewhere")
-    referee = scripted(engine, paths, [Call("Write", {"file_path": "Lore & World/new.md", "content": "x"})])
+    (paths.vault / "Handouts").symlink_to(tmp_path / "elsewhere")
+    referee = scripted(engine, paths, [Call("Write", {"file_path": "Handouts/new.md", "content": "x"})])
 
     [result] = tool_results(run_turn(referee))
 

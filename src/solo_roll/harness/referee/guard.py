@@ -8,6 +8,7 @@ from pathlib import Path, PurePath
 from typing import Any
 
 from ..campaign import CampaignPaths
+from ..vault import BLOCK_BEGIN, BLOCK_END, find_block
 
 __all__ = ["ENGINE_TOOL_PREFIX", "FILE_TOOLS", "PathGuard"]
 
@@ -17,6 +18,10 @@ _WRITE_TOOLS = {"Write", "Edit"}
 _GLOB_CHARS = set("*?[{")
 _OUTSIDE = "The Referee can reach only the campaign vault and the referee folder."
 _ENGINE_FILE = "The engine writes this file. Change mechanical state through the engine tools."
+_ENGINE_BLOCK = (
+    "The engine writes the mechanical block between the engine markers. Leave it as it is, "
+    "and change mechanical state through the engine tools."
+)
 
 
 class PathGuard:
@@ -39,6 +44,8 @@ class PathGuard:
                 return _OUTSIDE
             if tool in _WRITE_TOOLS and self._paths.is_engine_written(resolved):
                 return _ENGINE_FILE
+            if tool in _WRITE_TOOLS and _changes_block(tool, resolved, tool_input):
+                return _ENGINE_BLOCK
             return None
         searched = [tool_input.get("path")]
         pattern = tool_input.get("pattern" if tool == "Glob" else "glob")
@@ -63,6 +70,35 @@ class PathGuard:
         if any(resolved.is_relative_to(root) for root in self._roots):
             return resolved
         return None
+
+
+def _changes_block(tool: str, resolved: Path, tool_input: dict[str, Any]) -> bool:
+    """True if this Write or Edit could change, remove, move out of place or forge a mechanical block."""
+    current = resolved.read_text(errors="replace") if resolved.is_file() else ""
+    span = find_block(current)
+    if tool == "Write":
+        content = tool_input.get("content")
+        if not isinstance(content, str):
+            return True
+        if span is None:
+            return BLOCK_BEGIN in content or BLOCK_END in content
+        if content.count(BLOCK_BEGIN) != 1 or content.count(BLOCK_END) != 1:
+            return True
+        new_span = find_block(content)
+        return new_span is None or content[slice(*new_span)] != current[slice(*span)]
+    old, new = tool_input.get("old_string"), tool_input.get("new_string")
+    if not isinstance(old, str) or not isinstance(new, str) or not old:
+        return True
+    if BLOCK_BEGIN in new or BLOCK_END in new:
+        return True
+    if span is None:
+        return False
+    start = current.find(old)
+    while start >= 0:
+        if start < span[1] and start + len(old) > span[0]:
+            return True
+        start = current.find(old, start + 1)
+    return False
 
 
 def _static_prefix(pattern: str) -> str:
