@@ -1,17 +1,19 @@
-import type { Action, ClientMessage, Command, EngineState, ServerMessage } from './protocol'
+import type { Action, ClientMessage, Command, EngineState, RefereeEvent, ServerMessage } from './protocol'
 
-export interface LogLine {
-  kind: 'event' | 'error'
-  text: string
-}
+export type ChatEntry =
+  | { kind: 'player' | 'narration' | 'status' | 'event' | 'error'; text: string }
+  | { kind: 'tool'; id: string; label: string; outcome: 'running' | 'ok' | 'failed' | 'denied'; error?: string }
 
 export const game = $state({
   connected: false,
   state: null as EngineState | null,
   actions: [] as Action[],
-  log: [] as LogLine[],
+  chat: [] as ChatEntry[],
+  refereeBusy: false,
 })
 
+// Index in game.chat of the narration this turn is streaming into, or -1.
+let openText = -1
 let socket: WebSocket | null = null
 
 export function connect(): void {
@@ -26,14 +28,52 @@ export function connect(): void {
 }
 
 function receive(message: ServerMessage): void {
-  if (message.type === 'error') {
-    game.log.push({ kind: 'error', text: message.message })
-    return
+  switch (message.type) {
+    case 'error':
+      game.chat.push({ kind: 'error', text: message.message })
+      return
+    case 'player':
+      game.chat.push({ kind: 'player', text: message.text })
+      game.refereeBusy = true
+      return
+    case 'referee':
+      onReferee(message.event)
+      return
+    case 'events':
+      for (const event of message.events) game.chat.push({ kind: 'event', text: event.text ?? event.type })
+      openText = -1
+      break
   }
   game.state = message.state
   game.actions = message.actions
-  if (message.type === 'events') {
-    for (const event of message.events) game.log.push({ kind: 'event', text: event.text ?? event.type })
+}
+
+function onReferee(event: RefereeEvent): void {
+  game.refereeBusy = event.type !== 'done'
+  if (event.type === 'text') {
+    if (openText < 0) {
+      game.chat.push({ kind: 'narration', text: '' })
+      openText = game.chat.length - 1
+    }
+    const entry = game.chat[openText]
+    if (entry.kind === 'narration') entry.text += event.text
+  } else if (event.type === 'tool_start') {
+    const open = openText >= 0 ? game.chat[openText] : null
+    if (open && open.kind === 'narration') {
+      open.kind = 'status'
+      open.text = open.text.trim()
+    }
+    openText = -1
+    game.chat.push({ kind: 'tool', id: event.id, label: event.label, outcome: 'running' })
+  } else if (event.type === 'tool_result') {
+    const entry = game.chat.findLast((e) => e.kind === 'tool' && e.id === event.id)
+    if (entry && entry.kind === 'tool') {
+      entry.outcome = event.denied ? 'denied' : event.ok ? 'ok' : 'failed'
+      entry.error = event.error
+    }
+  } else {
+    openText = -1
+    if (event.error) game.chat.push({ kind: 'error', text: `Referee: ${event.error}` })
   }
 }
 
@@ -43,6 +83,10 @@ function send(message: ClientMessage): void {
 
 export function act(command: Command): void {
   send({ type: 'act', command })
+}
+
+export function say(text: string): void {
+  if (text.trim()) send({ type: 'say', text: text.trim() })
 }
 
 export function moveActionTo(area: string): Action | undefined {
