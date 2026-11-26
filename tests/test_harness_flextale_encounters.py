@@ -382,3 +382,13 @@ def test_resting_rolls_the_current_areas_encounter_table_after_the_turn(tmp_path
     assert current["table"] == "quickstart/hallway-encounter-a"
     assert [o["kind"] for o in current["outcomes"]] == ["obstacle"]
 
+
+
+def test_a_check_against_a_save_takes_the_names_from_the_character(tmp_path):
+    party = [{"name": "Brannoc", "abilities": {"STR": 14}, "saves": {"doom": 15}}]
+    engine = make_engine(tmp_path, [1, 9, 1, 3, 15], party=party)  # trap with DC +2
+    explore(engine)
+    with pytest.raises(IllegalActionError, match="breath"):
+        check(engine, "breath")
+    events = check(engine, "doom")
+    assert next(e for e in events if e["type"] == "mechanics")["target"]["value"] == 13
