@@ -16,6 +16,7 @@ FILE_TOOLS = ("Read", "Write", "Edit", "Glob", "Grep")
 ENGINE_TOOL_PREFIX = "mcp__engine__"
 _WRITE_TOOLS = {"Write", "Edit"}
 _GLOB_CHARS = set("*?[{")
+_MAX_ALTERNATIVES = 256
 _OUTSIDE = "The Referee can reach only the campaign vault and the referee folder."
 _ENGINE_FILE = "The engine writes this file. Change mechanical state through the engine tools."
 _ENGINE_BLOCK = (
@@ -50,9 +51,13 @@ class PathGuard:
         searched = [tool_input.get("path")]
         pattern = tool_input.get("pattern" if tool == "Glob" else "glob")
         if isinstance(pattern, str):
-            if ".." in PurePath(pattern).parts:
+            alternatives = _expand_braces(pattern)
+            if alternatives is None:
                 return _OUTSIDE
-            searched.append(_static_prefix(pattern))
+            for alternative in alternatives:
+                if ".." in PurePath(alternative).parts:
+                    return _OUTSIDE
+                searched.append(_static_prefix(alternative))
         for raw in searched:
             if raw is not None and (not isinstance(raw, str) or self._resolve(raw) is None):
                 return _OUTSIDE
@@ -109,3 +114,39 @@ def _static_prefix(pattern: str) -> str:
             break
         parts.append(part)
     return str(PurePath(*parts)) if parts else "."
+
+
+def _expand_braces(pattern: str) -> list[str] | None:
+    """Return every pattern that `{a,b}` groups in `pattern` stand for, nested groups included.
+
+    Returns None for unbalanced braces or more than `_MAX_ALTERNATIVES` patterns, which the guard denies.
+    """
+    open_at = pattern.find("{")
+    if open_at < 0:
+        return None if "}" in pattern else [pattern]
+    depth, choices, start = 0, [], open_at + 1
+    for i in range(open_at, len(pattern)):
+        if pattern[i] == "{":
+            depth += 1
+        elif pattern[i] == "}":
+            depth -= 1
+            if depth == 0:
+                choices.append(pattern[start:i])
+                break
+        elif pattern[i] == "," and depth == 1:
+            choices.append(pattern[start:i])
+            start = i + 1
+    else:
+        return None
+    if "}" in pattern[:open_at]:
+        return None
+    head, tail = pattern[:open_at], pattern[i + 1:]
+    expanded: list[str] = []
+    for choice in choices:
+        more = _expand_braces(head + choice + tail)
+        if more is None:
+            return None
+        expanded.extend(more)
+        if len(expanded) > _MAX_ALTERNATIVES:
+            return None
+    return expanded

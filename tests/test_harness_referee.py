@@ -166,6 +166,33 @@ def test_absolute_paths_outside_the_vault_are_denied(engine, paths, tool, tool_i
     assert result["denied"] is True
 
 
+@pytest.mark.parametrize(
+    "tool, tool_input",
+    [
+        ("Glob", {"pattern": "{/etc/*,x}"}),
+        ("Glob", {"pattern": "{x,/etc/*}"}),
+        ("Glob", {"pattern": "{NPCs,{a,../..}}/*.md"}),
+        ("Glob", {"pattern": "{,/}etc/*"}),
+        ("Glob", {"pattern": "{/etc/*,x"}),
+        ("Grep", {"pattern": "x", "glob": "{/home/*/.ssh/*,*.md}"}),
+    ],
+)
+def test_every_brace_alternative_of_a_glob_must_stay_in_the_vault(engine, paths, tool, tool_input):
+    referee = scripted(engine, paths, [Call(tool, tool_input)])
+
+    [result] = tool_results(run_turn(referee))
+
+    assert result["denied"] is True
+
+
+def test_a_brace_glob_whose_alternatives_stay_in_the_vault_is_allowed(engine, paths):
+    referee = scripted(engine, paths, [Call("Glob", {"pattern": "{NPCs,Locations}/*.md"})])
+
+    [result] = tool_results(run_turn(referee))
+
+    assert result["ok"] is True
+
+
 def test_the_campaign_folder_around_the_vault_is_denied(engine, paths):
     referee = scripted(engine, paths, [Call("Read", {"file_path": str(paths.state)})])
 
