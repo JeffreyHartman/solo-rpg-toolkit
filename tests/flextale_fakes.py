@@ -25,7 +25,7 @@ MAP = {
 MAP_TABLE = [(1, 5, "A hall"), (6, 10, "A chamber"), (11, 15, "A dead end"), (16, 20, "A stair")]
 ENCOUNTER = [
     (1, 8, "No Encounter"), (9, 10, "Trap"), (11, 12, "Obstacle"), (13, 14, "Secret"),
-    (15, 17, "Combat Encounter"), (18, 18, "Roll Twice: more"), (19, 20, "Combat and Treasure: both"),
+    (15, 17, "Combat Encounter"), (18, 18, "Roll Twice"), (19, 20, "Combat and Treasure"),
 ]
 DEFAULT_TABLES: dict[str, list[tuple[int, int, str]]] = {
     "map-generator-a": MAP_TABLE,
@@ -37,13 +37,13 @@ DEFAULT_TABLES: dict[str, list[tuple[int, int, str]]] = {
     "secret-door-a": [(1, 20, "A hidden latch")],
     "combat-encounter-a": [(1, 10, "Two fake goblins"), (11, 20, "One fake ogre")],
     "difficulty-class-a-osr": [
-        (1, 1, "Susceptible: reroll with disadvantage"), (2, 10, "+2 on roll"),
-        (11, 15, "Normal / roll"), (16, 19, "-2 on roll"), (20, 20, "Resistant: reroll with advantage"),
+        (1, 1, "Susceptible"), (2, 10, "+2 on roll"),
+        (11, 15, "Normal"), (16, 19, "-2 on roll"), (20, 20, "Resistant"),
     ],
     "treasure-a": [
-        (1, 1, "Contact Poison: Reroll."), (2, 2, "No treasure"), (3, 4, "Low Coin"),
-        (5, 6, "Low Gems"), (7, 8, "Potion (roll on Spell)"), (9, 10, "Scroll (roll on Spell)"),
-        (11, 12, "Additional Treasure: reroll twice"), (13, 20, "Favorable Treasure: reroll twice"),
+        (1, 1, "Contact Poison"), (2, 2, "No treasure"), (3, 4, "Low Coin"),
+        (5, 6, "Low Gems"), (7, 8, "Potion"), (9, 10, "Scroll"),
+        (11, 12, "Additional Treasure"), (13, 20, "Favorable Treasure"),
     ],
     "treasure-low-coin-a-osr": [(1, 20, "1d4 gp / 2d4 gp / 3d4 gp / 4d4 gp")],
     "treasure-low-gem-a-osr": [(1, 20, "Agate: 1d4x; 2 gp")],

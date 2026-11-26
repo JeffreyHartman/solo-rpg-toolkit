@@ -95,7 +95,7 @@ def test_susceptible_and_resistant_dc_results_reroll_with_an_edge(tmp_path):
 
 
 def test_a_trap_that_rerolls_with_an_edge_carries_it(tmp_path):
-    tables = {**DEFAULT_TABLES, "trap-a-osr": [(1, 1, "Slow: Reroll. Disadvantage on all checks."), (2, 20, "Pit: Save")]}
+    tables = {**DEFAULT_TABLES, "trap-a-osr": [(1, 1, "Snare: reroll, disadvantage"), (2, 20, "Pit: Save")]}
     engine = make_engine(tmp_path, [1, 9, 1, 2, 12], tables=tables)  # DC 12 = normal
     explore(engine)
     outcome = encounter(engine)["outcomes"][0]
@@ -134,7 +134,7 @@ def test_a_failed_save_marks_the_trap_failed(tmp_path):
 
 
 def test_a_check_with_disadvantage_rolls_two_dice_and_keeps_the_worse(tmp_path):
-    tables = {**DEFAULT_TABLES, "trap-a-osr": [(1, 1, "Slow: Reroll. Disadvantage on all checks."), (2, 20, "Pit: Save")]}
+    tables = {**DEFAULT_TABLES, "trap-a-osr": [(1, 1, "Snare: reroll, disadvantage"), (2, 20, "Pit: Save")]}
     engine = make_engine(tmp_path, [1, 9, 1, 2, 12, 16, 10], tables=tables)  # normal DC, then two check dice
     explore(engine)
     events = check(engine, "breath")  # needs 15 or more; the worse die is 10
