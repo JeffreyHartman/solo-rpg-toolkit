@@ -3,7 +3,7 @@ from .checks import CheckError
 from .dice import parse_dice, roll_dice
 from .rng import DiceSource
 
-__all__ = ["ABILITIES", "CLASS_HIT_DICE", "CLASS_REQUIREMENTS", "ability_modifier", "roll_character"]
+__all__ = ["ABILITIES", "CLASS_HIT_DICE", "CLASS_REQUIREMENTS", "CLASS_SAVES", "SAVES", "UNARMORED_AC", "ability_modifier", "roll_character"]
 
 ABILITIES = ("STR", "INT", "WIS", "DEX", "CON", "CHA")
 
@@ -12,6 +12,24 @@ CLASS_HIT_DICE = {
     "Bard": "d6", "Cleric": "d6", "Dwarf": "d8", "Elf": "d6", "Fighter": "d8",
     "Halfling": "d6", "Magic-User": "d4", "Thief": "d4",
 }
+
+SAVES = ("death", "wands", "paralysis", "breath", "spells")
+
+# Level 1 saving throw targets (OSE Classic Fantasy: Characters, class tables), in `SAVES` order.
+# The Bard row (Advanced Fantasy) is the Thief row.
+CLASS_SAVES = {
+    "Bard": dict(zip(SAVES, (13, 14, 13, 16, 15))),
+    "Cleric": dict(zip(SAVES, (11, 12, 14, 16, 15))),
+    "Dwarf": dict(zip(SAVES, (8, 9, 10, 13, 12))),
+    "Elf": dict(zip(SAVES, (12, 13, 13, 15, 15))),
+    "Fighter": dict(zip(SAVES, (12, 13, 14, 15, 16))),
+    "Halfling": dict(zip(SAVES, (8, 9, 10, 13, 12))),
+    "Magic-User": dict(zip(SAVES, (13, 14, 13, 16, 15))),
+    "Thief": dict(zip(SAVES, (13, 14, 13, 16, 15))),
+}
+
+UNARMORED_AC = 9
+"""Descending armor class of a character with no armor (OSE Classic Fantasy: Characters)."""
 
 # Minimum ability scores (OSE Classic Fantasy Characters, p10-13; Bard from
 # Advanced Fantasy).

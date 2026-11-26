@@ -18,7 +18,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from ....character import ability_modifier
+from ....character import UNARMORED_AC, ability_modifier
 from ....dice import parse_dice, roll_dice
 from ...errors import IllegalActionError
 from ... import party
@@ -29,7 +29,6 @@ __all__ = ["combat_actions", "register"]
 GENERIC = {"hd": 1, "ac": 9, "thac0": 19, "damage": "1d6"}
 NUMBER_WORDS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
                 "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
-PARTY_AC = 9
 MEMBER_THAC0 = ((3, 19), (6, 17), (9, 14), (12, 12), (99, 10))
 """Attack value by level for every class, a simplification of the per-class OSE tables."""
 
@@ -241,13 +240,14 @@ def _decision_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) 
         return [{"type": "monster_acted", "monster": monster["id"], "action": event["action"],
                  "text": f"{monster['name']} {monster['id']}: {event['action']}."}]
     member = party.member(state, event["target"])
-    need = monster["thac0"] - member.get("ac", PARTY_AC)
+    ac = member.get("ac", UNARMORED_AC)
+    need = monster["thac0"] - ac
     natural = ctx.dice.roll(1, 20)
     hit = natural == 20 or (natural != 1 and natural >= need)
     result = "Hit" if hit else "Miss"
     card = _card("monster_attack", "d20", [natural], natural, result, "OSE",
                  f"{monster['name']} {monster['id']} attacks {member['name']}: rolled {natural}, needs {need}. {result}.")
-    card["target"] = {"value": need, "source": f"OSE attack throw: THAC0 {monster['thac0']} vs AC {member.get('ac', PARTY_AC)}"}
+    card["target"] = {"value": need, "source": f"OSE attack throw: THAC0 {monster['thac0']} vs {member['name']}'s AC {ac}"}
     events = [card]
     if hit:
         events += _damage(member, monster["damage"], 0, ctx, "member")

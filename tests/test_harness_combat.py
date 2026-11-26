@@ -227,3 +227,12 @@ def test_exploring_takes_a_dungeon_turn(tmp_path):
     engine, events = start(tmp_path, PARTY_FIRST)
     assert "turn" in types(events)
     assert engine.state()["dungeon"]["turn"] == 1
+
+
+def test_a_monster_attack_uses_the_targets_armor_class_and_names_it(tmp_path):
+    party = [{**BRANNOC, "ac": 3}]
+    engine = make(tmp_path, TO_COMBAT + GOBLIN_HP + MONSTERS_FIRST + [1, 1, 20, 1, 1, 1, 3], party=party)
+    events = engine.act({"type": "explore", "exit": "e1"})
+    card = next(e for e in events if e.get("procedure") == "monster_attack")
+    assert card["target"]["value"] == 16
+    assert "Brannoc's AC 3" in card["target"]["source"]

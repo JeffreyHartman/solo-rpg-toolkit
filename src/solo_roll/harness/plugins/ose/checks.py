@@ -5,13 +5,11 @@ state when the character has them; otherwise it is a proposal input.
 """
 from typing import Any
 
-from ....character import ABILITIES
+from ....character import ABILITIES, SAVES
 from ... import party
 from ...registry import CONFIRM, CommandContext, Event, Registry, Target
 
 __all__ = ["SAVES", "register"]
-
-SAVES = ("death", "wands", "paralysis", "breath", "spells")
 
 MEMBER = {"type": "string", "label": "Character"}
 MODIFIER = {"type": "integer", "label": "Modifier added to the d20", "default": 0}
