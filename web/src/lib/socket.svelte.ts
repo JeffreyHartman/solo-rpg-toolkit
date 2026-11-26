@@ -26,7 +26,7 @@ export interface MechanicsCard {
 }
 
 export type ChatEntry =
-  | { kind: 'player' | 'narration' | 'status' | 'event' | 'error'; text: string }
+  | { kind: 'player' | 'narration' | 'status' | 'event' | 'error' | 'ooc'; text: string }
   | { kind: 'mechanics'; text: string; card: MechanicsCard }
   | { kind: 'tool'; id: string; label: string; outcome: 'running' | 'ok' | 'failed' | 'denied'; error?: string }
 
@@ -108,6 +108,8 @@ function receive(message: ServerMessage): void {
             text: event.text ?? event.type,
             card: { dice, rolls, total, result, source, target },
           })
+        } else if (event.type === 'ooc_note') {
+          game.chat.push({ kind: 'ooc', text: event.text ?? '' })
         } else {
           game.chat.push({ kind: 'event', text: event.text ?? event.type })
         }
