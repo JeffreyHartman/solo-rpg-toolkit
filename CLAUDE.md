@@ -82,6 +82,17 @@ Edit `data/charts/mythic-fate.json` — add to `likelihoods` array and `threshol
 2. Register parser in `main()` next to existing subcommands
 3. Add tests in `tests/test_cli.py` using `subprocess.run(["solo-roll", ...])`
 
+### Browser harness
+`src/solo_roll/harness/` holds the engine, the plugin registry, the plugins and
+the FastAPI server; `web/` holds the Svelte app. The server needs the `harness`
+extra, so `solo-roll` keeps zero runtime dependencies.
+```bash
+uv venv && uv pip install -e '.[dev,harness]'
+solo-harness demo /tmp/demo && solo-harness serve /tmp/demo   # binds 0.0.0.0:8765
+cd web && npm install && npm run build      # the server serves web/dist
+npm run dev                                 # or Vite on 0.0.0.0:5199, proxies /ws to :8765
+```
+
 ## Conventions
 
 - **TDD** + frequent commits (one logical change per commit)

@@ -1,0 +1,33 @@
+:root {
+  --bg: #0e0b08;
+  --panel: #17120d;
+  --panel-2: #1f1811;
+  --edge: #3a2f22;
+  --ink: #e8dcc2;
+  --ink-dim: #9a8b72;
+  --accent: #c9a25e;
+  --good: #7fae6b;
+  --bad: #c4644f;
+  --warn: #d9a441;
+  --fog: #0a0806;
+  --room: #2b2218;
+  --room-known: #3b2f21;
+  font: 15px/1.5 Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+* { box-sizing: border-box; }
+html, body, #app { margin: 0; height: 100%; }
+button, select, input, textarea { font: inherit; color: var(--ink); }
+button {
+  background: var(--panel-2); border: 1px solid var(--edge); border-radius: 6px;
+  padding: 4px 10px; cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+button.primary { background: #3a2c16; border-color: var(--accent); }
+select, input, textarea {
+  background: var(--panel-2); border: 1px solid var(--edge); border-radius: 6px; padding: 4px 8px;
+}
+.smallcaps { font-variant: small-caps; letter-spacing: 0.06em; }
+.dim { color: var(--ink-dim); }
+.scroll { overflow-y: auto; min-height: 0; }
