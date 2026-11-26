@@ -103,11 +103,14 @@ def test_serve_needs_a_campaign_or_a_campaign_folder(capsys):
 
 def test_serve_reads_flextale_tables_from_the_data_folder_main_is_given(tmp_path):
     from fastapi.testclient import TestClient
-    from flextale_fakes import MAP, write_tables
+    from flextale_fakes import DEFAULT_TABLES, MAP, write_tables
 
     from solo_roll.harness.campaign import create_campaign
 
-    write_tables(tmp_path / "xdg" / "solo-rpg-toolkit" / "flextale")
+    # The server rolls unseeded dice, so every encounter roll must land on a table this test writes.
+    quiet = [(1, 20, "No Encounter")]
+    tables = {**DEFAULT_TABLES, **{f"{k}-encounter-a": quiet for k in ("hallway", "chamber", "dead-end")}}
+    write_tables(tmp_path / "xdg" / "solo-rpg-toolkit" / "flextale", tables)
     campaign = create_campaign(tmp_path / "campaign", ["ose", "flextale"], MAP, "start", [{"name": "Brannoc"}])
     apps = []
 
