@@ -28,7 +28,7 @@ class ToolOutcome:
 class EngineTool:
     name: str
     description: str
-    input_schema: dict[str, type]
+    input_schema: dict[str, Any]
     """Argument name to Python type, the simple schema form that the SDK `tool` decorator takes."""
     label: Callable[[Engine, dict[str, Any]], str]
     run: Callable[[Engine, dict[str, Any]], ToolOutcome]
@@ -119,9 +119,10 @@ ENGINE_TOOLS: tuple[EngineTool, ...] = (
         description=(
             "Raise a judgment call for a decision the rules leave open, with your suggested answer and the reason. "
             "When the player owns the category, a card waits for the player's answer. When the Referee "
-            "owns it, your suggestion is the decision and the log records your reason."
+            "owns it, your suggestion is the decision and the log records your reason. `options` lists the "
+            "answers the player may pick from; pass [] to leave the answer free."
         ),
-        input_schema={"category": str, "question": str, "suggestion": str, "reason": str},
+        input_schema={"category": str, "question": str, "suggestion": str, "reason": str, "options": list[str]},
         label=lambda engine, args: "Raising a judgment call",
         run=_judgment_call,
     ),
