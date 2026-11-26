@@ -29,7 +29,8 @@ from ...registry import AUTO, CONFIRM, Action, CommandContext, Event, Registry, 
 
 __all__ = [
     "ASCENDING_AC", "DEFAULT_DAMAGE", "OPTIONAL_RULES", "VARIABLE_WEAPON_DAMAGE", "attack_bonus",
-    "attack_source", "attack_target", "attack_throw", "combat_actions", "register", "weapon_damage",
+    "attack_source", "attack_target", "attack_throw", "combat_actions", "optional_rules", "register",
+    "weapon_damage",
 ]
 
 GENERIC = {"hd": 1, "ac": 9, "thac0": 19, "damage": "1d6"}
@@ -270,8 +271,8 @@ def attack(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) 
         f"{member['name']} attacks {party.monster_label(monster)}: rolled {total}, "
         f"needs {target['value']}. {result}.")]
     if throw["hit"]:
-        notation, is_default = weapon_damage(rules, member)
-        events += _damage(monster, notation, strength, ctx, "monster", is_default)
+        notation, used_default_die = weapon_damage(rules, member)
+        events += _damage(monster, notation, strength, ctx, "monster", used_default_die)
     events += _finish_party_action(state, combat, member)
     return events
 
@@ -405,12 +406,12 @@ def _decision_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) 
 # Damage and the end of the fight
 
 def _damage(victim: dict[str, Any], notation: str, bonus: int, ctx: CommandContext, side: str,
-            is_default: bool = False) -> list[Event]:
+            used_default_die: bool = False) -> list[Event]:
     rolled = roll_dice(parse_dice(notation), ctx.dice)
     amount = max(1, rolled["total"] + bonus)
     victim["hp"] = max(0, victim["hp"] - amount)
     name = victim.get("name")
-    default = ", default die, no weapon data" if is_default else ""
+    default = ", default die, no weapon data" if used_default_die else ""
     label = party.monster_label(victim) if side == "monster" else name
     events: list[Event] = [
         _card("damage", rolled["dice"], rolled["rolls"], amount, f"{amount} damage", "OSE",
