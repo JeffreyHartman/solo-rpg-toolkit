@@ -8,7 +8,7 @@ import pytest
 from harness_fixtures import make_campaign, open_engine
 
 from solo_roll.harness.campaign import CampaignPaths
-from solo_roll.harness.referee import ScriptedReferee
+from solo_roll.harness.referee import Call, ScriptedReferee
 
 
 @pytest.fixture
@@ -73,3 +73,13 @@ def test_a_new_conversation_reads_the_last_clean_session_note(engine, paths):
     assert "Session 2" in after.prompt
     assert "Sessions/Session 001 - The Gate.md" in after.prompt
     assert '"area": "hall"' in after.prompt
+
+
+def test_the_scripted_turn_context_lists_the_prompt_parts_and_tool_results(engine, paths):
+    referee = ScriptedReferee(engine, paths, [[Call("mcp__engine__move", {"to": "hall"})]])
+
+    run_turn(referee, "I walk east.")
+
+    parts = referee.turn_context()
+    assert [p["label"] for p in parts] == ["Session opening", "State snapshot", "Player input", "Moving to Long Hall"]
+    assert '"area": "hall"' in parts[3]["text"]

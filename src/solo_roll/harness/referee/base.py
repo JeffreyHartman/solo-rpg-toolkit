@@ -8,7 +8,10 @@ from ..campaign import CampaignPaths
 from ..vault import session_note
 from .events import RefereeEvent
 
-__all__ = ["Referee", "TurnInput", "session_opening", "turn_prompt"]
+__all__ = ["ContextPart", "Referee", "TurnInput", "context_part", "prompt_parts", "session_opening", "turn_prompt"]
+
+ContextPart = dict[str, Any]
+"""One thing the Referee got in a turn, for the context drawer: `{label, chars, text}`."""
 
 
 @dataclass(frozen=True)
@@ -45,6 +48,25 @@ class Referee(Protocol):
 
     async def context_usage(self) -> int | None:
         """Tokens in the current conversation, or None before its first turn."""
+
+    def turn_context(self) -> list[ContextPart]:
+        """What the Referee got in the latest turn, in order: the prompt parts, then each tool result."""
+
+
+def context_part(label: str, text: str) -> ContextPart:
+    return {"label": label, "chars": len(text), "text": text}
+
+
+def prompt_parts(
+    player_input: str, snapshot: dict[str, Any], opening: str | None, system: str | None = None
+) -> list[ContextPart]:
+    """The parts of `turn_prompt`, plus the system prompt when the adapter has one."""
+    parts = [context_part("System prompt", system)] if system is not None else []
+    if opening:
+        parts.append(context_part("Session opening", opening))
+    parts.append(context_part("State snapshot", json.dumps(snapshot, indent=2)))
+    parts.append(context_part("Player input", player_input))
+    return parts
 
 
 def turn_prompt(player_input: str, snapshot: dict[str, Any], opening: str | None = None) -> str:

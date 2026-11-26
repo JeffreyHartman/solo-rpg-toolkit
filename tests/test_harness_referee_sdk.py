@@ -337,3 +337,31 @@ def test_the_context_reading_is_none_until_the_conversation_starts(engine, paths
     clients[0].total_tokens = 12345
 
     assert run(referee.context_usage()) == 12345
+
+
+def test_the_turn_context_lists_what_the_referee_got_with_sizes(engine, paths):
+    referee, clients = make_referee(
+        engine,
+        paths,
+        [
+            tool_use("t1", "mcp__engine__move", {"to": "hall"}),
+            run_engine_tool("move", {"to": "hall"}),
+            tool_result("t1", content=[{"type": "text", "text": "moved to hall"}]),
+            result(),
+        ],
+        [result()],
+    )
+
+    run_turn(referee, "I walk east.")
+    first = referee.turn_context()
+    run_turn(referee, "I wait.")
+    second = referee.turn_context()
+
+    assert [p["label"] for p in first] == [
+        "System prompt", "Session opening", "State snapshot", "Player input", "Moving to Long Hall"
+    ]
+    assert first[0]["text"] == clients[0].options.system_prompt
+    assert first[3] == {"label": "Player input", "chars": len("I walk east."), "text": "I walk east."}
+    assert first[4]["text"] == "moved to hall"
+    assert all(p["chars"] == len(p["text"]) for p in first)
+    assert [p["label"] for p in second] == ["System prompt", "State snapshot", "Player input"]
