@@ -312,11 +312,12 @@ def test_the_cards_name_the_strength_modifier_in_descending_ac(tmp_path):
     card = next(e for e in events if e.get("procedure") == "attack")
     damage = next(e for e in events if e.get("procedure") == "damage")
     assert card["target"]["value"] == 13
-    assert card["target"]["source"] == "OSE attack throw: THAC0 19 vs AC 6, STR +1"
+    assert card["target"]["source"] == "OSE attack throw: THAC0 19, STR +1 vs AC 6"
     assert card["rolls"] == [12]
     assert card["total"] == 13
     assert card["result"] == "Hit"
     assert "rolled 13 (12, STR +1)" in card["text"]
+    assert damage["rolls"] == [4]
     assert damage["total"] == 5
     assert "(1d6+1 STR)" in damage["text"]
 
@@ -326,9 +327,18 @@ def test_the_cards_name_the_strength_modifier_in_ascending_ac(tmp_path):
     events = attack(engine)
     card = next(e for e in events if e.get("procedure") == "attack")
     damage = next(e for e in events if e.get("procedure") == "damage")
+    assert card["target"]["value"] == 13
     assert card["target"]["source"] == "OSE attack throw, ascending AC: attack bonus +0, STR +1 vs ascending AC 13"
     assert "(12, STR +1)" in card["text"]
     assert "(1d6+1 STR)" in damage["text"]
+
+
+def test_the_attack_card_shows_the_attack_bonus_beside_the_strength_modifier(tmp_path):
+    party = [{**BRANNOC, "thac0": 17}]
+    engine, _ = start(tmp_path, PARTY_FIRST + [12, 4, 1, 1, 10, 5, 2], party=party, rules=ASCENDING)
+    card = next(e for e in attack(engine) if e.get("procedure") == "attack")
+    assert card["total"] == 15
+    assert "rolled 15 (12, attack bonus +2, STR +1)" in card["text"]
 
 
 def test_a_zero_strength_modifier_leaves_str_off_the_cards(tmp_path):
