@@ -75,6 +75,25 @@ class Engine:
     def state(self) -> dict[str, Any]:
         return copy.deepcopy(self._state)
 
+    @property
+    def paths(self) -> CampaignPaths:
+        return self._paths
+
+    def new_session(self) -> list[Event]:
+        """End the current session and start the next one, if the current session has a raw log.
+
+        A session with no raw log has had no play, so it keeps its number and this returns no events.
+        """
+        session = self._state["session"]
+        if not self._paths.raw_log(session).exists():
+            return []
+        events: list[Event] = [{"type": "session_ended", "session": session, "text": f"Session {session} ends."}]
+        append_raw_log(self._paths, session, events)
+        self._state["session"] = session + 1
+        write_json(self._paths.state, self._state)
+        write_state_note(self._paths, self._state)
+        return events
+
     def referee_guides(self) -> list[str]:
         return list(self._registry.referee_guides)
 
