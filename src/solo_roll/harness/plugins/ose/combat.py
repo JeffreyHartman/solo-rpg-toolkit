@@ -29,7 +29,7 @@ from ...registry import AUTO, CONFIRM, Action, CommandContext, Event, Registry, 
 
 __all__ = [
     "ASCENDING_AC", "DEFAULT_DAMAGE", "OPTIONAL_RULES", "VARIABLE_WEAPON_DAMAGE", "attack_bonus",
-    "attack_target", "attack_throw", "combat_actions", "register", "weapon_damage",
+    "attack_source", "attack_target", "attack_throw", "combat_actions", "register", "weapon_damage",
 ]
 
 GENERIC = {"hd": 1, "ac": 9, "thac0": 19, "damage": "1d6"}
@@ -261,7 +261,7 @@ def attack(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) 
     throw = attack_throw(rules, thac0, monster["ac"], strength, ctx)
     natural, total, result = throw["natural"], throw["total"], "Hit" if throw["hit"] else "Miss"
     events: list[Event] = [_card(
-        "attack", "d20", [natural], total, result, "OSE",
+        "attack", "d20", [natural], total, result, attack_source(rules),
         f"{member['name']} attacks {monster['name']} {monster['id']}: rolled {total}, "
         f"needs {target['value']}. {result}.")]
     if throw["hit"]:
@@ -307,6 +307,11 @@ def optional_rules(ctx: CommandContext) -> frozenset[str]:
 def attack_bonus(rules: frozenset[str], thac0: int) -> int:
     """The attack bonus of an attacker with this THAC0: 19 minus THAC0 under ascending AC, 0 otherwise."""
     return 19 - thac0 if ASCENDING_AC in rules else 0
+
+
+def attack_source(rules: frozenset[str]) -> str:
+    """The source an attack card names: the ascending AC rule when the campaign uses it."""
+    return "OSE, ascending AC" if ASCENDING_AC in rules else "OSE"
 
 
 def attack_target(rules: frozenset[str], thac0: int, ac: int, defender: str | None = None) -> Target:
@@ -383,7 +388,7 @@ def _decision_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) 
     throw = attack_throw(rules, monster["thac0"], ac, 0, ctx)
     natural, need, hit = throw["natural"], throw["need"], throw["hit"]
     result = "Hit" if hit else "Miss"
-    card = _card("monster_attack", "d20", [natural], throw["total"], result, "OSE",
+    card = _card("monster_attack", "d20", [natural], throw["total"], result, attack_source(rules),
                  f"{monster['name']} {monster['id']} attacks {member['name']}: rolled {throw['total']}, needs {need}. {result}.")
     card["target"] = attack_target(rules, monster["thac0"], ac, f"{member['name']}'s AC {ac}")
     events = [card]

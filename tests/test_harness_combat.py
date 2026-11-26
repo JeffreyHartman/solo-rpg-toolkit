@@ -252,6 +252,7 @@ def test_ascending_ac_hits_at_the_ascending_target_and_names_the_rule(tmp_path):
     assert card["total"] == 13
     assert "ascending AC 13" in card["target"]["source"]
     assert "attack bonus +0" in card["target"]["source"]
+    assert "ascending AC" in card["source"]
 
 
 def test_ascending_ac_misses_one_below_the_target(tmp_path):
@@ -277,6 +278,7 @@ def test_a_monster_attack_uses_the_ascending_ac_of_the_target(tmp_path):
     card = next(e for e in events if e.get("procedure") == "monster_attack")
     assert card["target"]["value"] == 16
     assert "ascending AC 16" in card["target"]["source"]
+    assert "ascending AC" in card["source"]
     assert card["result"] == "Hit"
 
 
