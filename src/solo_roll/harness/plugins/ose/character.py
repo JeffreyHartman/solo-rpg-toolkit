@@ -5,12 +5,24 @@ from ....character import CLASS_HIT_DICE, CLASS_SAVES, UNARMORED_AC, roll_charac
 from ...errors import IllegalActionError
 from ...registry import CommandContext, Event
 
-__all__ = ["CREATE_CHARACTER_INPUTS", "create_character"]
+__all__ = ["CHARACTER_SCHEMA", "CREATE_CHARACTER_INPUTS", "create_character"]
 
 CREATE_CHARACTER_INPUTS: dict[str, dict[str, Any]] = {
     "class": {"type": "string", "label": "Class"},
     "character_name": {"type": "string", "label": "Name"},
     "description": {"type": "string", "label": "Description", "default": ""},
+}
+
+CHARACTER_SCHEMA: dict[str, dict[str, Any]] = {
+    "name": {"type": "string", "label": "Name"},
+    "class": {"type": "string", "label": "Class"},
+    "level": {"type": "integer", "label": "Level"},
+    "description": {"type": "string", "label": "Description"},
+    "abilities": {"type": "object", "label": "Ability scores"},
+    "saves": {"type": "object", "label": "Saving throw targets"},
+    "ac": {"type": "integer", "label": "Armor class"},
+    "hp": {"type": "integer", "label": "Hit points"},
+    "max_hp": {"type": "integer", "label": "Maximum hit points"},
 }
 
 

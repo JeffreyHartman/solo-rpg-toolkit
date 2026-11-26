@@ -6,7 +6,7 @@ from ...errors import IllegalActionError
 from ...mapstate import area, exits
 from ...registry import Action, CommandContext, Event, Registry
 from . import checks, combat, dungeon_turn
-from .character import CREATE_CHARACTER_INPUTS, create_character
+from .character import CHARACTER_SCHEMA, CREATE_CHARACTER_INPUTS, create_character
 
 __all__ = ["OsePlugin"]
 
@@ -37,6 +37,7 @@ class OsePlugin:
         registry.add_action_provider(_move_actions)
         registry.add_referee_guide(REFEREE_GUIDE)
         registry.add_judgment_category("ruling", "Rulings the OSE rules leave open")
+        registry.add_character_schema(CHARACTER_SCHEMA)
         registry.add_state_default("dungeon", dungeon_turn.initial_dungeon(self._wandering))
         registry.add_procedure(
             "create_character", create_character, label="Create a character", inputs=CREATE_CHARACTER_INPUTS
