@@ -38,3 +38,43 @@ def test_demo_creates_a_campaign_the_engine_can_walk(tmp_path):
     engine.act(first["command"])
 
     assert engine.state()["party"]["area"] == first["command"]["to"]
+
+
+@pytest.fixture
+def referee_args(monkeypatch):
+    pytest.importorskip("claude_agent_sdk")
+    seen = []
+
+    class Recorder:
+        def __init__(self, engine, paths, model, effort):
+            seen.append((model, effort))
+
+        async def close(self):
+            pass
+
+    monkeypatch.setattr("solo_roll.harness.referee.sdk.AgentSdkReferee", Recorder)
+    return seen
+
+
+def serve(campaign, *flags):
+    return main(["serve", str(campaign), *flags], run=lambda *a, **k: None, lan_ip=lambda: "10.0.0.2")
+
+
+def test_serve_starts_the_referee_with_the_campaign_model_and_effort(tmp_path, referee_args):
+    campaign = make_campaign(tmp_path)
+    engine = open_engine(campaign)
+    engine.change_setting("referee", "model", "opus")
+    engine.change_setting("referee", "effort", "high")
+
+    serve(campaign)
+
+    assert referee_args == [("opus", "high")]
+
+
+def test_serve_flags_change_the_campaign_model_and_effort(tmp_path, referee_args):
+    campaign = make_campaign(tmp_path)
+
+    serve(campaign, "--model", "haiku", "--effort", "medium")
+
+    assert referee_args == [("haiku", "medium")]
+    assert open_engine(campaign).settings()["referee"]["model"] == "haiku"

@@ -39,11 +39,17 @@ def _serve(args, run: Callable, find_ip: Callable[[], str]) -> int:
     from .server import create_app
 
     engine = open_campaign(Path(args.campaign), RandomDice(seed=args.seed), BUILTIN_PLUGINS)
+    for key in ("model", "effort"):
+        if getattr(args, key) is not None:
+            engine.change_setting("referee", key, getattr(args, key))
     referee = None
     if args.referee == "sdk":
-        from .referee.sdk import AgentSdkReferee
+        from .referee import sdk
 
-        referee = AgentSdkReferee(engine, CampaignPaths(Path(args.campaign)), model=args.model, effort=args.effort)
+        chosen = engine.settings()["referee"]
+        referee = sdk.AgentSdkReferee(
+            engine, CampaignPaths(Path(args.campaign)), model=chosen["model"], effort=chosen["effort"]
+        )
     web_dist = Path(args.web_dist) if args.web_dist else Path(__file__).resolve().parents[3] / "web" / "dist"
     print(f"Harness for {args.campaign}: http://{find_ip()}:{args.port}/", flush=True)
     run(create_app(engine, web_dist=web_dist, referee=referee), host=BIND_HOST, port=args.port)
@@ -72,8 +78,8 @@ def main(
     serve.add_argument("--web-dist", default=None, help="built web app folder (default: web/dist in this checkout)")
     serve.add_argument("--referee", choices=["sdk", "none"], default="sdk",
                        help="sdk: Claude through the Agent SDK on your plan; none: no Referee")
-    serve.add_argument("--model", default="sonnet")
-    serve.add_argument("--effort", default="low")
+    serve.add_argument("--model", default=None, help="set the campaign's Referee model (default: keep it)")
+    serve.add_argument("--effort", default=None, help="set the campaign's Referee effort (default: keep it)")
     demo = sub.add_parser("demo", help="create a campaign with a small hand-made map")
     demo.add_argument("campaign")
     args = parser.parse_args(argv)
