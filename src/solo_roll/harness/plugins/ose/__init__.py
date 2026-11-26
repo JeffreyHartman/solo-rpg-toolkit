@@ -1,9 +1,11 @@
-"""The OSE ruleset plugin. This version supplies movement between connected areas."""
+"""The OSE ruleset plugin: movement between areas and the dungeon turn."""
+from pathlib import Path
 from typing import Any
 
 from ...errors import IllegalActionError
 from ...mapstate import area, exits
 from ...registry import Action, CommandContext, Event, Registry
+from . import dungeon_turn
 
 __all__ = ["OsePlugin"]
 
@@ -12,9 +14,24 @@ class OsePlugin:
     name = "ose"
     kind = "ruleset"
 
+    def __init__(
+        self,
+        data_dir: Path = dungeon_turn.DEFAULT_DATA_DIR,
+        wandering: dict[str, Any] | None = dungeon_turn.DEFAULT_WANDERING,
+    ):
+        """`data_dir` holds `tables/ose/`. `wandering` is the starting wandering config, or None for no checks."""
+        self._data_dir = Path(data_dir)
+        self._wandering = wandering
+
     def register(self, registry: Registry) -> None:
         registry.add_command("move", _move)
         registry.add_action_provider(_move_actions)
+        registry.add_state_default("dungeon", dungeon_turn.initial_dungeon(self._wandering))
+        registry.add_procedure("search", dungeon_turn.search(self._data_dir))
+        registry.add_procedure("listen", dungeon_turn.listen(self._data_dir))
+        registry.add_procedure("rest", dungeon_turn.rest)
+        registry.add_action_provider(dungeon_turn.dungeon_actions)
+        registry.add_trigger("turn", dungeon_turn.wandering_trigger(self._data_dir))
 
 
 def _move(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) -> list[Event]:

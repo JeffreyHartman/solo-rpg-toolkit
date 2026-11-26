@@ -12,7 +12,15 @@ from .dice import parse_dice, roll_dice
 from .rng import DiceSource
 from .tables import roll_table
 
-__all__ = ["DungeonError", "advance_turn", "load_state", "save_state", "new_state"]
+__all__ = [
+    "DungeonError",
+    "advance_clock",
+    "advance_turn",
+    "check_wandering",
+    "load_state",
+    "new_state",
+    "save_state",
+]
 
 TURNS_BETWEEN_RESTS = 6  # one turn of rest every hour
 ENCOUNTER_DISTANCE = "2d6"
@@ -55,6 +63,13 @@ def advance_turn(
 ) -> dict[str, Any]:
     """Advance one turn. With rest set, the turn is spent resting and
     turns_since_rest goes back to 0."""
+    payload = advance_clock(state, rest=rest)
+    payload["wandering"] = check_wandering(payload["state"], data_dir, dice)
+    return payload
+
+
+def advance_clock(state: dict[str, Any], rest: bool = False) -> dict[str, Any]:
+    """Advance the turn counter and burn the light, without the wandering check."""
     state = json.loads(json.dumps(state))  # do not mutate the caller's dict
     state["turn"] = state.get("turn", 0) + 1
     state["turns_since_rest"] = 0 if rest else state.get("turns_since_rest", 0) + 1
@@ -83,12 +98,11 @@ def advance_turn(
         "in_darkness": not burning,
         "rested": rest,
         "rest_due": state["turns_since_rest"] >= TURNS_BETWEEN_RESTS,
-        "wandering": _wandering(state, data_dir, dice),
         "state": state,
     }
 
 
-def _wandering(
+def check_wandering(
     state: dict[str, Any], data_dir: Path, dice: DiceSource
 ) -> dict[str, Any]:
     config = state.get("wandering")

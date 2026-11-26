@@ -21,7 +21,7 @@ def test_a_new_connection_gets_the_state_and_available_actions(client):
 
     assert hello["type"] == "snapshot"
     assert hello["state"]["party"]["area"] == "gate"
-    assert [a["id"] for a in hello["actions"]] == ["move:hall"]
+    assert [a["id"] for a in hello["actions"] if a["id"].startswith("move:")] == ["move:hall"]
 
 
 def test_a_move_command_returns_its_events_with_the_new_state(client):
@@ -33,7 +33,7 @@ def test_a_move_command_returns_its_events_with_the_new_state(client):
     assert reply["type"] == "events"
     assert [e["type"] for e in reply["events"]] == ["moved", "area_revealed"]
     assert reply["state"]["party"]["area"] == "hall"
-    assert {a["id"] for a in reply["actions"]} == {"move:gate", "move:crypt"}
+    assert {a["id"] for a in reply["actions"] if a["id"].startswith("move:")} == {"move:gate", "move:crypt"}
 
 
 def test_a_refused_command_returns_an_error_and_the_socket_stays_open(client):

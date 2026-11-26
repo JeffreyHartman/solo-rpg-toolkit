@@ -10,11 +10,13 @@ from typing import Any
 
 from ..rng import DiceSource
 from .campaign import CampaignPaths, load_json, write_json
-from .errors import UnknownCommandError
+from .errors import PluginError, UnknownCommandError
 from .registry import Action, CommandContext, Event, PluginFactory, Registry, build_registry
 from .vault import append_raw_log, write_state_note
 
 __all__ = ["Engine", "open_campaign"]
+
+MAX_TRIGGER_DEPTH = 8
 
 
 class Engine:
@@ -26,6 +28,9 @@ class Engine:
         dice: DiceSource,
     ):
         self._paths = paths
+        for key, factory in registry.state_defaults.items():
+            if key not in state:
+                state[key] = factory(state)
         self._state = state
         self._registry = registry
         self._context = CommandContext(dice=dice)
@@ -35,16 +40,35 @@ class Engine:
 
         The state, the raw log and `State.md` change only if the command succeeds.
         """
-        handler = self._registry.commands.get(command.get("type", ""))
-        if handler is None:
-            raise UnknownCommandError(f"no plugin handles command '{command.get('type')}'")
         working = copy.deepcopy(self._state)
-        events = handler(working, command, self._context)
+        events = self._with_triggers(self._run(working, command), working)
         self._state = working
         write_json(self._paths.state, self._state)
         append_raw_log(self._paths, self._state["session"], events)
         write_state_note(self._paths, self._state)
         return events
+
+    def _run(self, working: dict[str, Any], command: dict[str, Any]) -> list[Event]:
+        if command.get("type") == "procedure":
+            procedure = self._registry.procedures.get(command.get("name", ""))
+            if procedure is None:
+                raise UnknownCommandError(f"no plugin registers procedure '{command.get('name')}'")
+            return procedure.handler(working, command, self._context)
+        handler = self._registry.commands.get(command.get("type", ""))
+        if handler is None:
+            raise UnknownCommandError(f"no plugin handles command '{command.get('type')}'")
+        return handler(working, command, self._context)
+
+    def _with_triggers(self, events: list[Event], working: dict[str, Any], depth: int = 0) -> list[Event]:
+        """Insert the events of each trigger right after the event that fired it."""
+        if depth > MAX_TRIGGER_DEPTH:
+            raise PluginError("triggers keep firing each other")
+        out: list[Event] = []
+        for event in events:
+            out.append(event)
+            for trigger in self._registry.triggers.get(event["type"], []):
+                out.extend(self._with_triggers(trigger(working, event, self._context), working, depth + 1))
+        return out
 
     def state(self) -> dict[str, Any]:
         return copy.deepcopy(self._state)

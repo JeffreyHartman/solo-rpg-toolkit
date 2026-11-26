@@ -3,6 +3,11 @@
   import MapView from './lib/MapView.svelte'
   import { act, game } from './lib/socket.svelte'
 
+  let light = $derived(
+    game.state?.dungeon
+      ? game.state.dungeon.light.map((l) => `${l.kind} ${l.turns_left}`).join(', ') || 'darkness'
+      : '',
+  )
   let here = $derived(game.state ? game.state.map.areas[game.state.party.area] : null)
 </script>
 
@@ -11,6 +16,9 @@
   <div class="panel party">
     <b>{game.state.party.members.map((m) => m.name).join(', ')}</b>
     <div class="dim">{here?.name} · session {game.state.session}</div>
+    {#if game.state.dungeon}
+      <div class="dim">Turn {game.state.dungeon.turn} · Light: {light}</div>
+    {/if}
   </div>
   <section class="panel log">
     {#each game.log.slice(-30) as line}
