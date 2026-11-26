@@ -184,7 +184,7 @@ ENGINE_TOOLS: tuple[EngineTool, ...] = (
         name="edit",
         description=(
             "Change a party member or a monster when no procedure fits, with a one-line reason the player sees. "
-            "`who` is a member's name or a monster id. `change` is add_item, remove_item, light (a lit torch or "
+            "`who` is a member's name or a monster id. `change` is add_item, remove_item, light (a member lights a torch or "
             "lantern that joins the party's light), hp, condition, or clear_condition. `value` is the item, the "
             "condition, or for hp a signed change such as -3 or -1d6: the engine rolls any dice. Never pass a die result."
         ),

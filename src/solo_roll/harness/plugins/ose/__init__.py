@@ -2,6 +2,7 @@
 from pathlib import Path
 from typing import Any
 
+from ...edits import LIGHT_REQUESTED
 from ...errors import IllegalActionError
 from ...mapstate import area, exits
 from ...registry import Action, CommandContext, Event, Registry
@@ -52,7 +53,7 @@ class OsePlugin:
         registry.add_action_provider(dungeon_turn.dungeon_actions)
         registry.add_trigger("turn", dungeon_turn.wandering_trigger(self._data_dir))
         registry.add_trigger("moved", dungeon_turn.move_trigger)
-        registry.add_trigger("item_added", dungeon_turn.light_trigger)
+        registry.add_trigger(LIGHT_REQUESTED, dungeon_turn.light_trigger)
         checks.register(registry)
         combat.register(registry, self._data_dir)
 
