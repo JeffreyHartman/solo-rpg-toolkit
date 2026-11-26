@@ -1,8 +1,8 @@
 """`ScriptedReferee`: a Referee fake that plays scripted turns for tests.
 
 It runs each scripted tool call through the same path guard and engine tools
-as the Agent SDK adapter. Allowed `Read` and `Write` calls touch the real file;
-`Edit`, `Glob` and `Grep` succeed with no effect.
+as the Agent SDK adapter. Allowed `Read`, `Write` and `Edit` calls touch the real
+file; `Glob` and `Grep` succeed with no effect.
 """
 from collections.abc import AsyncIterator, Sequence
 from dataclasses import dataclass, field
@@ -78,6 +78,10 @@ class ScriptedReferee:
         if call.tool == "Write":
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(call.input.get("content", ""))
+        if call.tool == "Edit":
+            old, new = call.input["old_string"], call.input["new_string"]
+            count = -1 if call.input.get("replace_all") else 1
+            target.write_text(target.read_text().replace(old, new, count))
         return events.tool_result(call_id, call.tool, ok=True, output="ok")
 
     def _path(self, raw: str) -> Path:

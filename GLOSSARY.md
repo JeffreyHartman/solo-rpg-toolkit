@@ -52,6 +52,14 @@ _Avoid_: memory, lore, note (when it means a record)
 The Obsidian folder that holds the records of one campaign. The player can open it in Obsidian outside the harness.
 _Avoid_: journal (when it means the folder), notes folder
 
+**Mechanical block**:
+The part of a character note that the engine rewrites after every action, between the `%% engine:begin %%` and `%% engine:end %%` markers. It shows the character's mechanical state in Obsidian. The Referee cannot change it.
+_Avoid_: stat block (when it means this), sheet
+
+**Referee folder**:
+The folder beside the vault, outside it, where the Referee keeps secrets the player has not found. Neither the harness nor Obsidian shows it.
+_Avoid_: GM notes, secrets vault
+
 **Map**:
 The areas of a campaign, the connections between them, and what the player knows about each one. Distance and position are narrative unless a ruleset adds tactical movement.
 _Avoid_: dungeon (when it means the map), level
