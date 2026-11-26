@@ -8,7 +8,7 @@ from ..campaign import CampaignPaths
 from ..vault import session_note
 from .events import RefereeEvent
 
-__all__ = ["ContextPart", "Referee", "TurnInput", "context_part", "prompt_parts", "session_opening", "turn_prompt"]
+__all__ = ["ContextPart", "Referee", "TurnInput", "context_part", "end_session_request", "prompt_parts", "session_opening", "turn_prompt"]
 
 ContextPart = dict[str, Any]
 """One thing the Referee got in a turn, for the context drawer: `{label, chars, text}`."""
@@ -20,6 +20,8 @@ class TurnInput:
     snapshot: dict[str, Any]
     prompt: str
     conversation: int = 1
+    model: str = ""
+    effort: str = ""
 
 
 class Referee(Protocol):
@@ -73,6 +75,21 @@ def turn_prompt(player_input: str, snapshot: dict[str, Any], opening: str | None
     """The user message for one turn: the session opening on a conversation's first turn, the state snapshot, then the player's input."""
     head = f"<session>\n{opening}\n</session>\n\n" if opening else ""
     return f"{head}<state>\n{json.dumps(snapshot, indent=2)}\n</state>\n\n{player_input}"
+
+
+def end_session_request(paths: CampaignPaths, session: int) -> str:
+    """The turn input at End session: write the clean session note from the raw log, then update the records."""
+    raw = paths.raw_log(session).relative_to(paths.vault).as_posix()
+    return (
+        f"The player ended session {session}. Do not narrate. Do this, then reply with one line that names the note:\n"
+        f"1. Read the raw log `{raw}`.\n"
+        f"2. Write the clean session note `Sessions/Session {session:03d} - <Title>.md`, with a short title of your choice, "
+        f"frontmatter `type: session` and `session: {session}`, a summary of what happened in play order, "
+        "and [[wikilinks]] to the records it mentions. Add its line to `Sessions/_index.md`.\n"
+        "3. Update the records in `NPCs/` and `Locations/` that the session touched (status, location, what changed), "
+        "and write records that are missing, with a line in each folder index.\n"
+        "Follow `Conventions.md`."
+    )
 
 
 def session_opening(paths: CampaignPaths, session: int) -> str:

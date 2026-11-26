@@ -51,7 +51,7 @@ def test_a_referee_proposal_reaches_the_player_and_the_answer_is_narrated(tmp_pa
         proposed = next(m for m in receive_until_done(ws) if m["type"] == "events")
         [pending] = proposed["state"]["proposals"]["pending"]
         ws.send_json({"type": "answer", "id": pending["id"], "answer": "confirm"})
-        answered = receive_until_done(ws)
+        answered = [m for m in receive_until_done(ws) if m["type"] != "context"]
 
     assert [e["type"] for e in proposed["events"]] == ["proposal"]
     assert answered[0]["type"] == "events"

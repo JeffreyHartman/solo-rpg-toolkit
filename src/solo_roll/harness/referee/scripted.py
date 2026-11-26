@@ -59,7 +59,7 @@ class ScriptedReferee:
         opening = session_opening(self._tools.paths, snapshot["session"]) if self._fresh else None
         self._fresh = False
         prompt = turn_prompt(player_input, snapshot, opening)
-        self.turns_seen.append(TurnInput(player_input, snapshot, prompt, self._conversation))
+        self.turns_seen.append(TurnInput(player_input, snapshot, prompt, self._conversation, self.model, self.effort))
         self._turn_context = prompt_parts(player_input, snapshot, opening)
         steps = self._turns.pop(0) if self._turns else []
         for step in steps:
