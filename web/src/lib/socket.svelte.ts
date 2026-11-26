@@ -1,4 +1,15 @@
-import type { Action, ClientMessage, Command, EngineState, RefereeEvent, ServerMessage } from './protocol'
+import type {
+  Action,
+  CampaignSettings,
+  ClientMessage,
+  Command,
+  ConfirmLevel,
+  EngineState,
+  ProposalAnswer,
+  RefereeEvent,
+  ServerMessage,
+  Target,
+} from './protocol'
 
 export interface MechanicsCard {
   dice: string
@@ -6,6 +17,7 @@ export interface MechanicsCard {
   total: number
   result: string
   source: string
+  target?: Target
 }
 
 export type ChatEntry =
@@ -19,6 +31,7 @@ export const game = $state({
   actions: [] as Action[],
   chat: [] as ChatEntry[],
   refereeBusy: false,
+  settings: null as CampaignSettings | null,
 })
 
 // Index in game.chat of the narration this turn is streaming into, or -1.
@@ -48,11 +61,21 @@ function receive(message: ServerMessage): void {
     case 'referee':
       onReferee(message.event)
       return
+    case 'settings':
+      game.settings = message.settings
+      return
+    case 'snapshot':
+      game.settings = message.settings
+      break
     case 'events':
       for (const event of message.events) {
         if (event.type === 'mechanics') {
-          const { dice, rolls, total, result, source } = event as unknown as MechanicsCard
-          game.chat.push({ kind: 'mechanics', text: event.text ?? event.type, card: { dice, rolls, total, result, source } })
+          const { dice, rolls, total, result, source, target } = event as unknown as MechanicsCard
+          game.chat.push({
+            kind: 'mechanics',
+            text: event.text ?? event.type,
+            card: { dice, rolls, total, result, source, target },
+          })
         } else {
           game.chat.push({ kind: 'event', text: event.text ?? event.type })
         }
@@ -103,6 +126,14 @@ export function act(command: Command): void {
 
 export function say(text: string): void {
   if (text.trim()) send({ type: 'say', text: text.trim() })
+}
+
+export function answer(id: string, reply: ProposalAnswer, inputs?: Record<string, string | number>): void {
+  send({ type: 'answer', id, answer: reply, inputs })
+}
+
+export function setConfirmLevel(procedure: string, level: ConfirmLevel): void {
+  send({ type: 'set_setting', section: 'confirm', key: procedure, value: level })
 }
 
 export function exploreActionFor(exit: string): Action | undefined {
