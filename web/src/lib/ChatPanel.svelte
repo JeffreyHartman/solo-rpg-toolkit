@@ -29,7 +29,9 @@
       {:else if entry.kind === 'mechanics'}
         <div class="card">
           <b>{entry.card.dice}</b> [{entry.card.rolls.join(', ')}] = {entry.card.total}
+          {#if entry.card.target}<span> vs {entry.card.target.value}</span>{/if}
           <div>{entry.card.result}</div>
+          {#if entry.card.target}<div class="dim">Target: {entry.card.target.source}</div>{/if}
           <div class="dim">{entry.card.source}</div>
         </div>
       {:else}

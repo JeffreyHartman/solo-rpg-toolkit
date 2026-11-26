@@ -235,6 +235,6 @@ def test_triggers_that_fire_each_other_forever_are_stopped(tmp_path):
         engine.act({"type": "procedure", "name": "ping"})
 
 
-def test_a_procedure_with_another_confirm_level_is_not_accepted():
+def test_a_procedure_with_an_unknown_confirm_level_is_not_accepted():
     with pytest.raises(PluginError):
-        Registry().add_procedure("x", lambda s, c, ctx: [], confirm="confirm")
+        Registry().add_procedure("x", lambda s, c, ctx: [], confirm="sometimes")

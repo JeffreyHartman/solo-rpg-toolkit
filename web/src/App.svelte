@@ -2,7 +2,12 @@
 <script lang="ts">
   import ChatPanel from './lib/ChatPanel.svelte'
   import MapView from './lib/MapView.svelte'
+  import ProposalCard from './lib/ProposalCard.svelte'
+  import SettingsMenu from './lib/SettingsMenu.svelte'
   import { act, game } from './lib/socket.svelte'
+
+  let settingsOpen = $state(false)
+  let pending = $derived(game.state?.proposals?.pending ?? [])
 
   let light = $derived(
     game.state?.dungeon
@@ -22,6 +27,15 @@
     {/if}
   </div>
   <div class="panel log"><ChatPanel /></div>
+  <button class="panel settings-toggle" onclick={() => (settingsOpen = !settingsOpen)}>Settings</button>
+  {#if settingsOpen}
+    <div class="panel settings"><SettingsMenu onclose={() => (settingsOpen = false)} /></div>
+  {/if}
+  {#if pending.length}
+    <div class="panel proposals">
+      {#each pending as proposal (proposal.id)}<ProposalCard {proposal} />{/each}
+    </div>
+  {/if}
   <nav class="panel actions">
     {#each game.actions as a (a.id)}
       <button onclick={() => act(a.command)}>{a.label}</button>
@@ -38,6 +52,9 @@
   .party { top: 12px; left: 12px; }
   .log { left: 12px; bottom: 12px; width: min(460px, calc(100vw - 24px)); height: 45vh; font-size: 14px; }
   .actions { right: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px; max-width: min(480px, calc(100vw - 24px)); }
-  .offline { top: 12px; right: 12px; color: var(--warn); }
+  .offline { top: 56px; right: 12px; color: var(--warn); }
+  .settings-toggle { top: 12px; right: 12px; padding: 4px 12px; }
+  .settings { top: 56px; right: 12px; width: min(340px, calc(100vw - 24px)); z-index: 2; }
+  .proposals { right: 12px; bottom: 72px; width: min(380px, calc(100vw - 24px)); display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
   .waiting { padding: 24px; }
 </style>

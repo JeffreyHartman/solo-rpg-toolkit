@@ -45,15 +45,50 @@ def _move(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
     return ToolOutcome(output={"events": events, "area": engine.state()["party"]["area"]}, events=events)
 
 
+def _propose(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
+    events = engine.act(
+        {
+            "type": "propose",
+            "procedure": args.get("procedure"),
+            "inputs": args.get("inputs") or {},
+            "reason": args.get("reason", ""),
+        }
+    )
+    if events and events[0]["type"] == "proposal":
+        output = {"status": "waiting for the player", "proposal": events[0]["proposal"]}
+    else:
+        output = {"status": "ran", "events": events}
+    return ToolOutcome(output=output, events=events)
+
+
+def _procedure_label(engine: Engine, name: Any) -> str:
+    return next((p["label"] for p in engine.procedures() if p["name"] == name), str(name))
+
+
 ENGINE_TOOLS: tuple[EngineTool, ...] = (
     EngineTool(
         name="state",
-        description="Return the engine state snapshot and the available actions.",
+        description="Return the engine state snapshot, the available actions, and the procedures you can propose.",
         input_schema={},
         label=lambda engine, args: "Checking the state",
         run=lambda engine, args: ToolOutcome(
-            output={"state": engine.state(), "actions": engine.available_actions()}
+            output={
+                "state": engine.state(),
+                "actions": engine.available_actions(),
+                "procedures": engine.procedures(),
+            }
         ),
+    ),
+    EngineTool(
+        name="propose",
+        description=(
+            "Propose a procedure for the player's action, by procedure name, with its inputs and a short reason. "
+            "An Auto procedure runs at once and returns its events. A Confirm procedure becomes a proposal "
+            "card that waits for the player to confirm, change, or reject it."
+        ),
+        input_schema={"procedure": str, "inputs": dict, "reason": str},
+        label=lambda engine, args: f"Proposing {_procedure_label(engine, args.get('procedure'))}",
+        run=_propose,
     ),
     EngineTool(
         name="move",
