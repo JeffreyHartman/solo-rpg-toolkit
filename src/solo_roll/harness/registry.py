@@ -56,6 +56,7 @@ class Registry:
     plugins: list[str] = field(default_factory=list)
     commands: dict[str, CommandHandler] = field(default_factory=dict)
     action_providers: list[ActionProvider] = field(default_factory=list)
+    referee_guides: list[str] = field(default_factory=list)
 
     def add_command(self, command_type: str, handler: CommandHandler) -> None:
         if command_type in self.commands:
@@ -64,6 +65,10 @@ class Registry:
 
     def add_action_provider(self, provider: ActionProvider) -> None:
         self.action_providers.append(provider)
+
+    def add_referee_guide(self, markdown: str) -> None:
+        """Add markdown to the Referee's system prompt, in plugin order."""
+        self.referee_guides.append(markdown)
 
 
 def build_registry(names: list[str], factories: Mapping[str, PluginFactory]) -> Registry:

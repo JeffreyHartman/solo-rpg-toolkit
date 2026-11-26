@@ -7,6 +7,12 @@ from ...registry import Action, CommandContext, Event, Registry
 
 __all__ = ["OsePlugin"]
 
+REFEREE_GUIDE = """## Ruleset: Old-School Essentials (OSE)
+
+- Play in the spirit of OSE: a dangerous dungeon, scarce light, and choices with consequences.
+- Move the party between areas only with the `move` engine tool, by area id.
+"""
+
 
 class OsePlugin:
     name = "ose"
@@ -15,6 +21,7 @@ class OsePlugin:
     def register(self, registry: Registry) -> None:
         registry.add_command("move", _move)
         registry.add_action_provider(_move_actions)
+        registry.add_referee_guide(REFEREE_GUIDE)
 
 
 def _move(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) -> list[Event]:
