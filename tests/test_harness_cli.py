@@ -125,3 +125,28 @@ def test_serve_reads_flextale_tables_from_the_data_folder_main_is_given(tmp_path
         reply = ws.receive_json()
 
     assert reply["type"] == "events", reply
+
+
+def test_each_campaign_the_library_opens_gets_its_own_dice(tmp_path):
+    from fastapi.testclient import TestClient
+
+    apps = []
+    main(
+        ["serve", "--campaigns", str(tmp_path / "campaigns"), "--referee", "none", "--seed", "7"],
+        run=lambda app, host, port: apps.append(app),
+        lan_ip=lambda: "10.0.0.2",
+        env={},
+        home=tmp_path / "home",
+    )
+    abilities = []
+    with TestClient(apps[0]).websocket_connect("/ws") as ws:
+        ws.receive_json()
+        for name in ("First Delve", "Second Delve"):
+            ws.send_json({"type": "new_campaign", "name": name, "ruleset": "ose", "generators": []})
+            ws.receive_json()
+            ws.send_json({"type": "act", "command": {
+                "type": "procedure", "name": "create_character",
+                "inputs": {"class": "Fighter", "character_name": "Brannoc"}}})
+            abilities.append(ws.receive_json()["state"]["party"]["members"][0]["abilities"])
+
+    assert abilities[0] != abilities[1]

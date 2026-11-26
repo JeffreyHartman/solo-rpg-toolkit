@@ -1,6 +1,7 @@
 """solo-harness: create a demo campaign, or serve a campaign to the browser."""
 import argparse
 import os
+import random
 import socket
 import sys
 from collections.abc import Callable, Mapping
@@ -58,8 +59,10 @@ def _serve(
         chosen = engine.settings()["referee"]
         return sdk.AgentSdkReferee(engine, paths, model=chosen["model"], effort=chosen["effort"])
 
+    seeds = random.Random(args.seed)
+
     def dice():
-        return RandomDice(seed=args.seed)
+        return RandomDice(seed=seeds.getrandbits(64))
 
     engine = referee = library = None
     if args.campaign:
@@ -94,7 +97,8 @@ def main(
     serve.add_argument("--campaigns", default=None,
                        help="a folder of campaigns: the browser can create and open campaigns in it")
     serve.add_argument("--port", type=int, default=DEFAULT_PORT)
-    serve.add_argument("--seed", type=int, default=None)
+    serve.add_argument("--seed", type=int, default=None,
+                       help="seed for the dice; each opened campaign draws its own dice seed from it")
     serve.add_argument("--web-dist", default=None, help="built web app folder (default: web/dist in this checkout)")
     serve.add_argument("--referee", choices=["sdk", "none"], default="sdk",
                        help="sdk: Claude through the Agent SDK on your plan; none: no Referee")
