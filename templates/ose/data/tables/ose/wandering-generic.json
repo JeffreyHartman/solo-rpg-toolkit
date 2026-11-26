@@ -1,0 +1,8 @@
+{
+  "name": "ose/wandering-generic",
+  "display_name": "Generic Wandering Monsters",
+  "description": "Placeholder level 1 wandering monsters. A module replaces it through the wandering config in the engine state.",
+  "dice": "d6",
+  "source": "Toolkit placeholder, not from a published table",
+  "entries": ["Giant rats", "Skeletons", "Goblins", "Kobolds", "Giant centipedes", "Wild dogs"]
+}

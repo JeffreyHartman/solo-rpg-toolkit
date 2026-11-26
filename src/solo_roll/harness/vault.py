@@ -23,6 +23,7 @@ def write_state_note(paths: CampaignPaths, state: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     here = state["party"]["area"]
     area_name = state["map"]["areas"][here]["name"]
+    dungeon = _dungeon_section(state["dungeon"]) if "dungeon" in state else ""
     members = "\n".join(f"- {m['name']}" for m in state["party"]["members"])
     path.write_text(
         "---\ntype: state\nengine: true\n---\n"
@@ -31,4 +32,17 @@ def write_state_note(paths: CampaignPaths, state: dict[str, Any]) -> None:
         f"Session: {state['session']}\n"
         f"Position: {area_name}\n\n"
         f"## Party\n\n{members}\n"
+        f"{dungeon}"
+    )
+
+
+def _dungeon_section(dungeon: dict[str, Any]) -> str:
+    light = ", ".join(
+        f"{s['kind']} ({s['bearer']}), {s['turns_left']} turns left" for s in dungeon["light"]
+    )
+    return (
+        "\n## Dungeon\n\n"
+        f"Turn: {dungeon['turn']}\n"
+        f"Light: {light or 'none (darkness)'}\n"
+        f"Turns since rest: {dungeon['turns_since_rest']}\n"
     )
