@@ -355,6 +355,11 @@ class Engine:
         """Add a chat message, the player's text or the Referee's narration, to the current session's raw log."""
         append_raw_text(self._paths, self._state["session"], speaker, text)
 
+    def log_note(self, text: str) -> Event:
+        """Log an out-of-character Referee note to the raw log and return its `ooc_note` event."""
+        append_raw_text(self._paths, self._state["session"], "Referee (out of character)", text)
+        return {"type": "ooc_note", "text": text}
+
     def referee_guides(self) -> list[str]:
         return list(self._registry.referee_guides)
 

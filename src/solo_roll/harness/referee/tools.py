@@ -88,6 +88,13 @@ def _create_character(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
     return ToolOutcome(output={"events": events, "party": engine.state()["party"]["members"]}, events=events)
 
 
+def _out_of_character_note(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
+    text = str(args.get("text") or "").strip()
+    if not text:
+        raise HarnessError("The note is empty.")
+    return ToolOutcome(output={"status": "noted"}, events=[engine.log_note(text)])
+
+
 END_SESSION_TOOL = ENGINE_TOOL_PREFIX + "end_session"
 
 
@@ -155,6 +162,16 @@ ENGINE_TOOLS: tuple[EngineTool, ...] = (
         input_schema={"class": str, "character_name": str, "description": str},
         label=lambda engine, args: f"Creating {args.get('character_name') or 'a character'}",
         run=_create_character,
+    ),
+    EngineTool(
+        name="out_of_character_note",
+        description=(
+            "Tell the player something about the harness, not the story: a tool you lack or a rule the engine "
+            "cannot run. The chat shows it collapsed and the raw log keeps it. Never put it in narration."
+        ),
+        input_schema={"text": str},
+        label=lambda engine, args: "Noting a harness gap",
+        run=_out_of_character_note,
     ),
     EngineTool(
         name="end_session",

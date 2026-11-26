@@ -34,6 +34,11 @@
           {#if entry.card.target}<div class="dim">Target: {entry.card.target.source}</div>{/if}
           <div class="dim">{entry.card.source}</div>
         </div>
+      {:else if entry.kind === 'ooc'}
+        <details class="ooc">
+          <summary>Out-of-character note</summary>
+          {entry.text}
+        </details>
       {:else}
         <div class={entry.kind}>{entry.text}</div>
       {/if}
@@ -53,8 +58,9 @@
   .lines { flex: 1; display: flex; flex-direction: column; gap: 4px; }
   .player { color: var(--accent); font-style: italic; }
   .narration { white-space: pre-wrap; }
-  .status, .tool, .event, .busy { font-size: 13px; color: var(--ink-dim); }
+  .status, .tool, .event, .busy, .ooc { font-size: 13px; color: var(--ink-dim); }
   .status { font-style: italic; }
+  .ooc summary { cursor: pointer; }
   .tool::before { content: '⚙ '; }
   .tool.denied, .tool.failed, .error { color: var(--bad); }
   .card { border: 1px solid #c9a25e66; border-radius: 4px; padding: 4px 6px; font-size: 13px; }
