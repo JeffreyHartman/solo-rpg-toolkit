@@ -1,5 +1,6 @@
 <!-- Layout from the ui-shell prototype, variant C: the map fills the screen and panels float over it. -->
 <script lang="ts">
+  import ChatPanel from './lib/ChatPanel.svelte'
   import MapView from './lib/MapView.svelte'
   import { act, game } from './lib/socket.svelte'
 
@@ -20,21 +21,7 @@
       <div class="dim">Turn {game.state.dungeon.turn} · Light: {light}</div>
     {/if}
   </div>
-  <section class="panel log">
-    {#each game.log.slice(-30) as line}
-      {#if line.card}
-        <div class="card">
-          <b>{line.card.dice}</b> [{line.card.rolls.join(', ')}] = {line.card.total}
-          <div>{line.card.result}</div>
-          <div class="dim">{line.card.source}</div>
-        </div>
-      {:else}
-        <div class:error={line.kind === 'error'}>{line.text}</div>
-      {/if}
-    {:else}
-      <div class="dim">Click an exit or an area to move.</div>
-    {/each}
-  </section>
+  <div class="panel log"><ChatPanel /></div>
   <nav class="panel actions">
     {#each game.actions as a (a.id)}
       <button onclick={() => act(a.command)}>{a.label}</button>
@@ -49,10 +36,7 @@
   .map { position: fixed; inset: 0; }
   .panel { position: fixed; background: #17120ddd; border: 1px solid var(--edge); border-radius: 10px; padding: 8px 12px; }
   .party { top: 12px; left: 12px; }
-  .log { left: 12px; bottom: 12px; width: min(420px, calc(100vw - 24px)); max-height: 35vh; overflow-y: auto; font-size: 14px; }
-  .log > div { padding: 1px 0; }
-  .card { border: 1px solid #c9a25e66; border-radius: 4px; padding: 4px 6px; margin: 3px 0; }
-  .error { color: var(--bad); }
+  .log { left: 12px; bottom: 12px; width: min(460px, calc(100vw - 24px)); height: 45vh; font-size: 14px; }
   .actions { right: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px; max-width: min(480px, calc(100vw - 24px)); }
   .offline { top: 12px; right: 12px; color: var(--warn); }
   .waiting { padding: 24px; }

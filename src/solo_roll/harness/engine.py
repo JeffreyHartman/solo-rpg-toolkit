@@ -73,6 +73,9 @@ class Engine:
     def state(self) -> dict[str, Any]:
         return copy.deepcopy(self._state)
 
+    def referee_guides(self) -> list[str]:
+        return list(self._registry.referee_guides)
+
     def available_actions(self) -> list[Action]:
         snapshot = self.state()
         return [a for provider in self._registry.action_providers for a in provider(snapshot)]

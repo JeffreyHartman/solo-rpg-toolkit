@@ -149,3 +149,11 @@ def test_command_handlers_roll_with_the_injected_dice(tmp_path):
     )
 
     assert engine.act({"type": "roll"})[0]["value"] == 4
+
+
+def test_the_engine_collects_the_referee_guides_of_its_plugins(tmp_path):
+    engine = open_engine(make_campaign(tmp_path))
+
+    [guide] = engine.referee_guides()
+
+    assert "OSE" in guide

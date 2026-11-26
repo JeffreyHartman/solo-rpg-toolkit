@@ -63,9 +63,28 @@ export interface EngineEvent {
   [field: string]: unknown
 }
 
+// Mirrors src/solo_roll/harness/referee/events.py. Text before a tool_start in a
+// turn is a status line, not narration.
+export type RefereeEvent =
+  | { type: 'text'; text: string }
+  | { type: 'tool_start'; id: string; tool: string; input: Record<string, unknown>; label: string }
+  | {
+      type: 'tool_result'
+      id: string
+      tool: string
+      ok: boolean
+      denied: boolean
+      output?: unknown
+      error?: string
+      events: EngineEvent[]
+    }
+  | { type: 'done'; error?: string }
+
 export type ServerMessage =
   | { type: 'snapshot'; state: EngineState; actions: Action[] }
   | { type: 'events'; events: EngineEvent[]; state: EngineState; actions: Action[] }
+  | { type: 'player'; text: string }
+  | { type: 'referee'; event: RefereeEvent }
   | { type: 'error'; message: string }
 
-export type ClientMessage = { type: 'act'; command: Command }
+export type ClientMessage = { type: 'act'; command: Command } | { type: 'say'; text: string }

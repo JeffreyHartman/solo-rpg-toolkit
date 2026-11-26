@@ -82,6 +82,7 @@ class Registry:
     plugins: list[str] = field(default_factory=list)
     commands: dict[str, CommandHandler] = field(default_factory=dict)
     action_providers: list[ActionProvider] = field(default_factory=list)
+    referee_guides: list[str] = field(default_factory=list)
     procedures: dict[str, Procedure] = field(default_factory=dict)
     triggers: dict[str, list[Trigger]] = field(default_factory=dict)
     state_defaults: dict[str, StateDefault] = field(default_factory=dict)
@@ -93,6 +94,10 @@ class Registry:
 
     def add_action_provider(self, provider: ActionProvider) -> None:
         self.action_providers.append(provider)
+
+    def add_referee_guide(self, markdown: str) -> None:
+        """Add markdown to the Referee's system prompt, in plugin order."""
+        self.referee_guides.append(markdown)
 
     def add_procedure(self, name: str, handler: CommandHandler, confirm: str = AUTO) -> None:
         """Register a procedure. Only the Auto confirm level exists so far."""

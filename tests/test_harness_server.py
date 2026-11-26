@@ -6,6 +6,8 @@ pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient  # noqa: E402
 from harness_fixtures import make_campaign, open_engine  # noqa: E402
 
+from solo_roll.harness.campaign import CampaignPaths  # noqa: E402
+from solo_roll.harness.referee import Call, Say, ScriptedReferee  # noqa: E402
 from solo_roll.harness.server import create_app  # noqa: E402
 
 
@@ -80,3 +82,103 @@ def test_the_built_web_app_is_served_at_the_root(tmp_path):
 
     assert response.status_code == 200
     assert "harness" in response.text
+
+
+def referee_client(tmp_path, *turns):
+    campaign = make_campaign(tmp_path)
+    engine = open_engine(campaign)
+    referee = ScriptedReferee(engine, CampaignPaths(campaign), turns=list(turns))
+    return TestClient(create_app(engine, referee=referee)), referee
+
+
+def receive_until_done(ws):
+    messages = []
+    while True:
+        message = ws.receive_json()
+        messages.append(message)
+        if message["type"] == "referee" and message["event"]["type"] == "done":
+            return messages
+
+
+def test_free_text_echoes_the_player_and_streams_the_narration(tmp_path):
+    client, referee = referee_client(tmp_path, [Say("Dust "), Say("drifts.")])
+    with client.websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "say", "text": "I look around."})
+        messages = receive_until_done(ws)
+
+    assert messages[0] == {"type": "player", "text": "I look around."}
+    assert [m["event"]["type"] for m in messages[1:]] == ["text", "text", "done"]
+    assert "".join(m["event"].get("text", "") for m in messages[1:]) == "Dust drifts."
+    assert referee.turns_seen[0].player_input == "I look around."
+
+
+def test_an_engine_tool_in_a_turn_also_sends_the_engine_events_and_new_state(tmp_path):
+    client, _ = referee_client(tmp_path, [Say("You go."), Call("mcp__engine__move", {"to": "hall"})])
+    with client.websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "say", "text": "I walk east."})
+        messages = receive_until_done(ws)
+
+    kinds = [m["event"]["type"] if m["type"] == "referee" else m["type"] for m in messages]
+    assert kinds == ["player", "text", "tool_start", "tool_result", "events", "done"]
+    events = messages[4]
+    assert [e["type"] for e in events["events"]] == ["moved", "area_revealed"]
+    assert events["state"]["party"]["area"] == "hall"
+
+
+def test_a_clicked_action_is_narrated_by_the_referee_after_its_events(tmp_path):
+    client, referee = referee_client(tmp_path, [Say("The hall is long.")])
+    with client.websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "act", "command": {"type": "move", "to": "hall"}})
+        messages = receive_until_done(ws)
+
+    assert messages[0]["type"] == "events"
+    assert [m["event"]["type"] for m in messages[1:]] == ["text", "done"]
+    assert "Long Hall" in referee.turns_seen[0].player_input
+
+
+def test_the_referee_stream_reaches_every_open_connection(tmp_path):
+    client, _ = referee_client(tmp_path, [Say("Hello.")])
+    with client.websocket_connect("/ws") as talker, client.websocket_connect("/ws") as watcher:
+        talker.receive_json()
+        watcher.receive_json()
+        talker.send_json({"type": "say", "text": "Hi."})
+        receive_until_done(talker)
+        seen = receive_until_done(watcher)
+
+    assert seen[0]["type"] == "player"
+    assert seen[1]["event"] == {"type": "text", "text": "Hello."}
+
+
+def test_free_text_with_no_referee_returns_an_error(client):
+    with client.websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "say", "text": "Hello?"})
+        error = ws.receive_json()
+
+    assert error["type"] == "error"
+    assert "Referee" in error["message"]
+
+
+def test_a_referee_that_fails_ends_the_turn_with_an_error(tmp_path):
+    campaign = make_campaign(tmp_path)
+    engine = open_engine(campaign)
+
+    class BrokenReferee:
+        async def turn(self, player_input):
+            yield {"type": "text", "text": "Hm"}
+            raise RuntimeError("the CLI went away")
+
+        async def close(self):
+            pass
+
+    client = TestClient(create_app(engine, referee=BrokenReferee()))
+    with client.websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "say", "text": "Hello?"})
+        messages = receive_until_done(ws)
+
+    assert messages[-1]["event"]["type"] == "done"
+    assert "the CLI went away" in messages[-1]["event"]["error"]
