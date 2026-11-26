@@ -85,7 +85,11 @@ def _procedure_label(engine: Engine, name: Any) -> str:
 
 def _create_character(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
     events = engine.act({"type": "procedure", "name": "create_character", "inputs": dict(args)})
-    return ToolOutcome(output={"events": events, "party": engine.state()["party"]["members"]}, events=events)
+    return ToolOutcome(output={
+            "events": events,
+            "party": engine.state()["party"]["members"],
+            "kept_roll": engine.state().get("kept_roll"),
+        }, events=events)
 
 
 def _out_of_character_note(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
@@ -157,7 +161,8 @@ ENGINE_TOOLS: tuple[EngineTool, ...] = (
         name="create_character",
         description=(
             "Roll the player's character with the ruleset's creation procedure, once the player has agreed "
-            "on a class, a name and a description. The engine rolls the abilities."
+            "on a class, a name and a description. The engine rolls the abilities. If the scores miss the class "
+            "minimums they are kept: kept_roll lists the classes they qualify for, and the next call uses those scores."
         ),
         input_schema={"class": str, "character_name": str, "description": str},
         label=lambda engine, args: f"Creating {args.get('character_name') or 'a character'}",

@@ -3,7 +3,7 @@ from .checks import CheckError
 from .dice import parse_dice, roll_dice
 from .rng import DiceSource
 
-__all__ = ["ABILITIES", "CLASS_HIT_DICE", "CLASS_REQUIREMENTS", "CLASS_SAVES", "SAVES", "UNARMORED_AC", "ability_modifier", "roll_character"]
+__all__ = ["ABILITIES", "CLASS_HIT_DICE", "CLASS_REQUIREMENTS", "CLASS_SAVES", "SAVES", "UNARMORED_AC", "ability_modifier", "qualifying_classes", "roll_abilities", "roll_character", "unmet_requirements"]
 
 ABILITIES = ("STR", "INT", "WIS", "DEX", "CON", "CHA")
 
@@ -54,21 +54,31 @@ def ability_modifier(score: int, ability: str = "STR") -> int:
     raise CheckError(f"ability score out of range: {score}")
 
 
-def roll_character(dice: DiceSource, character_class: str = "Fighter") -> dict:
+def roll_abilities(dice: DiceSource) -> dict[str, int]:
+    """Roll 3d6 for each ability in `ABILITIES` order."""
+    return {ability: roll_dice(parse_dice("3d6"), dice)["total"] for ability in ABILITIES}
+
+
+def unmet_requirements(scores: dict[str, int], character_class: str) -> list[str]:
+    return [f"{ability} {minimum} (rolled {scores[ability]})"
+            for ability, minimum in CLASS_REQUIREMENTS.get(character_class, {}).items()
+            if scores[ability] < minimum]
+
+
+def qualifying_classes(scores: dict[str, int]) -> list[str]:
+    return sorted(c for c in CLASS_HIT_DICE if not unmet_requirements(scores, c))
+
+
+def roll_character(dice: DiceSource, character_class: str = "Fighter", abilities: dict[str, int] | None = None) -> dict:
+    """Roll a character of `character_class`. `abilities` reuses earlier scores instead of rolling new ones."""
     if character_class not in CLASS_HIT_DICE:
         raise CheckError(
             f"unknown class '{character_class}' — "
             f"one of {', '.join(sorted(CLASS_HIT_DICE))}"
         )
 
-    scores = {}
-    for ability in ABILITIES:
-        rolled = roll_dice(parse_dice("3d6"), dice)
-        scores[ability] = rolled["total"]
-
-    unmet = [f"{ability} {minimum} (rolled {scores[ability]})"
-             for ability, minimum in CLASS_REQUIREMENTS.get(character_class, {}).items()
-             if scores[ability] < minimum]
+    scores = dict(abilities) if abilities is not None else roll_abilities(dice)
+    unmet = unmet_requirements(scores, character_class)
 
     hit_die = CLASS_HIT_DICE[character_class]
     hp_roll = roll_dice(parse_dice(hit_die), dice)["total"]

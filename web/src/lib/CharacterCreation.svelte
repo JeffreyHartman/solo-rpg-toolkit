@@ -3,6 +3,12 @@
   import { createCharacter, game, OSE_CLASSES, say } from './socket.svelte'
 
   let characterClass = $state(OSE_CLASSES[0])
+  const kept = $derived(game.state?.kept_roll ?? null)
+  const choices = $derived(kept ? OSE_CLASSES.filter((c) => kept.qualifies_for.includes(c)) : OSE_CLASSES)
+
+  $effect(() => {
+    if (!choices.includes(characterClass)) characterClass = choices[0]
+  })
   let name = $state('')
   let description = $state('')
 
@@ -14,8 +20,15 @@
 
 <form class="panel creation" onsubmit={submit}>
   <h3>Create your character</h3>
-  <p class="dim">Abilities are rolled 3d6 in order by the engine.</p>
-  <label>Class <select bind:value={characterClass}>{#each OSE_CLASSES as c (c)}<option>{c}</option>{/each}</select></label>
+  {#if kept}
+    <p class="dim">
+      Kept scores: {Object.entries(kept.abilities).map(([a, v]) => `${a} ${v}`).join(', ')}.
+      They qualify for: {kept.qualifies_for.join(', ')}.
+    </p>
+  {:else}
+    <p class="dim">Abilities are rolled 3d6 in order by the engine.</p>
+  {/if}
+  <label>Class <select bind:value={characterClass}>{#each choices as c (c)}<option>{c}</option>{/each}</select></label>
   <label>Name <input bind:value={name} /></label>
   <label>Description <textarea rows="3" bind:value={description}></textarea></label>
   <div class="row">
@@ -23,7 +36,7 @@
       onclick={() => say(`Help me name and describe a ${characterClass}. Suggest a few names and a short description.`)}>
       Ask the Referee for ideas
     </button>
-    <button class="primary" disabled={!name.trim()}>Roll character</button>
+    <button class="primary" disabled={!name.trim()}>{kept ? 'Create character' : 'Roll character'}</button>
   </div>
 </form>
 

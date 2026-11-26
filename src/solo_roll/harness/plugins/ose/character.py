@@ -1,7 +1,16 @@
 """The OSE `create_character` procedure: 3d6 in order, a class hit die, and a name from the player."""
 from typing import Any
 
-from ....character import CLASS_HIT_DICE, CLASS_SAVES, UNARMORED_AC, roll_character
+from ....character import (
+    ABILITIES,
+    CLASS_HIT_DICE,
+    CLASS_SAVES,
+    UNARMORED_AC,
+    qualifying_classes,
+    roll_abilities,
+    roll_character,
+    unmet_requirements,
+)
 from ...errors import IllegalActionError
 from ...registry import CommandContext, Event
 
@@ -30,6 +39,8 @@ def create_character(state: dict[str, Any], command: dict[str, Any], ctx: Comman
     """Roll a character with `roll_character` and add it to the party.
 
     The command inputs are `class`, `character_name` and an optional `description`.
+    Scores that miss the class minimums are kept in `state["kept_roll"]` and reused by the next
+    command, so a failed roll cannot be rerolled; a successful creation clears them.
     """
     inputs = command["inputs"]
     name = str(inputs.get("character_name") or "").strip()
@@ -42,9 +53,29 @@ def create_character(state: dict[str, Any], command: dict[str, Any], ctx: Comman
     if character_class not in CLASS_HIT_DICE:
         raise IllegalActionError(f"unknown class '{character_class}' (one of {', '.join(sorted(CLASS_HIT_DICE))})")
 
-    rolled = roll_character(ctx.dice, character_class)
-    if not rolled["eligible"]:
-        raise IllegalActionError(f"cannot be a {character_class}: needs {', '.join(rolled['unmet_requirements'])}")
+    kept = state.get("kept_roll")
+    scores = dict(kept["abilities"]) if kept else roll_abilities(ctx.dice)
+    unmet = unmet_requirements(scores, character_class)
+    if unmet:
+        qualifies = qualifying_classes(scores)
+        state["kept_roll"] = {"abilities": scores, "qualifies_for": qualifies}
+        listed = ", ".join(f"{a} {v}" for a, v in scores.items())
+        return [
+            {
+                "type": "mechanics",
+                "text": (
+                    f"Rolled {listed}. Cannot be a {character_class}: needs {', '.join(unmet)}. "
+                    f"These scores are kept; choose one of: {', '.join(qualifies)}."
+                ),
+                "procedure": "create_character",
+                "dice": "3d6 x6",
+                "rolls": [scores[a] for a in ABILITIES],
+                "result": f"kept; qualifies for {', '.join(qualifies)}",
+                "source": "OSE Classic Fantasy: Characters",
+            }
+        ]
+    rolled = roll_character(ctx.dice, character_class, abilities=scores)
+    state["kept_roll"] = None
 
     abilities = rolled["abilities"]
     members.append(

@@ -56,14 +56,45 @@ def test_a_nameless_character_or_unknown_class_is_refused_with_no_dice_used(tmp_
     assert engine.state()["party"]["members"] == []
 
 
-def test_a_class_whose_requirements_the_rolls_miss_is_refused_and_the_party_is_unchanged(tmp_path):
-    low_int = [3, 3, 3, 1, 1, 1, *FIGHTER_ROLLS[6:]]  # INT 3, below the Elf minimum of 9
-    engine = open_engine(empty_party_campaign(tmp_path), ScriptedDice(low_int))
+LOW_INT_SCORES = [3, 3, 3, 1, 1, 1, 2, 2, 3, 5, 5, 4, 6, 5, 5, 3, 3, 4]  # INT 3, below the Elf minimum of 9
 
-    with pytest.raises(IllegalActionError, match="INT"):
-        engine.act(create(character_class="Elf"))
 
-    assert engine.state()["party"]["members"] == []
+def test_a_roll_that_misses_the_class_is_kept_and_lists_the_classes_it_qualifies_for(tmp_path):
+    engine = open_engine(empty_party_campaign(tmp_path), ScriptedDice(LOW_INT_SCORES))
+
+    events = engine.act(create(character_class="Elf"))
+
+    state = engine.state()
+    assert state["party"]["members"] == []
+    assert state["kept_roll"]["abilities"] == {"STR": 9, "INT": 3, "WIS": 7, "DEX": 14, "CON": 16, "CHA": 10}
+    assert "Elf" not in state["kept_roll"]["qualifies_for"]
+    assert "Fighter" in state["kept_roll"]["qualifies_for"]
+    assert [e["type"] for e in events] == ["mechanics"]
+    assert "INT" in events[0]["text"] and "Fighter" in events[0]["text"]
+
+
+def test_a_second_command_uses_the_kept_scores_instead_of_rolling_again(tmp_path):
+    dice = ScriptedDice([*LOW_INT_SCORES, 5])  # the one extra value is the Fighter hit die
+    engine = open_engine(empty_party_campaign(tmp_path), dice)
+    engine.act(create(character_class="Elf"))
+
+    engine.act(create(character_class="Elf"))  # same command again: same scores, same refusal
+    assert engine.state()["kept_roll"]["abilities"]["INT"] == 3
+    engine.act(create(character_class="Fighter"))
+
+    (member,) = engine.state()["party"]["members"]
+    assert member["abilities"]["INT"] == 3
+    assert member["max_hp"] == 7
+    assert engine.state()["kept_roll"] is None
+
+
+def test_the_kept_roll_survives_a_restart(tmp_path):
+    root = empty_party_campaign(tmp_path)
+    open_engine(root, ScriptedDice(LOW_INT_SCORES)).act(create(character_class="Elf"))
+
+    reopened = open_engine(root, ScriptedDice([]))
+
+    assert reopened.state()["kept_roll"]["abilities"]["INT"] == 3
 
 
 def test_the_first_character_carries_the_unclaimed_torch(tmp_path):
@@ -91,6 +122,26 @@ def test_the_referee_can_create_the_character_the_player_agreed_on(tmp_path):
 
     assert result["ok"]
     assert engine.state()["party"]["members"][0]["description"] == "A scarred gate guard."
+
+
+def test_the_referee_tool_result_shows_the_classes_the_kept_scores_qualify_for(tmp_path):
+    import asyncio
+
+    from solo_roll.harness.referee import Call, ScriptedReferee
+
+    root = empty_party_campaign(tmp_path)
+    engine = open_engine(root, ScriptedDice(LOW_INT_SCORES))
+    args = {"class": "Elf", "character_name": "Brannoc", "description": ""}
+    referee = ScriptedReferee(engine, CampaignPaths(root), turns=[[Call("mcp__engine__create_character", args)]])
+
+    async def run():
+        return [e async for e in referee.turn("An elf, please.")]
+
+    result = next(e for e in asyncio.run(run()) if e["type"] == "tool_result")
+
+    assert result["ok"]
+    assert "Fighter" in result["output"]["kept_roll"]["qualifies_for"]
+    assert "Elf" not in result["output"]["kept_roll"]["qualifies_for"]
 
 
 def test_a_new_character_stores_class_saves_and_unarmored_armor_class(tmp_path):
