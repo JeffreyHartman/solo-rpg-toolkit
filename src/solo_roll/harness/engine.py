@@ -10,9 +10,9 @@ from typing import Any
 
 from ..rng import DiceSource
 from .campaign import CampaignPaths, load_json, write_json
-from .errors import IllegalActionError, PluginError, UnknownCommandError
+from .errors import IllegalActionError, PluginError, SettingError, UnknownCommandError
 from .proposals import ANSWER_VERBS, ANSWERS, empty_proposals, prepare, proposal_text
-from .registry import AUTO, Action, CommandContext, Event, PluginFactory, Procedure, Registry, Target, build_registry
+from .registry import AUTO, CONFIRM_LEVELS, Action, CommandContext, Event, PluginFactory, Procedure, Registry, Target, build_registry
 from .settings import CampaignSettings
 from .vault import append_raw_log, write_state_note
 
@@ -139,6 +139,25 @@ class Engine:
     def confirm_level(self, procedure: str) -> str:
         """The confirm level from the campaign settings, or the procedure's default."""
         return self._settings.get("confirm", procedure, self._procedure(procedure).confirm)
+
+    def settings(self) -> dict[str, Any]:
+        """The campaign settings the engine owns, one list of rows per section, for the settings menu."""
+        return {
+            "confirm": [
+                {"procedure": p.name, "label": p.label, "default": p.confirm, "level": self.confirm_level(p.name)}
+                for p in self._registry.procedures.values()
+            ]
+        }
+
+    def change_setting(self, section: str, key: str, value: Any) -> None:
+        """Check and save one campaign setting. Raises `SettingError` and saves nothing for a bad one."""
+        if section != "confirm":
+            raise SettingError(f"no campaign setting section '{section}'")
+        if key not in self._registry.procedures:
+            raise SettingError(f"no procedure '{key}'")
+        if value not in CONFIRM_LEVELS:
+            raise SettingError(f"confirm level must be one of {', '.join(CONFIRM_LEVELS)}, got {value!r}")
+        self._settings.set(section, key, value)
 
     def _with_triggers(self, events: list[Event], working: dict[str, Any], depth: int = 0) -> list[Event]:
         """Insert the events of each trigger right after the event that fired it."""

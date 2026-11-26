@@ -7,6 +7,7 @@ __all__ = [
     "UnknownCommandError",
     "IllegalActionError",
     "FlextaleDataError",
+    "SettingError",
 ]
 
 
@@ -32,3 +33,7 @@ class IllegalActionError(HarnessError):
 
 class FlextaleDataError(HarnessError):
     """The FlexTale tables are missing from the data folder."""
+
+
+class SettingError(HarnessError):
+    """A campaign setting change names an unknown section or key, or a value that is not allowed."""

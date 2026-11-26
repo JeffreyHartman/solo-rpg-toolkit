@@ -6,7 +6,7 @@ from solo_roll.harness.campaign import create_campaign
 from solo_roll.harness.engine import open_campaign
 from solo_roll.harness.plugins import BUILTIN_PLUGINS
 
-from solo_roll.harness.errors import IllegalActionError
+from solo_roll.harness.errors import HarnessError, IllegalActionError
 
 from solo_roll.rng import ScriptedDice
 
@@ -192,3 +192,51 @@ def test_another_plugin_can_supply_the_target_of_a_procedure(tmp_path):
     proposal = propose(engine, "ability_check", {"member": "Brannoc", "ability": "WIS"})[0]["proposal"]
 
     assert proposal["target"] == {"value": 11, "source": "DC table: tricky", "editable": False}
+
+
+def test_a_confirm_level_change_persists_and_makes_an_auto_procedure_wait(tmp_path):
+    root = make_campaign(tmp_path)
+    open_engine(root).change_setting("confirm", "search", "confirm")
+
+    engine = open_engine(root, ScriptedDice([]))
+    events = propose(engine, "search", {})
+
+    assert engine.confirm_level("search") == "confirm"
+    assert [e["type"] for e in events] == ["proposal"]
+
+
+def test_a_confirm_procedure_set_to_auto_runs_when_proposed(tmp_path):
+    engine = open_engine(make_campaign(tmp_path), ScriptedDice([5]))
+    engine.change_setting("confirm", "ability_check", "auto")
+
+    events = propose(engine, "ability_check", {"member": "Brannoc", "ability": "STR", "target": 12})
+
+    assert [e["type"] for e in events] == ["mechanics"]
+    assert events[0]["target"]["source"] == "proposal input, set by the Referee"
+
+
+@pytest.mark.parametrize("section, key, value", [
+    ("confirm", "search", "sometimes"),
+    ("confirm", "no_such_procedure", "auto"),
+    ("no_such_section", "x", 1),
+])
+def test_a_bad_setting_is_refused_and_not_saved(tmp_path, section, key, value):
+    root = make_campaign(tmp_path)
+    engine = open_engine(root)
+
+    with pytest.raises(HarnessError):
+        engine.change_setting(section, key, value)
+
+    assert open_engine(root).settings() == engine.settings()
+    assert engine.confirm_level("search") == "auto"
+
+
+def test_the_settings_list_each_procedure_with_its_default_and_current_level(tmp_path):
+    engine = open_engine(make_campaign(tmp_path))
+    engine.change_setting("confirm", "listen", "confirm")
+
+    rows = {row["procedure"]: row for row in engine.settings()["confirm"]}
+
+    assert rows["listen"] == {"procedure": "listen", "label": "Listen at the door", "default": "auto", "level": "confirm"}
+    assert rows["ability_check"]["label"] == "Ability check"
+    assert rows["ability_check"]["level"] == "confirm"
