@@ -106,17 +106,17 @@ def _hp(who: dict[str, Any], label: str, value: str, reason: str, base: Event, c
         raise IllegalActionError(f"an hp change is a signed number or dice, such as -3 or +1d6, got {value!r}")
     sign = -1 if match.group(1) == "-" else 1
     amount_text = match.group(2)
-    card: Event
+    rolled = None
     if amount_text.isdigit():
         amount = int(amount_text)
-        card = edit_card(f"{label} {'loses' if sign < 0 else 'gains'} {amount} HP", reason)
     else:
         try:
             rolled = roll_dice(parse_dice(amount_text), ctx.dice)
         except DiceError as exc:
             raise IllegalActionError(str(exc)) from exc
         amount = rolled["total"]
-        card = edit_card(f"{label} {'loses' if sign < 0 else 'gains'} {amount} HP", reason)
+    card = edit_card(f"{label} {'loses' if sign < 0 else 'gains'} {amount} HP", reason)
+    if rolled is not None:
         card.update(dice=rolled["dice"], rolls=rolled["rolls"], total=amount)
     hp = who.get("hp", 0) + sign * amount
     top = who.get("max_hp")
