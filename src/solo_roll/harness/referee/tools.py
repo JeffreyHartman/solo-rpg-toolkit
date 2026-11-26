@@ -61,8 +61,31 @@ def _propose(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
     return ToolOutcome(output=output, events=events)
 
 
+def _judgment_call(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
+    events = engine.act(
+        {
+            "type": "judgment",
+            "category": args.get("category"),
+            "question": args.get("question", ""),
+            "suggestion": args.get("suggestion", ""),
+            "reason": args.get("reason", ""),
+            "options": args.get("options") or [],
+        }
+    )
+    if events[0]["type"] == "judgment_decided":
+        output = {"status": "decided", "answer": events[0]["answer"], "reason": events[0]["reason"]}
+    else:
+        output = {"status": "waiting for the player", "judgment": events[0]["judgment"]}
+    return ToolOutcome(output=output, events=events)
+
+
 def _procedure_label(engine: Engine, name: Any) -> str:
     return next((p["label"] for p in engine.procedures() if p["name"] == name), str(name))
+
+
+def _create_character(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
+    events = engine.act({"type": "procedure", "name": "create_character", "inputs": dict(args)})
+    return ToolOutcome(output={"events": events, "party": engine.state()["party"]["members"]}, events=events)
 
 
 ENGINE_TOOLS: tuple[EngineTool, ...] = (
@@ -76,6 +99,7 @@ ENGINE_TOOLS: tuple[EngineTool, ...] = (
                 "state": engine.state(),
                 "actions": engine.available_actions(),
                 "procedures": engine.procedures(),
+                "judgment_categories": engine.settings()["judgment"],
             }
         ),
     ),
@@ -91,11 +115,32 @@ ENGINE_TOOLS: tuple[EngineTool, ...] = (
         run=_propose,
     ),
     EngineTool(
+        name="judgment_call",
+        description=(
+            "Raise a judgment call for a decision the rules leave open, with your suggested answer and the reason. "
+            "When the player owns the category, a card waits for the player's answer. When the Referee "
+            "owns it, your suggestion is the decision and the log records your reason."
+        ),
+        input_schema={"category": str, "question": str, "suggestion": str, "reason": str},
+        label=lambda engine, args: "Raising a judgment call",
+        run=_judgment_call,
+    ),
+    EngineTool(
         name="move",
         description="Move the party to a connected area, by area id.",
         input_schema={"to": str},
         label=lambda engine, args: f"Moving to {_area_name(engine, args.get('to'))}",
         run=_move,
+    ),
+    EngineTool(
+        name="create_character",
+        description=(
+            "Roll the player's character with the ruleset's creation procedure, once the player has agreed "
+            "on a class, a name and a description. The engine rolls the abilities."
+        ),
+        input_schema={"class": str, "character_name": str, "description": str},
+        label=lambda engine, args: f"Creating {args.get('character_name') or 'a character'}",
+        run=_create_character,
     ),
 )
 

@@ -182,3 +182,80 @@ def test_a_referee_that_fails_ends_the_turn_with_an_error(tmp_path):
 
     assert messages[-1]["event"]["type"] == "done"
     assert "the CLI went away" in messages[-1]["event"]["error"]
+
+
+# New campaign and Open campaign screens
+
+from solo_roll.harness.library import Library  # noqa: E402
+from solo_roll.harness.plugins import BUILTIN_PLUGINS  # noqa: E402
+from solo_roll.rng import ScriptedDice  # noqa: E402
+
+CREATION_ROLLS = [3, 3, 3, 4, 4, 4, 2, 2, 3, 5, 5, 4, 6, 5, 5, 3, 3, 4, 5]
+
+
+@pytest.fixture
+def library_client(tmp_path):
+    library = Library(tmp_path / "campaigns", BUILTIN_PLUGINS, dice=lambda: ScriptedDice(list(CREATION_ROLLS)))
+    return TestClient(create_app(None, library=library)), library
+
+
+def test_with_no_campaign_open_a_connection_gets_the_library(library_client):
+    client, library = library_client
+    library.create("Old Delve", ruleset="ose", generators=[])
+
+    with client.websocket_connect("/ws") as ws:
+        hello = ws.receive_json()
+
+    assert hello["type"] == "library"
+    assert hello["plugins"]["ruleset"] == ["ose"]
+    assert [c["name"] for c in hello["campaigns"]] == ["Old Delve"]
+
+
+def test_a_new_campaign_opens_with_an_empty_party_and_a_character_is_made_by_procedure(library_client):
+    client, _ = library_client
+    with client.websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "new_campaign", "name": "Delve", "ruleset": "ose", "generators": ["flextale"]})
+        opened = ws.receive_json()
+        ws.send_json({"type": "act", "command": {
+            "type": "procedure", "name": "create_character",
+            "inputs": {"class": "Fighter", "character_name": "Brannoc"}}})
+        created = ws.receive_json()
+
+    assert opened["type"] == "snapshot"
+    assert opened["state"]["party"]["members"] == []
+    assert [m["name"] for m in created["state"]["party"]["members"]] == ["Brannoc"]
+
+
+def test_a_refused_new_campaign_returns_an_error_and_keeps_the_library_open(library_client):
+    client, _ = library_client
+    with client.websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "new_campaign", "name": "Bad", "ruleset": "flextale", "generators": []})
+        error = ws.receive_json()
+
+    assert error["type"] == "error"
+
+
+def test_open_campaign_switches_every_connection_and_list_returns_to_the_library(library_client):
+    client, library = library_client
+    campaign_id = library.create("Delve", ruleset="ose", generators=[])
+    with client.websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "open_campaign", "id": campaign_id})
+        opened = ws.receive_json()
+        ws.send_json({"type": "list_campaigns"})
+        listing = ws.receive_json()
+
+    assert opened["type"] == "snapshot"
+    assert listing["type"] == "library"
+
+
+def test_act_with_no_campaign_open_returns_an_error(library_client):
+    client, _ = library_client
+    with client.websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "act", "command": {"type": "move", "to": "x"}})
+        error = ws.receive_json()
+
+    assert error["type"] == "error"

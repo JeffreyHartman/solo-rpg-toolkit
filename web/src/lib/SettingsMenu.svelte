@@ -1,7 +1,7 @@
-<!-- The campaign settings menu: the Referee model, effort and context budget, and the confirm level of each procedure. -->
+<!-- The campaign settings menu: the Referee model, effort and context budget, the confirm level of each procedure, and the owner of each judgment call category. -->
 <script lang="ts">
-  import { EFFORTS, MODELS, type ConfirmLevel, type RefereeSettings } from './protocol'
-  import { game, setConfirmLevel, setRefereeSetting } from './socket.svelte'
+  import { EFFORTS, MODELS, type ConfirmLevel, type JudgmentOwner, type RefereeSettings } from './protocol'
+  import { game, setConfirmLevel, setJudgmentOwner, setRefereeSetting } from './socket.svelte'
 
   function setBudget(raw: string): void {
     const budget = Number(raw)
@@ -60,6 +60,21 @@
         >
           <option value="auto">Auto</option>
           <option value="confirm">Confirm</option>
+        </select>
+      </label>
+    {/each}
+  </div>
+  <h3 class="smallcaps dim">Judgment calls</h3>
+  <div class="rows scroll">
+    {#each game.settings?.judgment ?? [] as row (row.category)}
+      <label>
+        <span>{row.label}</span>
+        <select
+          value={row.owner}
+          onchange={(e) => setJudgmentOwner(row.category, e.currentTarget.value as JudgmentOwner)}
+        >
+          <option value="ask">Ask me</option>
+          <option value="referee">Referee decides</option>
         </select>
       </label>
     {/each}

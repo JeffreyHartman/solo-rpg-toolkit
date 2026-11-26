@@ -10,6 +10,7 @@ from .campaign import CampaignPaths, create_campaign
 from .demo import DEMO_MAP, DEMO_PARTY, DEMO_START
 from .engine import open_campaign
 from .errors import HarnessError
+from .library import Library
 from .plugins import BUILTIN_PLUGINS
 
 __all__ = ["main", "lan_ip"]
@@ -38,21 +39,32 @@ def _uvicorn_run(app, host: str, port: int) -> None:
 def _serve(args, run: Callable, find_ip: Callable[[], str]) -> int:
     from .server import create_app
 
-    engine = open_campaign(Path(args.campaign), RandomDice(seed=args.seed), BUILTIN_PLUGINS)
-    for key in ("model", "effort"):
-        if getattr(args, key) is not None:
-            engine.change_setting("referee", key, getattr(args, key))
-    referee = None
-    if args.referee == "sdk":
+    if not args.campaign and not args.campaigns:
+        raise HarnessError("give a campaign folder, or --campaigns for a folder of campaigns")
+
+    def make_referee(engine, paths):
+        if args.referee != "sdk":
+            return None
         from .referee import sdk
 
+        for key in ("model", "effort"):
+            if getattr(args, key) is not None:
+                engine.change_setting("referee", key, getattr(args, key))
         chosen = engine.settings()["referee"]
-        referee = sdk.AgentSdkReferee(
-            engine, CampaignPaths(Path(args.campaign)), model=chosen["model"], effort=chosen["effort"]
-        )
+        return sdk.AgentSdkReferee(engine, paths, model=chosen["model"], effort=chosen["effort"])
+
+    def dice():
+        return RandomDice(seed=args.seed)
+
+    engine = referee = library = None
+    if args.campaign:
+        engine = open_campaign(Path(args.campaign), dice(), BUILTIN_PLUGINS)
+        referee = make_referee(engine, CampaignPaths(Path(args.campaign)))
+    if args.campaigns:
+        library = Library(Path(args.campaigns), BUILTIN_PLUGINS, dice=dice, referee_factory=make_referee)
     web_dist = Path(args.web_dist) if args.web_dist else Path(__file__).resolve().parents[3] / "web" / "dist"
-    print(f"Harness for {args.campaign}: http://{find_ip()}:{args.port}/", flush=True)
-    run(create_app(engine, web_dist=web_dist, referee=referee), host=BIND_HOST, port=args.port)
+    print(f"Harness for {args.campaign or args.campaigns}: http://{find_ip()}:{args.port}/", flush=True)
+    run(create_app(engine, web_dist=web_dist, referee=referee, library=library), host=BIND_HOST, port=args.port)
     return 0
 
 
@@ -72,7 +84,9 @@ def main(
     parser = argparse.ArgumentParser(prog="solo-harness")
     sub = parser.add_subparsers(dest="command", required=True)
     serve = sub.add_parser("serve", help="serve a campaign on the LAN")
-    serve.add_argument("campaign")
+    serve.add_argument("campaign", nargs="?", help="a campaign folder to open at start")
+    serve.add_argument("--campaigns", default=None,
+                       help="a folder of campaigns: the browser can create and open campaigns in it")
     serve.add_argument("--port", type=int, default=DEFAULT_PORT)
     serve.add_argument("--seed", type=int, default=None)
     serve.add_argument("--web-dist", default=None, help="built web app folder (default: web/dist in this checkout)")

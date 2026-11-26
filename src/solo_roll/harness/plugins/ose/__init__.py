@@ -6,6 +6,7 @@ from ...errors import IllegalActionError
 from ...mapstate import area, exits
 from ...registry import Action, CommandContext, Event, Registry
 from . import checks, dungeon_turn
+from .character import CREATE_CHARACTER_INPUTS, create_character
 
 __all__ = ["OsePlugin"]
 
@@ -13,6 +14,7 @@ REFEREE_GUIDE = """## Ruleset: Old-School Essentials (OSE)
 
 - Play in the spirit of OSE: a dangerous dungeon, scarce light, and choices with consequences.
 - Move the party between areas only with the `move` engine tool, by area id.
+- When the party is empty, help the player pick a class, a name and a short description. Then call `create_character`; the engine rolls the 3d6 abilities in order.
 """
 
 
@@ -33,7 +35,11 @@ class OsePlugin:
         registry.add_command("move", _move)
         registry.add_action_provider(_move_actions)
         registry.add_referee_guide(REFEREE_GUIDE)
+        registry.add_judgment_category("ruling", "Rulings the OSE rules leave open")
         registry.add_state_default("dungeon", dungeon_turn.initial_dungeon(self._wandering))
+        registry.add_procedure(
+            "create_character", create_character, label="Create a character", inputs=CREATE_CHARACTER_INPUTS
+        )
         registry.add_procedure("search", dungeon_turn.search(self._data_dir), label=dungeon_turn.PROCEDURE_LABELS["search"])
         registry.add_procedure("listen", dungeon_turn.listen(self._data_dir), label=dungeon_turn.PROCEDURE_LABELS["listen"])
         registry.add_procedure("rest", dungeon_turn.rest, label=dungeon_turn.PROCEDURE_LABELS["rest"])

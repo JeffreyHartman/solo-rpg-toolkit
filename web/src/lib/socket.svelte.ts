@@ -1,11 +1,14 @@
 import type {
   Action,
   CampaignSettings,
+  CampaignSummary,
   ClientMessage,
   Command,
   ConfirmLevel,
   ContextReading,
   EngineState,
+  PluginsByKind,
+  JudgmentOwner,
   ProposalAnswer,
   RefereeEvent,
   RefereeSettings,
@@ -39,6 +42,8 @@ export const game = $state({
   context: null as ContextReading | null,
   // The session control sent last, until the server answers it.
   control: null as SessionControl | null,
+  // Set while the New and Open campaign screen is showing; null while a campaign is open.
+  library: null as { campaigns: CampaignSummary[]; plugins: PluginsByKind } | null,
 })
 
 // Index in game.chat of the narration this turn is streaming into, or -1.
@@ -58,6 +63,15 @@ export function connect(): void {
 
 function receive(message: ServerMessage): void {
   switch (message.type) {
+    case 'library':
+      game.library = { campaigns: message.campaigns, plugins: message.plugins }
+      return
+    case 'snapshot':
+      if (game.library) game.chat = []
+      game.library = null
+      game.settings = message.settings
+      game.context = message.context
+      break
     case 'error':
       game.chat.push({ kind: 'error', text: message.message })
       game.control = null
@@ -85,10 +99,6 @@ function receive(message: ServerMessage): void {
     case 'settings':
       game.settings = message.settings
       return
-    case 'snapshot':
-      game.settings = message.settings
-      game.context = message.context
-      break
     case 'events':
       for (const event of message.events) {
         if (event.type === 'mechanics') {
@@ -146,12 +156,38 @@ export function act(command: Command): void {
   send({ type: 'act', command })
 }
 
+export function listCampaigns(): void {
+  send({ type: 'list_campaigns' })
+}
+
+export function newCampaign(name: string, ruleset: string, generators: string[], module?: string): void {
+  send({ type: 'new_campaign', name, ruleset, generators, module })
+}
+
+export function openCampaign(id: string): void {
+  send({ type: 'open_campaign', id })
+}
+
+export const OSE_CLASSES = ['Fighter', 'Cleric', 'Magic-User', 'Thief', 'Dwarf', 'Elf', 'Halfling']
+
+export function createCharacter(characterClass: string, name: string, description: string): void {
+  act({ type: 'procedure', name: 'create_character', inputs: { class: characterClass, character_name: name, description } })
+}
+
 export function say(text: string): void {
   if (text.trim()) send({ type: 'say', text: text.trim() })
 }
 
 export function answer(id: string, reply: ProposalAnswer, inputs?: Record<string, string | number>): void {
   send({ type: 'answer', id, answer: reply, inputs })
+}
+
+export function answerJudgment(id: string, reply: string): void {
+  send({ type: 'answer_judgment', id, answer: reply })
+}
+
+export function setJudgmentOwner(category: string, owner: JudgmentOwner): void {
+  send({ type: 'set_setting', section: 'judgment', key: category, value: owner })
 }
 
 export function setConfirmLevel(procedure: string, level: ConfirmLevel): void {

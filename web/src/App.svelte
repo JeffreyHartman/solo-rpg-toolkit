@@ -1,16 +1,21 @@
 <!-- Layout from the ui-shell prototype, variant C: the map fills the screen and panels float over it. -->
 <script lang="ts">
+  import CharacterCreation from './lib/CharacterCreation.svelte'
+  import CharacterPanel from './lib/CharacterPanel.svelte'
   import ChatPanel from './lib/ChatPanel.svelte'
   import ContextDrawer from './lib/ContextDrawer.svelte'
+  import JudgmentCard from './lib/JudgmentCard.svelte'
+  import LibraryScreen from './lib/LibraryScreen.svelte'
   import MapView from './lib/MapView.svelte'
   import ProposalCard from './lib/ProposalCard.svelte'
   import SettingsMenu from './lib/SettingsMenu.svelte'
   import TopBar from './lib/TopBar.svelte'
-  import { act, game } from './lib/socket.svelte'
+  import { act, game, listCampaigns } from './lib/socket.svelte'
 
   let settingsOpen = $state(false)
   let drawerOpen = $state(false)
   let pending = $derived(game.state?.proposals?.pending ?? [])
+  let judgments = $derived(game.state?.judgments?.pending ?? [])
 
   let light = $derived(
     game.state?.dungeon
@@ -20,10 +25,11 @@
   let here = $derived(game.state ? game.state.map.areas[game.state.party.area] : null)
 </script>
 
-{#if game.state}
+<LibraryScreen />
+{#if game.state && !game.library}
   <div class="map"><MapView snapshot={game.state} /></div>
   <div class="panel party">
-    <b>{game.state.party.members.map((m) => m.name).join(', ')}</b>
+    <CharacterPanel members={game.state.party.members} />
     <div class="dim">{here?.name} · session {game.state.session}</div>
     {#if game.state.dungeon}
       <div class="dim">Turn {game.state.dungeon.turn} · Light: {light}</div>
@@ -39,17 +45,20 @@
   {#if drawerOpen}
     <div class="panel drawer"><ContextDrawer onclose={() => (drawerOpen = false)} /></div>
   {/if}
-  {#if pending.length}
+  {#if pending.length || judgments.length}
     <div class="panel proposals">
+      {#each judgments as judgment (judgment.id)}<JudgmentCard {judgment} />{/each}
       {#each pending as proposal (proposal.id)}<ProposalCard {proposal} />{/each}
     </div>
   {/if}
+  {#if game.state.party.members.length === 0}<CharacterCreation />{/if}
   <nav class="panel actions">
+    <button onclick={listCampaigns}>Campaigns</button>
     {#each game.actions as a (a.id)}
       <button onclick={() => act(a.command)}>{a.label}</button>
     {/each}
   </nav>
-{:else}
+{:else if !game.library}
   <p class="waiting dim">Connecting to the harness…</p>
 {/if}
 {#if !game.connected && game.state}<div class="panel offline">Disconnected, retrying…</div>{/if}
