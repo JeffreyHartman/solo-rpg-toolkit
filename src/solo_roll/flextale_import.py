@@ -3,6 +3,12 @@
 `import_flextale` takes the PDF path and an output data folder, and writes
 `<out>/tables/quickstart/<slug>-<context>.json`, which `load_table` reads with
 `data_dir=<out>`. Text extraction is injected so tests never need a PDF.
+
+An overrides file (`<out>/overrides.json` by default) corrects the book's own
+range errors after parsing and before each table is validated. It maps a table
+name to a list of ops: `set` (match a band by `[min, max]`, then change its
+`min`, `max` or `result`), `add`, `remove` and `replace` (swap in a full
+`ranges` list; the only op that can create a table the parser missed).
 """
 from __future__ import annotations
 
@@ -201,14 +207,80 @@ def _simple_ai_tables(raw: str) -> dict[str, dict]:
     return out
 
 
+Overrides = Mapping[str, list[dict]]
+
+
+def load_overrides(path: Path) -> Overrides:
+    """Reads an overrides file; the shape is checked when the ops are applied."""
+    try:
+        data = json.loads(path.read_text())
+    except OSError as exc:
+        raise FlextaleImportError(f"cannot read overrides file {path}: {exc}") from exc
+    except json.JSONDecodeError as exc:
+        raise FlextaleImportError(f"overrides file {path} is not valid JSON: {exc}") from exc
+    if not isinstance(data, dict):
+        raise FlextaleImportError(f"overrides file {path} must be a JSON object keyed by table name")
+    return data
+
+
+def _find_band(name: str, ranges: list[dict], match: object) -> int:
+    if not (isinstance(match, list) and len(match) == 2):
+        raise FlextaleImportError(f"override for {name}: 'match' must be [min, max]")
+    for index, band in enumerate(ranges):
+        if [band["min"], band["max"]] == match:
+            return index
+    raise FlextaleImportError(f"override for {name}: no band {match[0]}-{match[1]} to match")
+
+
+def _apply_ops(name: str, payload: dict, ops: object) -> None:
+    if not isinstance(ops, list):
+        raise FlextaleImportError(f"override for {name}: expected a list of ops")
+    ranges: list[dict] = payload["ranges"]
+    for op in ops:
+        kind = op.get("op") if isinstance(op, dict) else None
+        if kind == "set":
+            band = ranges[_find_band(name, ranges, op.get("match"))]
+            band.update({k: op[k] for k in ("min", "max", "result") if k in op})
+        elif kind == "add":
+            ranges.append({"min": op.get("min"), "max": op.get("max"), "result": op.get("result")})
+        elif kind == "remove":
+            del ranges[_find_band(name, ranges, op.get("match"))]
+        elif kind == "replace":
+            ranges[:] = op.get("ranges") or []
+        else:
+            raise FlextaleImportError(f"override for {name}: unknown op {kind!r}")
+    ranges.sort(key=lambda band: (band["min"], band["max"]) if isinstance(band["min"], int) else (0, 0))
+
+
+def _apply_overrides(payloads: dict[str, dict], overrides: Overrides) -> None:
+    for name, ops in overrides.items():
+        if name not in payloads:
+            creates = isinstance(ops, list) and any(
+                isinstance(op, dict) and op.get("op") == "replace" for op in ops
+            )
+            if not creates:
+                raise FlextaleImportError(
+                    f"override names {name}, which the import did not produce "
+                    "(only a 'replace' op can create a table)"
+                )
+            payloads[name] = _table_payload(name, name, [])
+        _apply_ops(name, payloads[name], ops)
+
+
 def import_flextale(
-    pdf: Path, out_dir: Path, extract: Extractor, first_page: int = 23, last_page: int = 65
+    pdf: Path,
+    out_dir: Path,
+    extract: Extractor,
+    first_page: int = 23,
+    last_page: int = 65,
+    overrides: Overrides | None = None,
 ) -> ImportResult:
     layout = extract(pdf, "layout", first_page, last_page)
     payloads: dict[str, dict] = {}
     for table in _parse_layout(layout):
         payloads.update(_context_tables(table))
     payloads.update(_simple_ai_tables(extract(pdf, "raw", first_page, last_page)))
+    _apply_overrides(payloads, overrides or {})
 
     result = ImportResult()
     for name, payload in payloads.items():
@@ -265,6 +337,10 @@ def main(
         "out", type=Path, nargs="?",
         help="output data folder (default: $XDG_DATA_HOME/solo-rpg-toolkit/flextale)",
     )
+    parser.add_argument(
+        "--overrides", type=Path,
+        help="JSON file of corrections for the book's range errors (default: <out>/overrides.json if present)",
+    )
     args = parser.parse_args(argv)
     env = os.environ if env is None else env
     home = Path.home() if home is None else home
@@ -273,7 +349,12 @@ def main(
         if not args.pdf.is_file():
             raise FlextaleImportError(f"PDF not found: {args.pdf}")
         _check_outside_git(out_dir)
-        result = import_flextale(args.pdf, out_dir, extract)
+        overrides_path = args.overrides or out_dir / "overrides.json"
+        if args.overrides is None and not overrides_path.is_file():
+            overrides = None
+        else:
+            overrides = load_overrides(overrides_path)
+        result = import_flextale(args.pdf, out_dir, extract, overrides=overrides)
     except FlextaleImportError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
