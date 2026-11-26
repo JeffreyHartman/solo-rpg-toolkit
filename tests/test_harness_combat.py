@@ -320,6 +320,7 @@ def test_the_cards_name_the_strength_modifier_in_descending_ac(tmp_path):
     assert damage["rolls"] == [4]
     assert damage["total"] == 5
     assert "(1d6+1 STR)" in damage["text"]
+    assert damage["source"] == "OSE, STR +1"
 
 
 def test_the_cards_name_the_strength_modifier_in_ascending_ac(tmp_path):
@@ -351,6 +352,7 @@ def test_a_zero_strength_modifier_leaves_str_off_the_cards(tmp_path):
     assert "STR" not in card["text"]
     assert "STR" not in damage["text"]
     assert "(1d6)" in damage["text"]
+    assert damage["source"] == "OSE"
 
 
 def test_a_member_without_abilities_leaves_str_off_the_cards(tmp_path):

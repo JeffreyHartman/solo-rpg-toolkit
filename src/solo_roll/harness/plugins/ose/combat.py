@@ -444,7 +444,8 @@ def _damage(victim: dict[str, Any], notation: str, ctx: CommandContext, side: st
     default = ", default die, no weapon data" if used_default_die else ""
     label = party.monster_label(victim) if side == "monster" else name
     events: list[Event] = [
-        _card("damage", rolled["dice"], rolled["rolls"], amount, f"{amount} damage", "OSE",
+        _card("damage", rolled["dice"], rolled["rolls"], amount, f"{amount} damage",
+              f"OSE, {named}" if (named := _modifier_text(ability)) else "OSE",
               f"{label} takes {amount} damage ({notation}{bonus:+d} {ability[0]}{default})." if ability and bonus else f"{label} takes {amount} damage ({notation}{default})."),
         {"type": "damage", "target": victim["id"] if side == "monster" else name, "amount": amount,
          "hp": victim["hp"], "text": f"{label} has {victim['hp']} HP left."},
