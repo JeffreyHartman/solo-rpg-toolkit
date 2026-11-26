@@ -44,6 +44,7 @@ class FlextaleImportError(Exception):
 class ImportResult:
     written: list[str] = field(default_factory=list)
     skipped: dict[str, str] = field(default_factory=dict)
+    flagged: dict[str, list[str]] = field(default_factory=dict)
 
 
 @dataclass
@@ -207,6 +208,21 @@ def _simple_ai_tables(raw: str) -> dict[str, dict]:
     return out
 
 
+_COIN_TABLE = re.compile(r"quickstart/treasure-[a-z]+-coin-")
+COIN_SLOTS = len(CONTEXTS)
+
+
+def _short_coin_bands(name: str, payload: dict) -> list[str]:
+    """Returns the bands of a coin table with fewer than one slot per context, as `min-max`."""
+    if not _COIN_TABLE.match(name):
+        return []
+    return [
+        f"{band['min']}-{band['max']}"
+        for band in payload["ranges"]
+        if len(str(band["result"]).split("/")) < COIN_SLOTS
+    ]
+
+
 Overrides = Mapping[str, list[dict]]
 
 
@@ -294,6 +310,8 @@ def import_flextale(
             result.skipped[name] = str(exc)
         else:
             result.written.append(name)
+            if short := _short_coin_bands(name, payload):
+                result.flagged[name] = short
     return result
 
 
@@ -361,7 +379,13 @@ def main(
     print(f"{len(result.written)} tables written to {out_dir}")
     for name, reason in result.skipped.items():
         print(f"skipped {name}: {reason}", file=sys.stderr)
-    return 1 if result.skipped else 0
+    for name, bands in result.flagged.items():
+        print(
+            f"warning {name}: bands {', '.join(bands)} have fewer than {COIN_SLOTS} coin slots; "
+            "rolling them fails until a 'set' override fixes the result",
+            file=sys.stderr,
+        )
+    return 1 if result.skipped or result.flagged else 0
 
 
 if __name__ == "__main__":
