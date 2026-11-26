@@ -12,7 +12,7 @@ Messages from the server, each a JSON object with a `type`:
   settings  {settings}                sent to every connection after a setting changes
   error     {message}                 sent only to the connection that caused it
 
-Pending proposals reach the browser in `state.proposals.pending`; the events of
+Pending judgment calls reach the browser in `state.judgments.pending`. Pending proposals reach it in `state.proposals.pending`; the events of
 a proposal include a `proposal` event.
 
 Messages from the browser:
@@ -20,6 +20,7 @@ Messages from the browser:
   say       {text}                    free text for the Referee
   answer    {id, answer, inputs?}     answer a proposal: confirm, change (with the
                                       changed inputs) or reject; the Referee then narrates it
+  answer_judgment {id, answer}        answer a judgment call card; the Referee then narrates it
   set_setting {section, key, value}   change one campaign setting
   list_campaigns {}                   ask for the library
   new_campaign {name, ruleset, generators, module?}  create a campaign and open it
@@ -104,7 +105,7 @@ class _Hub:
             await self._switch(ws, message, None)
         elif kind == "open_campaign":
             await self._switch(ws, None, message.get("id"))
-        elif self.engine is None and kind in ("act", "say", "answer", "set_setting"):
+        elif self.engine is None and kind in ("act", "say", "answer", "answer_judgment", "set_setting"):
             await ws.send_json({"type": "error", "message": "No campaign is open."})
         elif kind == "act":
             await self._act(ws, message.get("command") or {})
@@ -115,6 +116,9 @@ class _Hub:
             if message.get("inputs") is not None:
                 command["inputs"] = message["inputs"]
             await self._act(ws, command, lead="The player answered a proposal.")
+        elif kind == "answer_judgment":
+            command = {"type": "answer_judgment", "id": message.get("id"), "answer": message.get("answer")}
+            await self._act(ws, command, lead="The player answered a judgment call.")
         elif kind == "set_setting":
             await self._set_setting(ws, message)
         else:
