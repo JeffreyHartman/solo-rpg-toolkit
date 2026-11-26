@@ -45,6 +45,11 @@ def _move(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
     return ToolOutcome(output={"events": events, "area": engine.state()["party"]["area"]}, events=events)
 
 
+def _create_character(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
+    events = engine.act({"type": "procedure", "name": "create_character", **args})
+    return ToolOutcome(output={"events": events, "party": engine.state()["party"]["members"]}, events=events)
+
+
 ENGINE_TOOLS: tuple[EngineTool, ...] = (
     EngineTool(
         name="state",
@@ -61,6 +66,16 @@ ENGINE_TOOLS: tuple[EngineTool, ...] = (
         input_schema={"to": str},
         label=lambda engine, args: f"Moving to {_area_name(engine, args.get('to'))}",
         run=_move,
+    ),
+    EngineTool(
+        name="create_character",
+        description=(
+            "Roll the player's character with the ruleset's creation procedure, once the player has agreed "
+            "on a class, a name and a description. The engine rolls the abilities."
+        ),
+        input_schema={"class": str, "character_name": str, "description": str},
+        label=lambda engine, args: f"Creating {args.get('character_name') or 'a character'}",
+        run=_create_character,
     ),
 )
 

@@ -1,7 +1,10 @@
 """The harness server: one WebSocket for the open campaign, plus the built web app.
 
 Messages from the server, each a JSON object with a `type`:
-  snapshot  {state, actions}          sent once on connect
+  snapshot  {state, actions}          sent on connect when a campaign is open, and to every
+                                      connection when a campaign is opened
+  library   {campaigns, plugins}      sent on connect when no campaign is open, and in reply to
+                                      list_campaigns; `plugins` maps each kind to installed names
   events    {events, state, actions}  sent to every connection after a command,
                                       including one a Referee tool ran
   player    {text}                    sent to every connection: the player's free text
@@ -11,6 +14,9 @@ Messages from the server, each a JSON object with a `type`:
 Messages from the browser:
   act       {command}                 run one engine command; the Referee then narrates it
   say       {text}                    free text for the Referee
+  list_campaigns {}                   ask for the library
+  new_campaign {name, ruleset, generators, module?}  create a campaign and open it
+  open_campaign {id}                  open a saved campaign
 
 Referee turns run one at a time in the background, so `act` and `say` are
 accepted while a turn streams; a `say` waits for the turn before it.
@@ -26,6 +32,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .engine import Engine
 from .errors import HarnessError
+from .library import Library
 from .referee.base import Referee
 
 __all__ = ["create_app"]
@@ -36,19 +43,59 @@ NO_BUILD_PAGE = """<!doctype html><meta charset="utf-8"><title>Harness</title>
 
 
 class _Hub:
-    def __init__(self, engine: Engine, referee: Referee | None):
+    def __init__(self, engine: Engine | None, referee: Referee | None, library: Library | None = None):
         self.engine = engine
         self.referee = referee
+        self.library = library
         self.sockets: set[WebSocket] = set()
         self._turn_lock = asyncio.Lock()
         self._turns: set[asyncio.Task] = set()
 
     def snapshot(self) -> dict[str, Any]:
+        assert self.engine is not None
         return {"state": self.engine.state(), "actions": self.engine.available_actions()}
+
+    def first_message(self) -> dict[str, Any]:
+        if self.engine is None:
+            return self.library_message()
+        return {"type": "snapshot", **self.snapshot()}
+
+    def library_message(self) -> dict[str, Any]:
+        if self.library is None:
+            return {"type": "library", "campaigns": [], "plugins": {}}
+        return {"type": "library", "campaigns": self.library.campaigns(), "plugins": self.library.installed()}
+
+    async def _switch(self, ws: WebSocket, create: dict[str, Any] | None, campaign_id: str | None) -> None:
+        if self.library is None:
+            await ws.send_json({"type": "error", "message": "This server has no campaign folder."})
+            return
+        try:
+            if create is not None:
+                campaign_id = self.library.create(
+                    str(create.get("name") or ""),
+                    ruleset=str(create.get("ruleset") or ""),
+                    generators=list(create.get("generators") or []),
+                    module=create.get("module") or None,
+                )
+            engine, referee = self.library.open(str(campaign_id))
+        except HarnessError as exc:
+            await ws.send_json({"type": "error", "message": str(exc)})
+            return
+        await self.close()
+        self.engine, self.referee = engine, referee
+        await self._broadcast({"type": "snapshot", **self.snapshot()})
 
     async def handle(self, ws: WebSocket, message: dict[str, Any]) -> None:
         kind = message.get("type")
-        if kind == "act":
+        if kind == "list_campaigns":
+            await ws.send_json(self.library_message())
+        elif kind == "new_campaign":
+            await self._switch(ws, message, None)
+        elif kind == "open_campaign":
+            await self._switch(ws, None, message.get("id"))
+        elif self.engine is None and kind in ("act", "say"):
+            await ws.send_json({"type": "error", "message": "No campaign is open."})
+        elif kind == "act":
             await self._act(ws, message.get("command") or {})
         elif kind == "say":
             await self._say(ws, str(message.get("text") or ""))
@@ -56,6 +103,7 @@ class _Hub:
             await ws.send_json({"type": "error", "message": f"unknown message type {kind!r}"})
 
     async def _act(self, ws: WebSocket, command: dict[str, Any]) -> None:
+        assert self.engine is not None
         try:
             events = self.engine.act(command)
         except HarnessError as exc:
@@ -111,8 +159,14 @@ def _narration_request(events: list[dict[str, Any]]) -> str:
     return f"The player clicked an action. The engine reports:\n{lines}\nNarrate the result."
 
 
-def create_app(engine: Engine, web_dist: Path | None = None, referee: Referee | None = None) -> FastAPI:
-    hub = _Hub(engine, referee)
+def create_app(
+    engine: Engine | None,
+    web_dist: Path | None = None,
+    referee: Referee | None = None,
+    library: Library | None = None,
+) -> FastAPI:
+    """Serve `engine`, or no campaign yet when it is None. `library` lets the browser create and open campaigns."""
+    hub = _Hub(engine, referee, library)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -126,7 +180,7 @@ def create_app(engine: Engine, web_dist: Path | None = None, referee: Referee | 
         await ws.accept()
         hub.sockets.add(ws)
         try:
-            await ws.send_json({"type": "snapshot", **hub.snapshot()})
+            await ws.send_json(hub.first_message())
             while True:
                 await hub.handle(ws, await ws.receive_json())
         except WebSocketDisconnect:
