@@ -13,8 +13,8 @@ def test_move_to_a_connected_area_changes_the_party_position(tmp_path):
 
     events = engine.act({"type": "move", "to": "hall"})
 
-    assert events[0]["type"] == "moved"
-    assert (events[0]["from"], events[0]["to"]) == ("gate", "hall")
+    moved = next(e for e in events if e["type"] == "moved")
+    assert (moved["from"], moved["to"]) == ("gate", "hall")
     assert engine.state()["party"]["area"] == "hall"
 
 
@@ -34,7 +34,7 @@ def test_entering_an_unknown_area_reveals_it(tmp_path):
 
     events = engine.act({"type": "move", "to": "hall"})
 
-    assert events[1] == {"type": "area_revealed", "area": "hall", "text": "New area: Long Hall."}
+    assert events[0] == {"type": "area_revealed", "area": "hall", "text": "New area: Long Hall."}
     assert engine.state()["map"]["areas"]["hall"]["known"] is True
 
 
@@ -98,9 +98,11 @@ def test_a_move_appends_its_event_text_to_the_session_raw_log(tmp_path):
     log = (campaign / "vault" / "Sessions" / "Raw" / "Session 001.md").read_text()
     lines = [line for line in log.splitlines() if line.startswith("- ")]
     assert lines == [
-        "- The party moves from Gatehouse to Long Hall.",
         "- New area: Long Hall.",
+        "- The party moves from Gatehouse to Long Hall.",
+        "- Turn 1.",
         "- The party moves from Long Hall to Gatehouse.",
+        "- Turn 2.",
     ]
 
 

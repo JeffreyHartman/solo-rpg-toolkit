@@ -4,6 +4,7 @@ from pathlib import Path
 from solo_roll.harness.campaign import create_campaign
 from solo_roll.harness.engine import Engine, open_campaign
 from solo_roll.harness.plugins import BUILTIN_PLUGINS
+from solo_roll.harness.plugins.ose import OsePlugin
 from solo_roll.rng import DiceSource, ScriptedDice
 
 HAND_MADE_MAP = {
@@ -18,6 +19,9 @@ HAND_MADE_MAP = {
     ],
 }
 
+NO_WANDERING_PLUGINS = {**BUILTIN_PLUGINS, "ose": lambda: OsePlugin(wandering=None)}
+"""The built-in plugins with no wandering checks, so a move consumes no dice."""
+
 
 def make_campaign(root: Path) -> Path:
     return create_campaign(
@@ -30,4 +34,4 @@ def make_campaign(root: Path) -> Path:
 
 
 def open_engine(campaign_dir: Path, dice: DiceSource | None = None) -> Engine:
-    return open_campaign(campaign_dir, dice or ScriptedDice([]), BUILTIN_PLUGINS)
+    return open_campaign(campaign_dir, dice or ScriptedDice([]), NO_WANDERING_PLUGINS)

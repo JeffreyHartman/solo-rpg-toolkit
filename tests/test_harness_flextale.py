@@ -8,6 +8,7 @@ from solo_roll.harness.campaign import create_campaign
 from solo_roll.harness.engine import open_campaign
 from solo_roll.harness.errors import FlextaleDataError, IllegalActionError
 from solo_roll.harness.plugins import BUILTIN_PLUGINS
+from solo_roll.harness.plugins.ose import OsePlugin
 from solo_roll.harness.plugins.flextale import FlextalePlugin
 from solo_roll.rng import ScriptedDice
 
@@ -50,7 +51,7 @@ def make_engine(tmp_path: Path, rolls: list[int], data_dir: Path | None = None):
     root = create_campaign(
         tmp_path / "campaign", ["ose", "flextale"], MAP, "start", [{"name": "Brannoc"}]
     )
-    factories = {**BUILTIN_PLUGINS, "flextale": lambda: FlextalePlugin(data)}
+    factories = {**BUILTIN_PLUGINS, "ose": lambda: OsePlugin(wandering=None), "flextale": lambda: FlextalePlugin(data)}
     return open_campaign(root, ScriptedDice(rolls), factories)
 
 

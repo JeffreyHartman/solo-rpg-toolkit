@@ -12,7 +12,7 @@ def encounter(engine):
 def test_exploring_a_hall_rolls_the_hallway_table_and_stores_no_encounter(tmp_path):
     engine = make_engine(tmp_path, [1, 3])  # map: hall, encounter: none
     events = explore(engine)
-    assert [e["type"] for e in events] == ["mechanics", "area_revealed", "mechanics", "encounter", "moved"]
+    assert [e["type"] for e in events] == ["mechanics", "area_revealed", "mechanics", "encounter", "moved", "turn"]
     current = encounter(engine)
     assert current["area"] == "area-2"
     assert current["table"] == "quickstart/hallway-encounter-a"

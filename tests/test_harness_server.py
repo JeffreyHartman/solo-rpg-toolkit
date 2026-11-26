@@ -33,7 +33,7 @@ def test_a_move_command_returns_its_events_with_the_new_state(client):
         reply = ws.receive_json()
 
     assert reply["type"] == "events"
-    assert [e["type"] for e in reply["events"]] == ["moved", "area_revealed"]
+    assert [e["type"] for e in reply["events"]] == ["area_revealed", "moved", "turn"]
     assert reply["state"]["party"]["area"] == "hall"
     assert {a["id"] for a in reply["actions"] if a["id"].startswith("move:")} == {"move:gate", "move:crypt"}
 
@@ -123,7 +123,7 @@ def test_an_engine_tool_in_a_turn_also_sends_the_engine_events_and_new_state(tmp
     kinds = [m["event"]["type"] if m["type"] == "referee" else m["type"] for m in messages]
     assert kinds == ["player", "text", "tool_start", "tool_result", "events", "done"]
     events = messages[4]
-    assert [e["type"] for e in events["events"]] == ["moved", "area_revealed"]
+    assert [e["type"] for e in events["events"]] == ["area_revealed", "moved", "turn"]
     assert events["state"]["party"]["area"] == "hall"
 
 

@@ -17,6 +17,7 @@ __all__ = [
     "dungeon_actions",
     "initial_dungeon",
     "listen",
+    "move_trigger",
     "rest",
     "search",
     "wandering_trigger",
@@ -61,6 +62,11 @@ def listen(data_dir: Path):
 
 def rest(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) -> list[Event]:
     return _take_turn(state, rest=True)
+
+
+def move_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> list[Event]:
+    """Moving between areas, or into a newly explored one, takes a dungeon turn."""
+    return _take_turn(state, rest=False)
 
 
 def wandering_trigger(data_dir: Path):

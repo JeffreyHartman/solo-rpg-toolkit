@@ -46,6 +46,7 @@ class OsePlugin:
         registry.add_procedure("rest", dungeon_turn.rest, label=dungeon_turn.PROCEDURE_LABELS["rest"])
         registry.add_action_provider(dungeon_turn.dungeon_actions)
         registry.add_trigger("turn", dungeon_turn.wandering_trigger(self._data_dir))
+        registry.add_trigger("moved", dungeon_turn.move_trigger)
         checks.register(registry)
         combat.register(registry, self._data_dir)
 
@@ -59,19 +60,20 @@ def _move(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) -
         raise IllegalActionError(f"no connection from '{here}' to '{target}'")
     destination = area(state, target)
     state["party"]["area"] = target
-    events: list[Event] = [
+    events: list[Event] = []
+    if not destination.get("known"):
+        destination["known"] = True
+        events.append(
+            {"type": "area_revealed", "area": target, "text": f"New area: {destination['name']}."}
+        )
+    events.append(
         {
             "type": "moved",
             "from": here,
             "to": target,
             "text": f"The party moves from {area(state, here)['name']} to {destination['name']}.",
         }
-    ]
-    if not destination.get("known"):
-        destination["known"] = True
-        events.append(
-            {"type": "area_revealed", "area": target, "text": f"New area: {destination['name']}."}
-        )
+    )
     return events
 
 

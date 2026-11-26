@@ -221,3 +221,9 @@ def test_a_fight_with_no_standing_member_is_refused_and_changes_nothing(tmp_path
     with pytest.raises(IllegalActionError, match="standing"):
         engine.act({"type": "explore", "exit": "e1"})
     assert engine.state() == before
+
+
+def test_exploring_takes_a_dungeon_turn(tmp_path):
+    engine, events = start(tmp_path, PARTY_FIRST)
+    assert "turn" in types(events)
+    assert engine.state()["dungeon"]["turn"] == 1

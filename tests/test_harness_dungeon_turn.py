@@ -117,13 +117,13 @@ def test_the_wandering_check_runs_on_the_second_turn_only(tmp_path, data_dir):
 
 def test_a_wandering_hit_rolls_the_monster_distance_surprise_and_reaction(tmp_path, data_dir):
     # search, search, check 1 (hit), monster d6 3, distance 2d6 (3+4), surprise 6 and 2, reaction 2d6 (3+3)
-    rolls = [2, 2, 1, 3, 3, 4, 6, 2, 3, 3]
+    rolls = [2, 2, 1, 3, 3, 4, 6, 2, 3, 3, 4, 5, 2]
     engine = engine_with(tmp_path, data_dir, rolls, wandering={"table": "ose/w", "interval": 2})
     run(engine, "search")
 
     events = run(engine, "search")
 
-    encounter = events[-1]
+    encounter = next(e for e in events if e["type"] == "wandering_encounter")
     assert events[2]["result"] == "Wandering monster"
     assert encounter["type"] == "wandering_encounter"
     assert encounter["monster"] == "goblins"
@@ -238,3 +238,23 @@ def test_triggers_that_fire_each_other_forever_are_stopped(tmp_path):
 def test_a_procedure_with_an_unknown_confirm_level_is_not_accepted():
     with pytest.raises(PluginError):
         Registry().add_procedure("x", lambda s, c, ctx: [], confirm="sometimes")
+
+
+def test_moving_takes_a_dungeon_turn_and_burns_the_torch(tmp_path, data_dir):
+    engine = engine_with(tmp_path, data_dir, [], wandering=None)
+
+    events = engine.act({"type": "move", "to": "hall"})
+
+    assert [e["type"] for e in events] == ["area_revealed", "moved", "turn"]
+    dungeon = engine.state()["dungeon"]
+    assert dungeon["turn"] == 1
+    assert dungeon["light"][0]["turns_left"] == 5
+
+
+def test_moving_runs_the_wandering_check_on_the_second_turn(tmp_path, data_dir):
+    engine = engine_with(tmp_path, data_dir, [2, 4])
+    run(engine, "search")
+
+    events = engine.act({"type": "move", "to": "hall"})
+
+    assert [e["procedure"] for e in events if e["type"] == "mechanics"] == ["wandering_check"]
