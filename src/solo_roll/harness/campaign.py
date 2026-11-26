@@ -2,6 +2,7 @@
 
 Layout under the campaign folder:
   campaign.json          plugin list
+  settings.json          campaign settings, changed by the player during play
   engine/state.json      engine state, written only by the engine
   vault/                 the Obsidian vault, laid out by `vault.create_vault`
   vault/State.md         read-only state note, rewritten after every command
@@ -26,6 +27,10 @@ class CampaignPaths:
     @property
     def settings(self) -> Path:
         return self.root / "campaign.json"
+
+    @property
+    def campaign_settings(self) -> Path:
+        return self.root / "settings.json"
 
     @property
     def state(self) -> Path:

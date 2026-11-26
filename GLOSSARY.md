@@ -40,6 +40,14 @@ _Avoid_: move (except for Ironsworn moves), routine, flow
 A procedure with its inputs, offered by the Referee for the player to confirm, change, or reject before the engine runs it.
 _Avoid_: suggestion, request
 
+**Confirm level**:
+A campaign setting of each procedure. An Auto procedure that the Referee proposes runs at once; a Confirm procedure waits as a proposal for the player.
+_Avoid_: approval mode
+
+**Target number**:
+The number a roll must meet, for example an ability score, a save, a DC, or an AC. It comes from plugin data when the data exists; otherwise it is a proposal input. Every mechanics card names its source.
+_Avoid_: difficulty (when it means the number)
+
 **Judgment call**:
 A step in a procedure that needs a human decision, for example "does this action mark progress?". The Referee suggests an answer, and the player decides.
 _Avoid_: gut call, ruling
