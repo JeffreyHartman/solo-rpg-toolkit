@@ -164,3 +164,38 @@ def test_the_referee_can_edit_the_story_around_the_mechanical_block(tmp_path):
     assert "A miller's son from the hills." in note.read_text()
     assert "Find his brother." in note.read_text()
     assert mechanical_block(note) == block
+
+
+def test_a_turn_that_meets_an_npc_writes_the_record_and_updates_the_index(tmp_path):
+    campaign = make_campaign(tmp_path)
+    vault = CampaignPaths(campaign).vault
+    index = vault / "NPCs" / "_index.md"
+    record = (
+        "---\nname: Old Mag\ntype: npc\nstatus: alive\nmet: Session 001\ndisposition: friendly\n---\n"
+        "# Old Mag\n\nSells rope to [[Brannoc]] at the gate.\n"
+    )
+
+    results = results_of(
+        campaign,
+        Call("Read", {"file_path": "Conventions.md"}),
+        Call("Write", {"file_path": "NPCs/Old Mag.md", "content": record}),
+        Call("Write", {"file_path": "NPCs/_index.md", "content": index.read_text() + "- [[Old Mag]] - rope seller\n"}),
+    )
+
+    assert [r["ok"] for r in results] == [True, True, True]
+    assert frontmatter(vault / "NPCs" / "Old Mag.md")["type"] == "npc"
+    assert "- [[Old Mag]] - rope seller" in index.read_text()
+    assert unresolved_links(vault) == []
+
+
+def test_the_raw_log_index_links_each_session_log(tmp_path):
+    campaign = make_campaign(tmp_path)
+    engine = open_engine(campaign)
+
+    engine.act({"type": "move", "to": "hall"})
+    engine.act({"type": "move", "to": "gate"})
+
+    vault = CampaignPaths(campaign).vault
+    index = (vault / "Sessions" / "Raw" / "_index.md").read_text()
+    assert index.count("[[Sessions/Raw/Session 001|Session 001]]") == 1
+    assert unresolved_links(vault) == []

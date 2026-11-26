@@ -43,6 +43,8 @@ def append_raw_log(paths: "CampaignPaths", session: int, events: list[Event]) ->
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists():
         path.write_text(f"# Session {session:03d} raw log\n\n")
+        with (path.parent / "_index.md").open("a") as index:
+            index.write(f"- [[Sessions/Raw/{path.stem}|{path.stem}]]\n")
     with path.open("a") as log:
         for event in events:
             log.write(f"- {event.get('text') or event['type']}\n")

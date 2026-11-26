@@ -140,6 +140,15 @@ def test_options_load_no_user_settings_and_turn_off_memory_and_auto_compact(engi
     assert str(paths.referee) in options.system_prompt
 
 
+def test_the_system_prompt_holds_the_vault_conventions_note_as_the_owner_left_it(engine, paths):
+    conventions = paths.vault / "Conventions.md"
+    conventions.write_text(conventions.read_text() + "\n- Name every tavern after a bird.\n")
+    referee, clients = make_referee(engine, paths, [result()])
+    run_turn(referee)
+
+    assert "Name every tavern after a bird." in clients[0].options.system_prompt
+
+
 def test_the_pre_tool_use_hook_is_the_path_guard(engine, paths):
     referee, clients = make_referee(engine, paths, [result()])
     run_turn(referee)
