@@ -1,12 +1,11 @@
 """Tests for judgment calls: a procedure step raises one, the player answers, the setting moves it to the Referee."""
 import pytest
-from harness_fixtures import HAND_MADE_MAP
+from harness_fixtures import BUILTIN_PLUGINS, HAND_MADE_MAP
 
 from solo_roll.harness.campaign import create_campaign
 from solo_roll.harness.engine import open_campaign
 from solo_roll.harness.errors import IllegalActionError, SettingError
 from solo_roll.harness.judgment import judgment_request
-from solo_roll.harness.plugins import BUILTIN_PLUGINS
 from solo_roll.rng import ScriptedDice
 
 

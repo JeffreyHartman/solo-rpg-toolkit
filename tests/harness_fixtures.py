@@ -3,8 +3,11 @@ from pathlib import Path
 
 from solo_roll.harness.campaign import create_campaign
 from solo_roll.harness.engine import Engine, open_campaign
-from solo_roll.harness.plugins import BUILTIN_PLUGINS
+from solo_roll.harness.plugins import builtin_plugins
 from solo_roll.rng import DiceSource, ScriptedDice
+
+BUILTIN_PLUGINS = builtin_plugins(Path("/nonexistent/flextale-data"))
+"""The shipped plugins, with a FlexTale data folder that does not exist. Tests that roll FlexTale tables replace it."""
 
 HAND_MADE_MAP = {
     "areas": {

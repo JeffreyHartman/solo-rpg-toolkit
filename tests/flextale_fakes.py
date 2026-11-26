@@ -2,9 +2,10 @@
 import json
 from pathlib import Path
 
+from harness_fixtures import BUILTIN_PLUGINS
+
 from solo_roll.harness.campaign import create_campaign
 from solo_roll.harness.engine import open_campaign
-from solo_roll.harness.plugins import BUILTIN_PLUGINS
 from solo_roll.harness.plugins.flextale import FlextalePlugin
 from solo_roll.rng import ScriptedDice
 
