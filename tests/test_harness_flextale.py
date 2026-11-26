@@ -3,12 +3,13 @@ import json
 from pathlib import Path
 
 import pytest
+from harness_fixtures import BUILTIN_PLUGINS
 
 from solo_roll import OSE_DATA_DIR
 from solo_roll.harness.campaign import create_campaign
 from solo_roll.harness.engine import open_campaign
 from solo_roll.harness.errors import FlextaleDataError, IllegalActionError
-from solo_roll.harness.plugins import BUILTIN_PLUGINS
+from solo_roll.harness.plugins import builtin_plugins
 from solo_roll.harness.plugins.ose import OsePlugin
 from solo_roll.harness.plugins.flextale import FlextalePlugin
 from solo_roll.rng import ScriptedDice
@@ -140,6 +141,6 @@ def test_explore_of_an_exit_elsewhere_is_illegal(tmp_path):
         engine.act({"type": "explore", "exit": "nope"})
 
 
-def test_builtin_flextale_factory_uses_the_default_data_folder():
-    plugin = BUILTIN_PLUGINS["flextale"]()
+def test_the_builtin_flextale_factory_makes_the_generator_plugin(tmp_path):
+    plugin = builtin_plugins(tmp_path, OSE_DATA_DIR)["flextale"]()
     assert plugin.name == "flextale" and plugin.kind == "generator"

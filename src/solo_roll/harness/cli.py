@@ -1,8 +1,10 @@
 """solo-harness: create a demo campaign, or serve a campaign to the browser."""
 import argparse
+import os
+import random
 import socket
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
 
 from ..rng import RandomDice
@@ -11,7 +13,10 @@ from .demo import DEMO_MAP, DEMO_PARTY, DEMO_START
 from .engine import open_campaign
 from .errors import HarnessError
 from .library import Library
-from .plugins import BUILTIN_PLUGINS
+from .. import OSE_DATA_DIR
+from ..flextale_import import default_output_dir
+from .plugins import builtin_plugins
+from .registry import PluginFactory
 
 __all__ = ["main", "lan_ip"]
 
@@ -36,7 +41,9 @@ def _uvicorn_run(app, host: str, port: int) -> None:
     uvicorn.run(app, host=host, port=port)
 
 
-def _serve(args, run: Callable, find_ip: Callable[[], str]) -> int:
+def _serve(
+    args, run: Callable, find_ip: Callable[[], str], plugins: Mapping[str, PluginFactory], web_dist: Path
+) -> int:
     from .server import create_app
 
     if not args.campaign and not args.campaigns:
@@ -53,16 +60,17 @@ def _serve(args, run: Callable, find_ip: Callable[[], str]) -> int:
         chosen = engine.settings()["referee"]
         return sdk.AgentSdkReferee(engine, paths, model=chosen["model"], effort=chosen["effort"])
 
+    seeds = random.Random(args.seed)
+
     def dice():
-        return RandomDice(seed=args.seed)
+        return RandomDice(seed=seeds.getrandbits(64))
 
     engine = referee = library = None
     if args.campaign:
-        engine = open_campaign(Path(args.campaign), dice(), BUILTIN_PLUGINS)
+        engine = open_campaign(Path(args.campaign), dice(), plugins)
         referee = make_referee(engine, CampaignPaths(Path(args.campaign)))
     if args.campaigns:
-        library = Library(Path(args.campaigns), BUILTIN_PLUGINS, dice=dice, referee_factory=make_referee)
-    web_dist = Path(args.web_dist) if args.web_dist else Path(__file__).resolve().parents[3] / "web" / "dist"
+        library = Library(Path(args.campaigns), plugins, dice=dice, referee_factory=make_referee)
     print(f"Harness for {args.campaign or args.campaigns}: http://{find_ip()}:{args.port}/", flush=True)
     run(create_app(engine, web_dist=web_dist, referee=referee, library=library), host=BIND_HOST, port=args.port)
     return 0
@@ -80,6 +88,8 @@ def main(
     argv: list[str] | None = None,
     run: Callable | None = None,
     lan_ip: Callable[[], str] = lan_ip,
+    env: Mapping[str, str] | None = None,
+    home: Path | None = None,
 ) -> int:
     parser = argparse.ArgumentParser(prog="solo-harness")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -88,7 +98,8 @@ def main(
     serve.add_argument("--campaigns", default=None,
                        help="a folder of campaigns: the browser can create and open campaigns in it")
     serve.add_argument("--port", type=int, default=DEFAULT_PORT)
-    serve.add_argument("--seed", type=int, default=None)
+    serve.add_argument("--seed", type=int, default=None,
+                       help="seed for the dice; each opened campaign draws its own dice seed from it")
     serve.add_argument("--web-dist", default=None, help="built web app folder (default: web/dist in this checkout)")
     serve.add_argument("--referee", choices=["sdk", "none"], default="sdk",
                        help="sdk: Claude through the Agent SDK on your plan; none: no Referee")
@@ -100,7 +111,10 @@ def main(
 
     try:
         if args.command == "serve":
-            return _serve(args, run or _uvicorn_run, lan_ip)
+            flextale_data = default_output_dir(os.environ if env is None else env, home or Path.home())
+            plugins = builtin_plugins(flextale_data, OSE_DATA_DIR)
+            web_dist = Path(args.web_dist) if args.web_dist else Path(__file__).resolve().parents[3] / "web" / "dist"
+            return _serve(args, run or _uvicorn_run, lan_ip, plugins, web_dist)
         return _demo(args)
     except ImportError as exc:
         print(f"solo-harness needs the harness extra ({exc.name} is missing): "

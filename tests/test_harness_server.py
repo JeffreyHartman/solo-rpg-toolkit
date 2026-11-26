@@ -186,8 +186,9 @@ def test_a_referee_that_fails_ends_the_turn_with_an_error(tmp_path):
 
 # New campaign and Open campaign screens
 
+from harness_fixtures import BUILTIN_PLUGINS  # noqa: E402
+
 from solo_roll.harness.library import Library  # noqa: E402
-from solo_roll.harness.plugins import BUILTIN_PLUGINS  # noqa: E402
 from solo_roll.rng import ScriptedDice  # noqa: E402
 
 CREATION_ROLLS = [3, 3, 3, 4, 4, 4, 2, 2, 3, 5, 5, 4, 6, 5, 5, 3, 3, 4, 5]

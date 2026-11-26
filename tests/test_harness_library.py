@@ -1,10 +1,10 @@
 """Tests for `harness.library.Library`: list, create and open campaigns in one folder."""
 import pytest
+from harness_fixtures import BUILTIN_PLUGINS
 
 from solo_roll.harness.campaign import CampaignPaths
 from solo_roll.harness.errors import CampaignFileError, PluginError
 from solo_roll.harness.library import Library
-from solo_roll.harness.plugins import BUILTIN_PLUGINS
 from solo_roll.rng import ScriptedDice
 
 FIGHTER_ROLLS = [3, 3, 3, 4, 4, 4, 2, 2, 3, 5, 5, 4, 6, 5, 5, 3, 3, 4, 5]

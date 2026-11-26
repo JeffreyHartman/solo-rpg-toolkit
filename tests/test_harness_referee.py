@@ -166,6 +166,33 @@ def test_absolute_paths_outside_the_vault_are_denied(engine, paths, tool, tool_i
     assert result["denied"] is True
 
 
+@pytest.mark.parametrize(
+    "tool, tool_input",
+    [
+        ("Glob", {"pattern": "{/etc/*,x}"}),
+        ("Glob", {"pattern": "{x,/etc/*}"}),
+        ("Glob", {"pattern": "{NPCs,{a,../..}}/*.md"}),
+        ("Glob", {"pattern": "{,/}etc/*"}),
+        ("Glob", {"pattern": "{/etc/*,x"}),
+        ("Grep", {"pattern": "x", "glob": "{/home/*/.ssh/*,*.md}"}),
+    ],
+)
+def test_every_brace_alternative_of_a_glob_must_stay_in_the_vault(engine, paths, tool, tool_input):
+    referee = scripted(engine, paths, [Call(tool, tool_input)])
+
+    [result] = tool_results(run_turn(referee))
+
+    assert result["denied"] is True
+
+
+def test_a_brace_glob_whose_alternatives_stay_in_the_vault_is_allowed(engine, paths):
+    referee = scripted(engine, paths, [Call("Glob", {"pattern": "{NPCs,Locations}/*.md"})])
+
+    [result] = tool_results(run_turn(referee))
+
+    assert result["ok"] is True
+
+
 def test_the_campaign_folder_around_the_vault_is_denied(engine, paths):
     referee = scripted(engine, paths, [Call("Read", {"file_path": str(paths.state)})])
 
@@ -224,6 +251,53 @@ def test_engine_written_files_cannot_be_written_or_edited(engine, paths):
     assert [r["denied"] for r in results] == [True, True, True, True]
     assert paths.state_note.read_text() == before
     assert "rewritten" not in raw_log.read_text()
+
+
+@pytest.mark.parametrize(
+    "tool, make_input",
+    [
+        ("Read", lambda p: {"file_path": str(p.vault / "Home.md")}),
+        ("Write", lambda p: {"file_path": str(p.vault / "NPCs" / "Old Mag.md"), "content": "rope"}),
+        ("Edit", lambda p: {"file_path": str(p.vault / "Home.md"), "old_string": "#", "new_string": "#"}),
+        ("Read", lambda p: {"file_path": str(p.referee / "Secrets.md")}),
+        ("Edit", lambda p: {"file_path": str(p.referee / "Secrets.md"), "old_string": "trap", "new_string": "pit"}),
+        ("Glob", lambda p: {"pattern": f"{p.vault}/NPCs/*.md"}),
+        ("Glob", lambda p: {"pattern": "*.md", "path": str(p.referee)}),
+        ("Grep", lambda p: {"pattern": "trap", "path": str(p.referee)}),
+        ("Grep", lambda p: {"pattern": "x", "path": str(p.vault / "NPCs")}),
+    ],
+)
+def test_absolute_paths_inside_the_vault_or_the_referee_folder_are_allowed(engine, paths, tool, make_input):
+    paths.vault.mkdir(parents=True, exist_ok=True)
+    (paths.vault / "Home.md").write_text("# Home\n")
+    (paths.referee / "Secrets.md").write_text("trap")
+    referee = scripted(engine, paths, [Call(tool, make_input(paths))])
+
+    [result] = tool_results(run_turn(referee))
+
+    assert result["ok"] is True
+
+
+def test_engine_written_files_are_denied_by_absolute_path(engine, paths):
+    engine.act({"type": "move", "to": "hall"})
+    state_note, raw_log = paths.state_note.read_text(), paths.raw_log(1).read_text()
+    referee = scripted(
+        engine,
+        paths,
+        [
+            Call("Write", {"file_path": str(paths.state_note), "content": "hp: 999"}),
+            Call("Write", {"file_path": str(paths.raw_log(1)), "content": "rewritten"}),
+            Call("Edit", {"file_path": str(paths.raw_log(1)), "old_string": "-", "new_string": "+"}),
+            Call("Write", {"file_path": str(paths.vault / "Sessions" / "Raw" / "Session 002.md"), "content": "x"}),
+        ],
+    )
+
+    results = tool_results(run_turn(referee))
+
+    assert [r["denied"] for r in results] == [True, True, True, True]
+    assert paths.state_note.read_text() == state_note
+    assert paths.raw_log(1).read_text() == raw_log
+    assert not paths.raw_log(2).exists()
 
 
 def test_engine_written_files_can_still_be_read(engine, paths):

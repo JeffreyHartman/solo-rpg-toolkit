@@ -152,6 +152,27 @@ def test_the_referee_cannot_change_the_mechanical_block(tmp_path, change):
     assert not (note.parent / "Twin.md").exists()
 
 
+def test_the_referee_cannot_build_a_marker_from_pieces(tmp_path):
+    campaign = make_fighter_campaign(tmp_path)
+    twin = CampaignPaths(campaign).vault / "Characters" / "Twin.md"
+    note = CampaignPaths(campaign).vault / "Characters" / "Brannoc.md"
+    before = note.read_text()
+
+    results = results_of(
+        campaign,
+        write("%% engine:begin %\nHp: 60\n%% engine:end %\n", file_path="Characters/Twin.md"),
+        Call("Edit", {"file_path": "Characters/Twin.md", "old_string": "begin %\n", "new_string": "begin %%\n"}),
+        Call("Edit", {"file_path": "Characters/Twin.md", "old_string": "end %\n", "new_string": "end %%\n"}),
+        edit("# Brannoc\n", "# Brannoc\n%% engine:begi\n"),
+        edit("engine:begi\n", "engine:begin %%\nHp: 60\n"),
+    )
+
+    assert [r["ok"] for r in results] == [True, False, False, True, False]
+    assert "%% engine:end %%" not in twin.read_text()
+    assert note.read_text().count("%% engine:begin %%") == 1
+    assert mechanical_block(note) in before
+
+
 def test_the_referee_can_edit_the_story_around_the_mechanical_block(tmp_path):
     campaign = make_fighter_campaign(tmp_path)
     note = CampaignPaths(campaign).vault / "Characters" / "Brannoc.md"

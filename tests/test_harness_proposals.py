@@ -1,13 +1,10 @@
 """Tests for proposals, target numbers and confirm levels through `Engine.act`."""
 import pytest
-from harness_fixtures import HAND_MADE_MAP, make_campaign, open_engine
+from harness_fixtures import BUILTIN_PLUGINS, HAND_MADE_MAP, make_campaign, open_engine
 
 from solo_roll.harness.campaign import create_campaign
 from solo_roll.harness.engine import open_campaign
-from solo_roll.harness.plugins import BUILTIN_PLUGINS
-
 from solo_roll.harness.errors import HarnessError, IllegalActionError
-
 from solo_roll.rng import ScriptedDice
 
 

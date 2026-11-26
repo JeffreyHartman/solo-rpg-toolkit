@@ -18,6 +18,7 @@ __all__ = [
     "BLOCK_END",
     "FOLDERS",
     "append_raw_log",
+    "append_raw_text",
     "character_note",
     "create_vault",
     "find_block",
@@ -42,15 +43,29 @@ FOLDERS: dict[str, str] = {
 
 
 def append_raw_log(paths: "CampaignPaths", session: int, events: list[Event]) -> None:
+    with _open_raw_log(paths, session) as log:
+        for event in events:
+            log.write(f"- {event.get('text') or event['type']}\n")
+
+
+def append_raw_text(paths: "CampaignPaths", session: int, speaker: str, text: str) -> None:
+    """Add one chat message to the raw log as a list item, its later lines indented under it."""
+    lines = text.strip().splitlines()
+    if not lines:
+        return
+    body = "\n".join(f"  {line}" if line else "" for line in lines[1:])
+    with _open_raw_log(paths, session) as log:
+        log.write(f"- {speaker}: {lines[0]}\n" + (f"{body}\n" if body else ""))
+
+
+def _open_raw_log(paths: "CampaignPaths", session: int):
     path = paths.raw_log(session)
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.exists():
         path.write_text(f"# Session {session:03d} raw log\n\n")
         with (path.parent / "_index.md").open("a") as index:
             index.write(f"- [[Sessions/Raw/{path.stem}|{path.stem}]]\n")
-    with path.open("a") as log:
-        for event in events:
-            log.write(f"- {event.get('text') or event['type']}\n")
+    return path.open("a")
 
 
 def write_state_note(paths: "CampaignPaths", state: dict[str, Any]) -> None:

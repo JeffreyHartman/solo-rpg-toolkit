@@ -14,7 +14,7 @@ from ..errors import HarnessError
 from ..registry import Event
 from .guard import ENGINE_TOOL_PREFIX, PathGuard
 
-__all__ = ["ENGINE_TOOLS", "EngineTool", "RefereeTools", "ToolOutcome"]
+__all__ = ["END_SESSION_TOOL", "ENGINE_TOOLS", "EngineTool", "RefereeTools", "ToolOutcome"]
 
 
 @dataclass(frozen=True)
@@ -28,7 +28,7 @@ class ToolOutcome:
 class EngineTool:
     name: str
     description: str
-    input_schema: dict[str, type]
+    input_schema: dict[str, Any]
     """Argument name to Python type, the simple schema form that the SDK `tool` decorator takes."""
     label: Callable[[Engine, dict[str, Any]], str]
     run: Callable[[Engine, dict[str, Any]], ToolOutcome]
@@ -88,6 +88,19 @@ def _create_character(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
     return ToolOutcome(output={"events": events, "party": engine.state()["party"]["members"]}, events=events)
 
 
+END_SESSION_TOOL = ENGINE_TOOL_PREFIX + "end_session"
+
+
+def _end_session(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
+    session = engine.state()["session"]
+    if not engine.paths.raw_log(session).exists():
+        raise HarnessError(f"Session {session} has no play to write up yet.")
+    return ToolOutcome(
+        output={"status": "The session ends after this turn. Say goodbye and end your turn; "
+                "the harness then asks you to write the session note."}
+    )
+
+
 ENGINE_TOOLS: tuple[EngineTool, ...] = (
     EngineTool(
         name="state",
@@ -119,9 +132,10 @@ ENGINE_TOOLS: tuple[EngineTool, ...] = (
         description=(
             "Raise a judgment call for a decision the rules leave open, with your suggested answer and the reason. "
             "When the player owns the category, a card waits for the player's answer. When the Referee "
-            "owns it, your suggestion is the decision and the log records your reason."
+            "owns it, your suggestion is the decision and the log records your reason. `options` lists the "
+            "answers the player may pick from; pass [] to leave the answer free."
         ),
-        input_schema={"category": str, "question": str, "suggestion": str, "reason": str},
+        input_schema={"category": str, "question": str, "suggestion": str, "reason": str, "options": list[str]},
         label=lambda engine, args: "Raising a judgment call",
         run=_judgment_call,
     ),
@@ -141,6 +155,16 @@ ENGINE_TOOLS: tuple[EngineTool, ...] = (
         input_schema={"class": str, "character_name": str, "description": str},
         label=lambda engine, args: f"Creating {args.get('character_name') or 'a character'}",
         run=_create_character,
+    ),
+    EngineTool(
+        name="end_session",
+        description=(
+            "End the session when the player asks to stop. After this turn the harness runs End session: "
+            "you write the clean session note and update the records, then the next session starts."
+        ),
+        input_schema={},
+        label=lambda engine, args: "Ending the session",
+        run=_end_session,
     ),
 )
 

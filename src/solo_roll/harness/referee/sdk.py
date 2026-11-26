@@ -28,6 +28,7 @@ from claude_agent_sdk import (
 from ..campaign import CampaignPaths
 from ..engine import Engine
 from ..errors import HarnessError
+from ..settings import REFEREE_DEFAULTS
 from . import events
 from .base import ContextPart, context_part, prompt_parts, session_opening, turn_prompt
 from .guard import ENGINE_TOOL_PREFIX, FILE_TOOLS
@@ -35,8 +36,8 @@ from .tools import EngineTool, RefereeTools, ToolOutcome
 
 __all__ = ["AgentSdkReferee", "RefereeConfigError", "system_prompt"]
 
-DEFAULT_MODEL = "sonnet"
-DEFAULT_EFFORT = "low"
+DEFAULT_MODEL = REFEREE_DEFAULTS["model"]
+DEFAULT_EFFORT = REFEREE_DEFAULTS["effort"]
 
 ClientFactory = Callable[[ClaudeAgentOptions], Any]
 
@@ -51,6 +52,7 @@ BASE_PROMPT = """You are the Referee of a solo tabletop RPG campaign. One player
 - The engine owns all mechanical state and every die roll. Never invent a die result, a damage number, an HP change, or a position change. Change mechanical state only with the `mcp__engine__*` tools.
 - When the player's free text needs a roll, call `mcp__engine__propose` with a procedure, its inputs, and a one-line reason. The `mcp__engine__state` tool lists the procedures and their inputs. Pass a `target` input only when no data gives the target number; the engine refuses one that data gives. A Confirm proposal waits for the player: end your turn and narrate nothing about its result.
 - When a decision is a judgment call (the rules leave it open, and the player may want to decide), call `mcp__engine__judgment_call` with a category from `mcp__engine__state`, the question, your suggested answer, and the reason. When the player owns the category, a card waits for the answer: end your turn. When the Referee owns it, the result holds the decision, which you then narrate.
+- When the player asks to stop for now, call `mcp__engine__end_session` and end your turn. The harness then asks you to write the session note.
 - Each player message starts with a fresh <state> snapshot from the engine. Trust it over anything you remember.
 - Before a tool call, write at most one short status line, or nothing. Write the narration after the last tool call.
 - Your working directory is the campaign vault, an Obsidian folder of markdown records with YAML frontmatter and [[wikilinks]]. Read records to learn the story, and write records for new NPCs, places, threads, and clues.

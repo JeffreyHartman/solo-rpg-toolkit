@@ -99,3 +99,54 @@ def test_serve_with_a_campaign_folder_and_no_campaign_starts_on_the_library(tmp_
 def test_serve_needs_a_campaign_or_a_campaign_folder(capsys):
     assert main(["serve"], run=lambda *a, **k: None) == 1
     assert "--campaigns" in capsys.readouterr().err
+
+
+def test_serve_reads_flextale_tables_from_the_data_folder_main_is_given(tmp_path):
+    from fastapi.testclient import TestClient
+    from flextale_fakes import MAP, write_tables
+
+    from solo_roll.harness.campaign import create_campaign
+
+    write_tables(tmp_path / "xdg" / "solo-rpg-toolkit" / "flextale")
+    campaign = create_campaign(tmp_path / "campaign", ["ose", "flextale"], MAP, "start", [{"name": "Brannoc"}])
+    apps = []
+
+    main(
+        ["serve", str(campaign), "--referee", "none"],
+        run=lambda app, host, port: apps.append(app),
+        lan_ip=lambda: "10.0.0.2",
+        env={"XDG_DATA_HOME": str(tmp_path / "xdg")},
+        home=tmp_path / "home",
+    )
+
+    with TestClient(apps[0]).websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "act", "command": {"type": "explore", "exit": "e1"}})
+        reply = ws.receive_json()
+
+    assert reply["type"] == "events", reply
+
+
+def test_each_campaign_the_library_opens_gets_its_own_dice(tmp_path):
+    from fastapi.testclient import TestClient
+
+    apps = []
+    main(
+        ["serve", "--campaigns", str(tmp_path / "campaigns"), "--referee", "none", "--seed", "7"],
+        run=lambda app, host, port: apps.append(app),
+        lan_ip=lambda: "10.0.0.2",
+        env={},
+        home=tmp_path / "home",
+    )
+    abilities = []
+    with TestClient(apps[0]).websocket_connect("/ws") as ws:
+        ws.receive_json()
+        for name in ("First Delve", "Second Delve"):
+            ws.send_json({"type": "new_campaign", "name": name, "ruleset": "ose", "generators": []})
+            ws.receive_json()
+            ws.send_json({"type": "act", "command": {
+                "type": "procedure", "name": "create_character",
+                "inputs": {"class": "Fighter", "character_name": "Brannoc"}}})
+            abilities.append(ws.receive_json()["state"]["party"]["members"][0]["abilities"])
+
+    assert abilities[0] != abilities[1]
