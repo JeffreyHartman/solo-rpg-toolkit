@@ -25,7 +25,7 @@ from .registry import (
     Target,
     build_registry,
 )
-from .settings import CampaignSettings
+from .settings import REFEREE_DEFAULTS, REFEREE_EFFORTS, REFEREE_MODELS, CampaignSettings
 from .vault import append_raw_log, write_character_notes, write_state_note
 
 __all__ = ["Engine", "open_campaign"]
@@ -283,6 +283,7 @@ class Engine:
                 {"category": name, "label": label, "owner": self.judgment_owner(name)}
                 for name, label in self._registry.judgment_categories.items()
             ],
+            "referee": {key: self._settings.get("referee", key, default) for key, default in REFEREE_DEFAULTS.items()},
         }
 
     def change_setting(self, section: str, key: str, value: Any) -> None:
@@ -295,6 +296,10 @@ class Engine:
             return
         if section == "judgment":
             self._change_judgment_owner(key, value)
+            return
+        if section == "referee":
+            _check_referee_setting(key, value)
+            self._settings.set(section, key, value)
             return
         if section != "confirm":
             raise SettingError(f"no campaign setting section '{section}'")
@@ -326,12 +331,42 @@ class Engine:
     def state(self) -> dict[str, Any]:
         return copy.deepcopy(self._state)
 
+    @property
+    def paths(self) -> CampaignPaths:
+        return self._paths
+
+    def new_session(self) -> list[Event]:
+        """End the current session and start the next one, if the current session has a raw log.
+
+        A session with no raw log has had no play, so it keeps its number and this returns no events.
+        """
+        session = self._state["session"]
+        if not self._paths.raw_log(session).exists():
+            return []
+        events: list[Event] = [{"type": "session_ended", "session": session, "text": f"Session {session} ends."}]
+        append_raw_log(self._paths, session, events)
+        self._state["session"] = session + 1
+        write_json(self._paths.state, self._state)
+        write_state_note(self._paths, self._state)
+        return events
+
     def referee_guides(self) -> list[str]:
         return list(self._registry.referee_guides)
 
     def available_actions(self) -> list[Action]:
         snapshot = self.state()
         return [a for provider in self._registry.action_providers for a in provider(snapshot)]
+
+
+def _check_referee_setting(key: str, value: Any) -> None:
+    if key == "model" and value not in REFEREE_MODELS:
+        raise SettingError(f"model must be one of {', '.join(REFEREE_MODELS)}, got {value!r}")
+    if key == "effort" and value not in REFEREE_EFFORTS:
+        raise SettingError(f"effort must be one of {', '.join(REFEREE_EFFORTS)}, got {value!r}")
+    if key == "budget" and (type(value) is not int or value <= 0):
+        raise SettingError(f"budget must be a positive whole number of tokens, got {value!r}")
+    if key not in REFEREE_DEFAULTS:
+        raise SettingError(f"no Referee setting '{key}'")
 
 
 def open_campaign(

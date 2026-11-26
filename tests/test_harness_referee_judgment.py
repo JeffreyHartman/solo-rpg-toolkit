@@ -101,4 +101,6 @@ def test_a_judgment_answer_reaches_the_engine_and_is_narrated_and_an_owner_chang
 
         ws.send_json({"type": "set_setting", "section": "judgment", "key": "ruling", "value": "referee"})
         changed = ws.receive_json()
+        while changed["type"] == "context":
+            changed = ws.receive_json()
         assert changed["settings"]["judgment"][0]["owner"] == "referee"
