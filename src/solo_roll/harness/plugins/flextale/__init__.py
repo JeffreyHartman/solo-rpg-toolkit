@@ -6,7 +6,7 @@ from ....tables import TableNotFoundError, roll_table
 from ...errors import FlextaleDataError, IllegalActionError
 from ...mapstate import area
 from ...registry import Action, CommandContext, Event, Registry
-from . import checks, encounters, treasure
+from . import checks, encounters, simple_ai, treasure
 from .tabledata import CONTEXTS
 
 __all__ = ["FlextalePlugin"]
@@ -20,6 +20,7 @@ REFEREE_GUIDE = """## Generator: FlexTale
 
 - When the party explores a new area, the engine rolls what it holds. Read `encounter.current` in the state and describe exactly that: do not add traps, obstacles, secrets or monsters.
 - A trap or obstacle with status `open` waits for a check. Propose `encounter_check` for the character; the engine sets the target number from the DC table.
+- Monsters act through the engine's Simple AI. Never decide what a monster does or how much damage it deals.
 - Treasure comes only from the `treasure` procedure, and it changes the inventory in the state.
 """
 
@@ -39,6 +40,7 @@ class FlextalePlugin:
         registry.add_referee_guide(REFEREE_GUIDE)
         checks.register(registry)
         treasure.register(registry, self._data_dir, self._system)
+        simple_ai.register(registry, self._data_dir)
         registry.add_state_default("encounter", encounters.initial_encounter)
         registry.add_setting("difficulty", "context", "Difficulty context", CONTEXTS, "A")
         registry.add_trigger("area_revealed", encounters.reveal_trigger(self._data_dir, self._system))
@@ -47,6 +49,8 @@ class FlextalePlugin:
     def _explore(
         self, state: dict[str, Any], command: dict[str, Any], ctx: CommandContext
     ) -> list[Event]:
+        if state.get("combat"):
+            raise IllegalActionError("the party cannot explore during combat")
         here = state["party"]["area"]
         exits = state["map"].setdefault("open_exits", [])
         used = next(
