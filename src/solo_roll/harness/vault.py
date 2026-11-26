@@ -20,6 +20,7 @@ __all__ = [
     "character_note",
     "create_vault",
     "find_block",
+    "session_note",
     "write_character_notes",
     "write_state_note",
 ]
@@ -250,3 +251,9 @@ How the records in this vault are written. The Referee follows these rules, and 
 - Each character note has a mechanical block between `%% engine:begin %%` and `%% engine:end %%`. The engine rewrites it after every action; nobody else edits it.
 - Live trackers (HP, AC, slots, torches, rations, coins, position, clocks) stay out of story notes. They live in `State.md` and the mechanical block.
 """
+
+
+def session_note(paths: "CampaignPaths", session: int) -> Path | None:
+    """The clean note for `session` in `Sessions/` (`Session NNN - Title.md`), or None if it has none yet."""
+    notes = sorted((paths.vault / "Sessions").glob(f"Session {session:03d}*.md"))
+    return notes[0] if notes else None

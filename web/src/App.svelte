@@ -4,14 +4,17 @@
   import CharacterPanel from './lib/CharacterPanel.svelte'
   import CombatPanel from './lib/CombatPanel.svelte'
   import ChatPanel from './lib/ChatPanel.svelte'
+  import ContextDrawer from './lib/ContextDrawer.svelte'
   import JudgmentCard from './lib/JudgmentCard.svelte'
   import LibraryScreen from './lib/LibraryScreen.svelte'
   import MapView from './lib/MapView.svelte'
   import ProposalCard from './lib/ProposalCard.svelte'
   import SettingsMenu from './lib/SettingsMenu.svelte'
+  import TopBar from './lib/TopBar.svelte'
   import { act, game, listCampaigns } from './lib/socket.svelte'
 
   let settingsOpen = $state(false)
+  let drawerOpen = $state(false)
   let pending = $derived(game.state?.proposals?.pending ?? [])
   let judgments = $derived(game.state?.judgments?.pending ?? [])
 
@@ -37,9 +40,14 @@
     <div class="panel combat"><CombatPanel combat={game.state.combat} /></div>
   {/if}
   <div class="panel log"><ChatPanel /></div>
-  <button class="panel settings-toggle" onclick={() => (settingsOpen = !settingsOpen)}>Settings</button>
+  <div class="panel top">
+    <TopBar ondrawer={() => (drawerOpen = !drawerOpen)} onsettings={() => (settingsOpen = !settingsOpen)} />
+  </div>
   {#if settingsOpen}
     <div class="panel settings"><SettingsMenu onclose={() => (settingsOpen = false)} /></div>
+  {/if}
+  {#if drawerOpen}
+    <div class="panel drawer"><ContextDrawer onclose={() => (drawerOpen = false)} /></div>
   {/if}
   {#if pending.length || judgments.length}
     <div class="panel proposals">
@@ -66,9 +74,10 @@
   .combat { top: 12px; left: 50%; transform: translateX(-50%); min-width: 220px; max-width: calc(100vw - 24px); }
   .log { left: 12px; bottom: 12px; width: min(460px, calc(100vw - 24px)); height: 45vh; font-size: 14px; }
   .actions { right: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px; max-width: min(480px, calc(100vw - 24px)); }
-  .offline { top: 56px; right: 12px; color: var(--warn); }
-  .settings-toggle { top: 12px; right: 12px; padding: 4px 12px; }
-  .settings { top: 56px; right: 12px; width: min(340px, calc(100vw - 24px)); z-index: 2; }
+  .offline { top: 64px; left: 12px; color: var(--warn); }
+  .top { top: 12px; right: 12px; max-width: calc(100vw - 24px); z-index: 3; }
+  .settings { top: 72px; right: 12px; width: min(340px, calc(100vw - 24px)); z-index: 2; }
+  .drawer { top: 72px; right: 12px; bottom: 12px; width: min(520px, calc(100vw - 24px)); z-index: 2; }
   .proposals { right: 12px; bottom: 72px; width: min(380px, calc(100vw - 24px)); display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; }
   .waiting { padding: 24px; }
 </style>

@@ -5,11 +5,13 @@ import type {
   ClientMessage,
   Command,
   ConfirmLevel,
+  ContextReading,
   EngineState,
   PluginsByKind,
   JudgmentOwner,
   ProposalAnswer,
   RefereeEvent,
+  RefereeSettings,
   ServerMessage,
   Target,
 } from './protocol'
@@ -28,6 +30,8 @@ export type ChatEntry =
   | { kind: 'mechanics'; text: string; card: MechanicsCard }
   | { kind: 'tool'; id: string; label: string; outcome: 'running' | 'ok' | 'failed' | 'denied'; error?: string }
 
+export type SessionControl = 'compact' | 'new_session' | 'end_session'
+
 export const game = $state({
   connected: false,
   state: null as EngineState | null,
@@ -35,6 +39,9 @@ export const game = $state({
   chat: [] as ChatEntry[],
   refereeBusy: false,
   settings: null as CampaignSettings | null,
+  context: null as ContextReading | null,
+  // The session control sent last, until the server answers it.
+  control: null as SessionControl | null,
   // Set while the New and Open campaign screen is showing; null while a campaign is open.
   library: null as { campaigns: CampaignSummary[]; plugins: PluginsByKind } | null,
 })
@@ -63,9 +70,24 @@ function receive(message: ServerMessage): void {
       if (game.library) game.chat = []
       game.library = null
       game.settings = message.settings
+      game.context = message.context
       break
     case 'error':
       game.chat.push({ kind: 'error', text: message.message })
+      game.control = null
+      return
+    case 'context':
+      game.context = message
+      if (game.control === 'compact') game.control = null
+      return
+    case 'session':
+      game.control = null
+      game.chat.push({
+        kind: 'event',
+        text: message.note
+          ? `Session note written: ${message.note}. Session ${message.session} begins.`
+          : `Session ${message.session} begins.`,
+      })
       return
     case 'player':
       game.chat.push({ kind: 'player', text: message.text })
@@ -170,6 +192,15 @@ export function setJudgmentOwner(category: string, owner: JudgmentOwner): void {
 
 export function setConfirmLevel(procedure: string, level: ConfirmLevel): void {
   send({ type: 'set_setting', section: 'confirm', key: procedure, value: level })
+}
+
+export function setRefereeSetting<K extends keyof RefereeSettings>(key: K, value: RefereeSettings[K]): void {
+  send({ type: 'set_setting', section: 'referee', key, value })
+}
+
+export function control(kind: SessionControl): void {
+  game.control = kind
+  send({ type: kind })
 }
 
 export function setOption(section: string, key: string, value: string): void {

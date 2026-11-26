@@ -1,6 +1,7 @@
 """The campaign settings store: `section -> key -> value`, saved to `settings.json` on every change.
 
-Sections in use: `confirm` (procedure name to confirm level). The store does
+Sections in use: `confirm` (procedure name to confirm level) and `referee`
+(`model`, `effort`, and the context `budget` in tokens). The store does
 not check values; the owner of each section does that before it calls `set`.
 """
 import copy
@@ -9,7 +10,11 @@ from typing import Any
 
 from .campaign import load_json, write_json
 
-__all__ = ["CampaignSettings"]
+__all__ = ["CampaignSettings", "REFEREE_DEFAULTS", "REFEREE_EFFORTS", "REFEREE_MODELS"]
+
+REFEREE_MODELS = ("sonnet", "opus", "haiku")
+REFEREE_EFFORTS = ("low", "medium", "high", "xhigh", "max")
+REFEREE_DEFAULTS: dict[str, Any] = {"model": "sonnet", "effort": "low", "budget": 60_000}
 
 
 class CampaignSettings:

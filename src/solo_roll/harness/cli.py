@@ -45,9 +45,13 @@ def _serve(args, run: Callable, find_ip: Callable[[], str]) -> int:
     def make_referee(engine, paths):
         if args.referee != "sdk":
             return None
-        from .referee.sdk import AgentSdkReferee
+        from .referee import sdk
 
-        return AgentSdkReferee(engine, paths, model=args.model, effort=args.effort)
+        for key in ("model", "effort"):
+            if getattr(args, key) is not None:
+                engine.change_setting("referee", key, getattr(args, key))
+        chosen = engine.settings()["referee"]
+        return sdk.AgentSdkReferee(engine, paths, model=chosen["model"], effort=chosen["effort"])
 
     def dice():
         return RandomDice(seed=args.seed)
@@ -88,8 +92,8 @@ def main(
     serve.add_argument("--web-dist", default=None, help="built web app folder (default: web/dist in this checkout)")
     serve.add_argument("--referee", choices=["sdk", "none"], default="sdk",
                        help="sdk: Claude through the Agent SDK on your plan; none: no Referee")
-    serve.add_argument("--model", default="sonnet")
-    serve.add_argument("--effort", default="low")
+    serve.add_argument("--model", default=None, help="set the campaign's Referee model (default: keep it)")
+    serve.add_argument("--effort", default=None, help="set the campaign's Referee effort (default: keep it)")
     demo = sub.add_parser("demo", help="create a campaign with a small hand-made map")
     demo.add_argument("campaign")
     args = parser.parse_args(argv)

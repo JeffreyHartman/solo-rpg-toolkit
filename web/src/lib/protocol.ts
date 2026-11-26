@@ -120,6 +120,15 @@ export interface ConfirmRow {
   level: ConfirmLevel
 }
 
+export const MODELS = ['sonnet', 'opus', 'haiku'] as const
+export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const
+
+export interface RefereeSettings {
+  model: (typeof MODELS)[number]
+  effort: (typeof EFFORTS)[number]
+  budget: number
+}
+
 export interface OptionRow {
   section: string
   key: string
@@ -141,6 +150,22 @@ export interface CampaignSettings {
   confirm: ConfirmRow[]
   options?: OptionRow[]
   judgment: JudgmentRow[]
+  referee: RefereeSettings
+}
+
+// One thing the Referee got in its latest turn, from Referee.turn_context.
+export interface ContextPart {
+  label: string
+  chars: number
+  text: string
+}
+
+export interface ContextReading {
+  type: 'context'
+  tokens: number | null
+  budget: number
+  over: boolean
+  parts: ContextPart[]
 }
 
 export interface Command {
@@ -178,12 +203,20 @@ export type RefereeEvent =
   | { type: 'done'; error?: string }
 
 export type ServerMessage =
-  | { type: 'snapshot'; state: EngineState; actions: Action[]; settings: CampaignSettings }
+  | {
+      type: 'snapshot'
+      state: EngineState
+      actions: Action[]
+      settings: CampaignSettings
+      context: ContextReading | null
+    }
   | { type: 'events'; events: EngineEvent[]; state: EngineState; actions: Action[] }
   | { type: 'library'; campaigns: CampaignSummary[]; plugins: PluginsByKind }
   | { type: 'player'; text: string }
   | { type: 'referee'; event: RefereeEvent }
   | { type: 'settings'; settings: CampaignSettings }
+  | ContextReading
+  | { type: 'session'; session: number; note: string | null }
   | { type: 'error'; message: string }
 
 export type ProposalAnswer = 'confirm' | 'change' | 'reject'
@@ -194,6 +227,9 @@ export type ClientMessage =
   | { type: 'answer'; id: string; answer: ProposalAnswer; inputs?: Record<string, string | number> }
   | { type: 'answer_judgment'; id: string; answer: string }
   | { type: 'set_setting'; section: string; key: string; value: unknown }
+  | { type: 'compact' }
+  | { type: 'new_session' }
+  | { type: 'end_session' }
   | { type: 'list_campaigns' }
   | { type: 'new_campaign'; name: string; ruleset: string; generators: string[]; module?: string }
   | { type: 'open_campaign'; id: string }
