@@ -172,6 +172,10 @@ export function setConfirmLevel(procedure: string, level: ConfirmLevel): void {
   send({ type: 'set_setting', section: 'confirm', key: procedure, value: level })
 }
 
+export function setOption(section: string, key: string, value: string): void {
+  send({ type: 'set_setting', section, key, value })
+}
+
 export function exploreActionFor(exit: string): Action | undefined {
   return game.actions.find((a) => a.command.type === 'explore' && a.command.exit === exit)
 }

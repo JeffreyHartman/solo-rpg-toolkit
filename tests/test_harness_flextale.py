@@ -27,6 +27,10 @@ MAP = {
 def write_fake_table(data_dir: Path) -> None:
     path = data_dir / "tables" / "quickstart" / "map-generator-a.json"
     path.parent.mkdir(parents=True)
+    (path.parent / "chamber-encounter-a.json").write_text(
+        json.dumps({"name": "quickstart/chamber-encounter-a", "dice": "d20",
+                    "ranges": [{"min": 1, "max": 20, "result": "No Encounter"}]})
+    )
     path.write_text(
         json.dumps(
             {
@@ -61,7 +65,7 @@ def test_every_open_exit_of_the_current_area_is_an_explore_action(tmp_path):
 
 def test_explore_places_a_connected_area_and_moves_the_party_in(tmp_path):
     write_fake_table(tmp_path / "data")
-    engine = make_engine(tmp_path, [15])
+    engine = make_engine(tmp_path, [15, 1])
     engine.act({"type": "explore", "exit": "e1"})
     state = engine.state()
     new_id = state["party"]["area"]
@@ -78,7 +82,7 @@ def test_explore_places_a_connected_area_and_moves_the_party_in(tmp_path):
 
 def test_new_area_sits_beside_the_exit_without_overlap(tmp_path):
     write_fake_table(tmp_path / "data")
-    engine = make_engine(tmp_path, [15, 15])
+    engine = make_engine(tmp_path, [15, 1, 15, 1])
     engine.act({"type": "explore", "exit": "e1"})
     first = engine.state()["party"]["area"]
     state = engine.state()
@@ -95,7 +99,7 @@ def test_new_area_sits_beside_the_exit_without_overlap(tmp_path):
 
 def test_new_area_offers_exits_on_its_other_sides(tmp_path):
     write_fake_table(tmp_path / "data")
-    engine = make_engine(tmp_path, [15])
+    engine = make_engine(tmp_path, [15, 1])
     engine.act({"type": "explore", "exit": "e1"})
     state = engine.state()
     here = state["party"]["area"]
@@ -105,7 +109,7 @@ def test_new_area_offers_exits_on_its_other_sides(tmp_path):
 
 def test_explore_emits_a_mechanics_card_with_dice_result_and_source(tmp_path):
     write_fake_table(tmp_path / "data")
-    engine = make_engine(tmp_path, [15])
+    engine = make_engine(tmp_path, [15, 1])
     events = engine.act({"type": "explore", "exit": "e1"})
     card = next(e for e in events if e["type"] == "mechanics")
     assert card["procedure"] == "map-generator"
@@ -121,7 +125,7 @@ def test_explore_emits_a_mechanics_card_with_dice_result_and_source(tmp_path):
 
 
 def test_missing_data_raises_an_error_naming_the_import_command(tmp_path):
-    engine = make_engine(tmp_path, [15])
+    engine = make_engine(tmp_path, [15, 1])
     with pytest.raises(FlextaleDataError, match="solo-flextale-import"):
         engine.act({"type": "explore", "exit": "e1"})
     assert engine.state()["party"]["area"] == "start"
@@ -129,7 +133,7 @@ def test_missing_data_raises_an_error_naming_the_import_command(tmp_path):
 
 def test_explore_of_an_exit_elsewhere_is_illegal(tmp_path):
     write_fake_table(tmp_path / "data")
-    engine = make_engine(tmp_path, [15])
+    engine = make_engine(tmp_path, [15, 1])
     with pytest.raises(IllegalActionError):
         engine.act({"type": "explore", "exit": "nope"})
 
