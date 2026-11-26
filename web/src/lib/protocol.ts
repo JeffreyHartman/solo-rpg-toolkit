@@ -77,12 +77,22 @@ export interface Proposal {
   reason: string
 }
 
+export interface JudgmentCall {
+  id: string
+  category: string
+  question: string
+  suggestion: string
+  reason: string
+  options: string[]
+}
+
 export interface EngineState {
   session: number
   party: { members: Member[]; area: string }
   map: { areas: Record<string, Area>; connections: Connection[]; open_exits?: OpenExit[] }
   dungeon?: Dungeon
   proposals?: { pending: Proposal[] }
+  judgments?: { pending: JudgmentCall[] }
 }
 
 export type ConfirmLevel = 'auto' | 'confirm'
@@ -94,8 +104,17 @@ export interface ConfirmRow {
   level: ConfirmLevel
 }
 
+export type JudgmentOwner = 'ask' | 'referee'
+
+export interface JudgmentRow {
+  category: string
+  label: string
+  owner: JudgmentOwner
+}
+
 export interface CampaignSettings {
   confirm: ConfirmRow[]
+  judgment: JudgmentRow[]
 }
 
 export interface Command {
@@ -147,6 +166,7 @@ export type ClientMessage =
   | { type: 'act'; command: Command }
   | { type: 'say'; text: string }
   | { type: 'answer'; id: string; answer: ProposalAnswer; inputs?: Record<string, string | number> }
+  | { type: 'answer_judgment'; id: string; answer: string }
   | { type: 'set_setting'; section: string; key: string; value: unknown }
   | { type: 'list_campaigns' }
   | { type: 'new_campaign'; name: string; ruleset: string; generators: string[]; module?: string }

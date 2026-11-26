@@ -1,7 +1,7 @@
 <!-- The campaign settings menu: the confirm level of each procedure. -->
 <script lang="ts">
-  import type { ConfirmLevel } from './protocol'
-  import { game, setConfirmLevel } from './socket.svelte'
+  import type { ConfirmLevel, JudgmentOwner } from './protocol'
+  import { game, setConfirmLevel, setJudgmentOwner } from './socket.svelte'
 
   let { onclose }: { onclose: () => void } = $props()
 </script>
@@ -22,6 +22,21 @@
         >
           <option value="auto">Auto</option>
           <option value="confirm">Confirm</option>
+        </select>
+      </label>
+    {/each}
+  </div>
+  <h3 class="smallcaps dim">Judgment calls</h3>
+  <div class="rows scroll">
+    {#each game.settings?.judgment ?? [] as row (row.category)}
+      <label>
+        <span>{row.label}</span>
+        <select
+          value={row.owner}
+          onchange={(e) => setJudgmentOwner(row.category, e.currentTarget.value as JudgmentOwner)}
+        >
+          <option value="ask">Ask me</option>
+          <option value="referee">Referee decides</option>
         </select>
       </label>
     {/each}
