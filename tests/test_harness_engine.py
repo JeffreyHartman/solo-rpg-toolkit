@@ -88,6 +88,44 @@ def test_two_plugins_cannot_claim_the_same_command(tmp_path):
         open_campaign(campaign, ScriptedDice([]), {"ose": OsePlugin, "ose-again": OsePlugin})
 
 
+def test_a_move_appends_its_event_text_to_the_session_raw_log(tmp_path):
+    campaign = make_campaign(tmp_path)
+    engine = open_engine(campaign)
+
+    engine.act({"type": "move", "to": "hall"})
+    engine.act({"type": "move", "to": "gate"})
+
+    log = (campaign / "vault" / "Sessions" / "Raw" / "Session 001.md").read_text()
+    lines = [line for line in log.splitlines() if line.startswith("- ")]
+    assert lines == [
+        "- The party moves from Gatehouse to Long Hall.",
+        "- New area: Long Hall.",
+        "- The party moves from Long Hall to Gatehouse.",
+    ]
+
+
+def test_state_note_shows_the_party_position_after_a_move(tmp_path):
+    campaign = make_campaign(tmp_path)
+    engine = open_engine(campaign)
+
+    engine.act({"type": "move", "to": "hall"})
+
+    note = (campaign / "vault" / "State.md").read_text()
+    assert "Written by the engine" in note
+    assert "Position: Long Hall" in note
+    assert "Brannoc" in note
+
+
+def test_a_refused_command_writes_nothing_to_the_vault(tmp_path):
+    campaign = make_campaign(tmp_path)
+    engine = open_engine(campaign)
+
+    with pytest.raises(IllegalActionError):
+        engine.act({"type": "move", "to": "crypt"})
+
+    assert not (campaign / "vault" / "Sessions" / "Raw" / "Session 001.md").exists()
+
+
 class DicePlugin:
     """A test plugin whose `roll` command reports one d6 from the engine's dice."""
 

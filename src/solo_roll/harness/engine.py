@@ -12,6 +12,7 @@ from ..rng import DiceSource
 from .campaign import CampaignPaths, load_json, write_json
 from .errors import UnknownCommandError
 from .registry import Action, CommandContext, Event, PluginFactory, Registry, build_registry
+from .vault import append_raw_log, write_state_note
 
 __all__ = ["Engine", "open_campaign"]
 
@@ -41,6 +42,8 @@ class Engine:
         events = handler(working, command, self._context)
         self._state = working
         write_json(self._paths.state, self._state)
+        append_raw_log(self._paths, self._state["session"], events)
+        write_state_note(self._paths, self._state)
         return events
 
     def state(self) -> dict[str, Any]:
