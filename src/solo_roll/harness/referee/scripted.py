@@ -51,8 +51,8 @@ class ScriptedReferee:
         self.effort = "low"
         self.compacts = 0
         self.context_tokens: int | None = None
-        self._turn_context: list[ContextPart] = []
         """What `context_usage` returns; a test sets it."""
+        self._turn_context: list[ContextPart] = []
 
     async def turn(self, player_input: str) -> AsyncIterator[events.RefereeEvent]:
         snapshot = self._tools.engine.state()
