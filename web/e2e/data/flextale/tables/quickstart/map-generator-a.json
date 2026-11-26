@@ -1,0 +1,1 @@
+{"name": "quickstart/map-generator-a", "dice": "d20", "ranges": [{"min": 1, "max": 5, "result": "A hall"}, {"min": 6, "max": 10, "result": "A chamber"}, {"min": 11, "max": 15, "result": "A dead end"}, {"min": 16, "max": 20, "result": "A stair"}]}

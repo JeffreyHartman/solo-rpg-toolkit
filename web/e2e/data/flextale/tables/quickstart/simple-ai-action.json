@@ -1,0 +1,1 @@
+{"name": "quickstart/simple-ai-action", "dice": "d20", "ranges": [{"min": 1, "max": 10, "result": "Attack the nearest"}, {"min": 11, "max": 15, "result": "Maneuver for position"}, {"min": 16, "max": 19, "result": "Defend"}, {"min": 20, "max": 20, "result": "Flee"}]}

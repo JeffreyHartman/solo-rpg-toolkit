@@ -1,0 +1,1 @@
+{"name": "quickstart/trap-a-osr", "dice": "d20", "ranges": [{"min": 1, "max": 5, "result": "Dart: Save vs breath"}, {"min": 6, "max": 20, "result": "Pit: Save vs death"}]}

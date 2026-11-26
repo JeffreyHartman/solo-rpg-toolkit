@@ -1,0 +1,1 @@
+{"name": "quickstart/simple-ai-target", "dice": "d20", "ranges": [{"min": 1, "max": 20, "result": "Closest foe"}]}

@@ -1,0 +1,1 @@
+{"name": "quickstart/combat-encounter-a", "dice": "d20", "ranges": [{"min": 1, "max": 10, "result": "Two fake goblins"}, {"min": 11, "max": 20, "result": "One fake ogre"}]}
