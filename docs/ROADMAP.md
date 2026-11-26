@@ -229,10 +229,29 @@ A browser harness for solo play: an engine that owns mechanical state and dice, 
 - [x] First slice: FlexTale Quick Start delve on OSE ([spec, issue #2](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/2)), `v0.7.0` (PR #18)
 - [x] ADR 0003 (player controls the character, Referee controls the world) and ADR 0004 (Referee rolls only when the outcome is uncertain)
 
-The phase plan from here to a fully playable harness is the [roadmap map, issue #25](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/25). The map is still a draft. When it is locked, its phase plan replaces this section.
+The phase plan from here to a fully playable harness. It was locked on the [roadmap map, issue #25](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/25). The full sort of every gap is on [Sort the arc gaps into phases](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/29). Each phase from phase 2 on gets its own wayfinder map, then a spec and build tickets. Each phase ends with a merge to main and a minor tag.
 
-- [x] Phase 1, Solid ground: the first slice works on real data. FlexTale table overrides, GM voice and out-of-character notes, Referee edit tools and monster turns, OSE optional combat rules, a kept class roll, headless screenshots, and an end-to-end smoke test. `v0.8.0` (PR #34)
-- [ ] Phase 2, The table: the player-controlled VTT. Direct actions, scenes (#35), usability research, visual design, dockable panels, rule citations
-- [ ] Phase 3, The full arc: character creation and import, inventory and gear (#20), the settlement, travel, character death (#39), the return to town, XP, and levels
-- [ ] Phase 4, Modules: Claude Code converts an adventure PDF into a campaign, and the harness plays it
-- [ ] Phase 5, Later, unordered: hexcrawl, tactical grid, other Referee providers, the Ironsworn ruleset
+"Fully playable" means one OSE campaign arc over several sessions, with no terminal and no hand edits: make a character and buy gear, start in a settlement with a hook, travel to a site, delve, go back to town to sell, heal, and level up, then start the next session from saved state.
+
+- [x] **Phase 1, Solid ground.** The first slice works on real data. FlexTale table overrides, GM voice and out-of-character notes, Referee edit tools and monster turns, OSE optional combat rules, a kept class roll, headless screenshots, and an end-to-end smoke test. `v0.8.0` (PR #34)
+- [ ] **Phase 2, The table.** The player-controlled VTT. It opens with the control seam: direct actions, the token move that the engine owns, and the log of direct actions. Then player-started checks, sheet edits, the session recap, and the sheet, creation form, and cards from plugin metadata.
+  - Issues: [#35 scenes](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/35), [#38 Strength modifier](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/38), [#24 usability research](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/24), [#3 visual design](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/3), [#16 dockable panels](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/16), [#22 rule citations](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/22)
+  - Exit test: play the FlexTale Quick Start delve on OSE in the browser over two sessions. The Referee loads the dungeon level as a scene. The player moves the token, makes checks, and edits the sheet with direct actions. The second session opens with a recap.
+  - Tag: `v0.9.0`
+- [ ] **Phase 3, Engine seams.** Item records that the engine owns, with a carrier and a ruleset currency. Engine time with plugin units and clock events. An event vocabulary, the one-responder rule, a provider setting, and a name rule for plugins.
+  - Exit test: OSE, FlexTale, and a Mythic GME generator plugin open in one campaign and play one delve with no engine change.
+  - Tag: `v0.10.0`
+- [ ] **Phase 4, The town.** Character creation and import, gold, gear, and the shop, the settlement and the hook, quests, the leave-site action, delve upgrades, character death, and selling, healing, XP, and levels. The party goes to the dungeon with a scene switch.
+  - Issues: [#36 discard a roll](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/36), [#20 inventory and shopping](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/20), [#39 character death](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/39)
+  - Exit test: make a new character in the browser and buy gear. Take a hook in the settlement, go to the dungeon with a scene switch, and delve. Go back to town to sell, heal, gain XP, and level up. Also play one character death.
+  - Tag: `v0.11.0`
+- [ ] **Phase 5, The road.** Small travel: one procedure, the day clock, wilderness rules, rations, travel encounters and weather, and the travel UI.
+  - Exit test: the full "fully playable" bar above, over at least two sessions.
+  - Tag: `v1.0.0`
+- [ ] **Phase 6, Modules.** Plugin discovery first. Then Claude Code converts an adventure PDF into a campaign against `docs/dungeon-schema.md`, and the harness plays it as a module plugin.
+  - Exit test: convert one adventure PDF that the owner owns, then play one session of it with no hand edits. The phase 5 arc still works.
+- [ ] **Phase 7, Later, unordered.** Hexcrawl with a generated hex map, tactical grid, other Referee providers, the Ironsworn ruleset, and [#37 a party of several characters](https://github.com/JeffreyHartman/solo-rpg-toolkit/issues/37). Each one gets its exit test when its map is charted. If the module that phase 6 picks needs a grid, the phase 6 map can pull the tactical grid forward.
+
+Standing rules:
+- One phase runs at a time, because of the Claude Pro plan limits.
+- Each phase brings the source data that its procedures read. No phase is only data.
