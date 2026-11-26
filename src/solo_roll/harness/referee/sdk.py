@@ -4,12 +4,14 @@ The options follow ADR 0002. The SDK version is pinned in the `harness` extra;
 on every upgrade, check that `memoryFiles` in the context usage is still empty.
 """
 import json
+import warnings
 from collections import defaultdict, deque
 from collections.abc import AsyncIterator, Callable
 from typing import Any
 
 from claude_agent_sdk import (
     AssistantMessage,
+    CanUseToolShadowedWarning,
     ClaudeAgentOptions,
     ClaudeSDKClient,
     HookMatcher,
@@ -117,7 +119,10 @@ class AgentSdkReferee:
     async def _connect(self) -> Any:
         if self._client is None:
             client = self._client_factory(self.options())
-            await client.connect()
+            with warnings.catch_warnings():
+                # The engine tools skip can_use_tool on purpose; the PreToolUse hook gates every call.
+                warnings.simplefilter("ignore", CanUseToolShadowedWarning)
+                await client.connect()
             usage = await client.get_context_usage()
             loaded = usage.get("memoryFiles") or []
             if loaded:
