@@ -5,7 +5,7 @@ from typing import Any
 from ...errors import IllegalActionError
 from ...mapstate import area, exits
 from ...registry import Action, CommandContext, Event, Registry
-from . import checks, dungeon_turn
+from . import checks, combat, dungeon_turn
 from .character import CREATE_CHARACTER_INPUTS, create_character
 
 __all__ = ["OsePlugin"]
@@ -14,6 +14,7 @@ REFEREE_GUIDE = """## Ruleset: Old-School Essentials (OSE)
 
 - Play in the spirit of OSE: a dangerous dungeon, scarce light, and choices with consequences.
 - Move the party between areas only with the `move` engine tool, by area id.
+- In combat, propose the owner's `attack` and `special_action` for the character the player describes. The engine rolls initiative and attacks, applies all damage, and runs the monsters. Read `combat` in the state and narrate its events; never invent damage, hit points or monster actions.
 - When the party is empty, help the player pick a class, a name and a short description. Then call `create_character`; the engine rolls the 3d6 abilities in order.
 """
 
@@ -46,9 +47,12 @@ class OsePlugin:
         registry.add_action_provider(dungeon_turn.dungeon_actions)
         registry.add_trigger("turn", dungeon_turn.wandering_trigger(self._data_dir))
         checks.register(registry)
+        combat.register(registry, self._data_dir)
 
 
 def _move(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) -> list[Event]:
+    if state.get("combat"):
+        raise IllegalActionError("the party cannot move during combat")
     here = state["party"]["area"]
     target = command.get("to")
     if target not in {far for _, far in exits(state, here)}:

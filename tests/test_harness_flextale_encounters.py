@@ -145,27 +145,28 @@ def test_a_check_with_disadvantage_rolls_two_dice_and_keeps_the_worse(tmp_path):
 def test_a_combat_result_leaves_a_pending_combat_and_a_combat_event_for_ticket_12(tmp_path):
     from solo_roll.harness.plugins.flextale.encounters import pending_combat
 
-    engine = make_engine(tmp_path, [1, 16, 1, 1])  # combat, then monsters table roll 1
+    engine = make_engine(tmp_path, [1, 16, 1, 4, 3, 5, 2])  # combat, monsters roll 1, then goblin hit points and initiative
     events = explore(engine)
-    outcome = pending_combat(engine.state())
-    assert (outcome["kind"], outcome["status"], outcome["detail"]["result"]) == ("combat", "pending", "Two fake goblins")
+    assert pending_combat(engine.state()) is None  # the fight has started
+    outcome = encounter(engine)["outcomes"][0]
+    assert (outcome["kind"], outcome["status"], outcome["detail"]["result"]) == ("combat", "started", "Two fake goblins")
     hook = next(e for e in events if e["type"] == "combat_encounter")
     assert (hook["area"], hook["outcome"], hook["monsters"]) == ("area-2", 0, "Two fake goblins")
 
 
 def test_a_trap_that_is_a_monster_becomes_combat(tmp_path):
     tables = {**DEFAULT_TABLES, "trap-a-osr": [(1, 20, "Monster: Change the threat to combat")]}
-    engine = make_engine(tmp_path, [1, 9, 1, 12], tables=tables)
+    engine = make_engine(tmp_path, [1, 9, 1, 12, 4, 4, 4, 4, 5, 2], tables=tables)
     explore(engine)
     outcome = encounter(engine)["outcomes"][0]
     assert (outcome["kind"], outcome["via"]["result"].split(":")[0]) == ("combat", "Monster")
 
 
 def test_combat_and_treasure_keeps_the_treasure_pending(tmp_path):
-    engine = make_engine(tmp_path, [1, 19, 11])  # monsters roll 11
+    engine = make_engine(tmp_path, [1, 19, 11, 3, 3, 3, 3, 5, 2])  # monsters roll 11: an ogre
     explore(engine)
     kinds = [(o["kind"], o["status"]) for o in encounter(engine)["outcomes"]]
-    assert kinds == [("combat", "pending"), ("treasure", "pending")]
+    assert kinds == [("combat", "started"), ("treasure", "pending")]
 
 
 def test_roll_twice_resolves_two_more_results_and_skips_further_roll_twice(tmp_path):
@@ -245,7 +246,7 @@ def test_a_missing_treasure_table_raises_the_typed_error_and_keeps_the_inventory
 
 
 def test_pending_treasure_is_taken_once_and_not_offered_while_combat_is_pending(tmp_path):
-    engine = make_engine(tmp_path, [1, 19, 11, 3, 1, 4])
+    engine = make_engine(tmp_path, [1, 19, 11, 3, 3, 3, 3, 5, 2, 3, 1, 4])
     explore(engine)
     assert "treasure" not in [a["command"].get("name") for a in engine.available_actions()]
     treasure(engine)
@@ -261,7 +262,7 @@ def shuttle(engine, times):
 
 
 def test_backtracking_rolls_a_random_encounter_on_every_fourth_known_area(tmp_path):
-    engine = make_engine(tmp_path, [1, 1, 15, 1])  # explore (hall, none); fourth move: combat
+    engine = make_engine(tmp_path, [1, 1, 15, 1, 4, 3, 5, 2])  # explore (hall, none); fourth move: combat, goblins
     explore(engine)
     quiet = shuttle(engine, 3)  # exhausts ScriptedDice if any of these rolled
     assert not [e for e in quiet if e["type"] == "encounter"]

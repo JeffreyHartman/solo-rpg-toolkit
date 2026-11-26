@@ -1,0 +1,7 @@
+{
+  "goblin": {"hd": 1, "ac": 6, "thac0": 19, "damage": "1d6"},
+  "kobold": {"hd": 1, "ac": 7, "thac0": 19, "damage": "1d4"},
+  "skeleton": {"hd": 1, "ac": 7, "thac0": 19, "damage": "1d6"},
+  "giant rat": {"hd": 1, "ac": 7, "thac0": 19, "damage": "1d3"},
+  "ogre": {"hd": 4, "ac": 5, "thac0": 16, "damage": "1d10"}
+}

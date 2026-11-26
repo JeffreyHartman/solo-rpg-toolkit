@@ -34,7 +34,7 @@ def register(registry: Registry, data_dir: Path, system: str) -> None:
 def treasure_actions(state: dict[str, Any]) -> list[Action]:
     current = state.get("encounter", {}).get("current") or {}
     waiting = any(o["kind"] == "treasure" and o["status"] == "pending" for o in current.get("outcomes", []))
-    if not waiting or pending_combat(state):
+    if not waiting or pending_combat(state) or state.get("combat"):
         return []
     return [{"id": "treasure", "label": "Collect the treasure", "command": {"type": "procedure", "name": "treasure"}}]
 
