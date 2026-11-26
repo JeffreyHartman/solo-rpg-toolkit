@@ -20,7 +20,7 @@ from ..dice import DiceError, parse_dice, roll_dice
 from .errors import IllegalActionError
 from .registry import CommandContext, Event
 
-__all__ = ["CHANGES", "edit"]
+__all__ = ["CHANGES", "edit", "edit_card"]
 
 CHANGES = ("add_item", "remove_item", "light", "hp", "condition", "clear_condition")
 EDIT_SOURCE = "Referee edit"
@@ -45,22 +45,22 @@ def edit(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) ->
         lit = change == "light"
         _add_item(who, value)
         did = f"{label} lights a {value}" if lit else f"{label} gains {value}"
-        return [_card(did, reason), {"type": "item_added", **base, "item": value, "lit": lit, "text": f"{did}."}]
+        return [edit_card(did, reason), {"type": "item_added", **base, "item": value, "lit": lit, "text": f"{did}."}]
     if change == "remove_item":
         _remove_item(who, label, value)
         did = f"{label} loses {value}"
-        return [_card(did, reason), {"type": "item_removed", **base, "item": value, "text": f"{did}."}]
+        return [edit_card(did, reason), {"type": "item_removed", **base, "item": value, "text": f"{did}."}]
     conditions = who.setdefault("conditions", [])
     if change == "condition":
         if value not in conditions:
             conditions.append(value)
         did = f"{label} is {value}"
-        return [_card(did, reason), {"type": "condition_set", **base, "condition": value, "text": f"{did}."}]
+        return [edit_card(did, reason), {"type": "condition_set", **base, "condition": value, "text": f"{did}."}]
     if value not in conditions:
         raise IllegalActionError(f"{label} is not {value}")
     conditions.remove(value)
     did = f"{label} is no longer {value}"
-    return [_card(did, reason), {"type": "condition_cleared", **base, "condition": value, "text": f"{did}."}]
+    return [edit_card(did, reason), {"type": "condition_cleared", **base, "condition": value, "text": f"{did}."}]
 
 
 def _subject(state: dict[str, Any], who: str) -> tuple[dict[str, Any], str, str]:
@@ -101,14 +101,14 @@ def _hp(who: dict[str, Any], label: str, value: str, reason: str, base: Event, c
     card: Event
     if amount_text.isdigit():
         amount = int(amount_text)
-        card = _card(f"{label} {'loses' if sign < 0 else 'gains'} {amount} HP", reason)
+        card = edit_card(f"{label} {'loses' if sign < 0 else 'gains'} {amount} HP", reason)
     else:
         try:
             rolled = roll_dice(parse_dice(amount_text), ctx.dice)
         except DiceError as exc:
             raise IllegalActionError(str(exc)) from exc
         amount = rolled["total"]
-        card = _card(f"{label} {'loses' if sign < 0 else 'gains'} {amount} HP", reason)
+        card = edit_card(f"{label} {'loses' if sign < 0 else 'gains'} {amount} HP", reason)
         card.update(dice=rolled["dice"], rolls=rolled["rolls"], total=amount)
     hp = who.get("hp", 0) + sign * amount
     top = who.get("max_hp")
@@ -117,6 +117,7 @@ def _hp(who: dict[str, Any], label: str, value: str, reason: str, base: Event, c
                    "text": f"{label} has {who['hp']} HP."}]
 
 
-def _card(did: str, reason: str) -> Event:
+def edit_card(did: str, reason: str) -> Event:
+    """The mechanics card of a Referee edit with no roll: what changed and why."""
     return {"type": "mechanics", "procedure": "edit", "dice": "", "rolls": [], "total": None,
             "result": did, "source": EDIT_SOURCE, "reason": reason, "text": f"{did}. Reason: {reason}"}

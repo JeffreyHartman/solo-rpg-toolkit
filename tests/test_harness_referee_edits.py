@@ -4,10 +4,14 @@ The dice are scripted; a test that must not roll gets no dice, so any roll fails
 """
 import asyncio
 
-from harness_fixtures import make_campaign, open_engine
+from harness_fixtures import HAND_MADE_MAP, make_campaign, open_engine
 
-from solo_roll.harness.campaign import CampaignPaths
+from solo_roll import OSE_DATA_DIR
+from solo_roll.harness.campaign import CampaignPaths, create_campaign, load_json, write_json
+from solo_roll.harness.engine import open_campaign
+from solo_roll.harness.plugins.ose import OsePlugin
 from solo_roll.harness.referee import Call, ScriptedReferee
+from solo_roll.harness.referee.tools import RefereeTools
 from solo_roll.rng import ScriptedDice
 
 EDIT = "mcp__engine__edit"
@@ -88,3 +92,111 @@ def test_an_hp_change_in_dice_is_rolled_with_the_engine_dice(tmp_path):
     card = result["events"][0]
     assert (card["dice"], card["rolls"], card["total"]) == ("1d6", [4], 4)
     assert engine.state()["party"]["members"][0]["hp"] == 6
+
+
+MONSTER_ACTION = "mcp__engine__monster_action"
+BRANNOC = {"name": "Brannoc", "class": "Fighter", "level": 1, "hp": 6, "max_hp": 6, "ac": 5,
+           "abilities": {"STR": 14}, "saves": {}}
+GOBLIN = {"id": "m1", "name": "goblin", "hp": 4, "max_hp": 4, "ac": 6, "thac0": 19, "damage": "1d6",
+          "status": "alive", "generic": False}
+MONSTERS_FIRST = [2, 5]
+PARTY_FIRST = [5, 2]
+
+
+def ose_fight(tmp_path, rolls, rules=()):
+    """An OSE campaign with no FlexTale, in a fight with one goblin, after an initiative roll."""
+    root = create_campaign(tmp_path / "campaign", ["ose"], HAND_MADE_MAP, "gate", [dict(BRANNOC)])
+    paths = CampaignPaths(root)
+    state = load_json(paths.state)
+    state["combat"] = {"area": "gate", "outcome": None, "round": 0, "phase": "party", "first": "party",
+                       "acted": [], "monsters": [dict(GOBLIN)]}
+    state["ose_rules"] = list(rules)
+    write_json(paths.state, state)
+    factories = {"ose": lambda: OsePlugin(OSE_DATA_DIR, wandering=None)}
+    engine = open_campaign(root, ScriptedDice(rolls), factories)
+    events = engine.act({"type": "procedure", "name": "initiative"})
+    return root, engine, events
+
+
+def test_with_no_monster_turn_trigger_the_engine_waits_for_the_referee_to_act(tmp_path):
+    _, engine, events = ose_fight(tmp_path, MONSTERS_FIRST)
+
+    [turn] = [e for e in events if e["type"] == "monster_turn"]
+    assert turn["referee"] is True and "Referee" in turn["text"]
+    assert "monsters_done" not in [e["type"] for e in events]
+    assert engine.state()["combat"]["waiting"] == ["m1"]
+
+
+def test_the_referee_attacks_for_the_monster_and_the_engine_rolls_the_attack(tmp_path):
+    # d20 15 against THAC0 19 vs AC 5 (needs 14) hits; 1d6 damage 3. The party acts second.
+    campaign, engine, _ = ose_fight(tmp_path, MONSTERS_FIRST + [15, 3])
+
+    [result] = run_turn(engine, campaign, Call(MONSTER_ACTION, {
+        "monster": "m1", "kind": "attack", "action": "stabs", "target": "Brannoc",
+        "reason": "Cornered, the goblin fights."}))
+
+    assert result["ok"], result.get("error")
+    cards = [e for e in result["events"] if e["type"] == "mechanics"]
+    assert cards[0]["reason"] == "Cornered, the goblin fights." and cards[0]["source"] == "Referee edit"
+    attack = next(c for c in cards if c["procedure"] == "monster_attack")
+    assert (attack["rolls"], attack["result"]) == ([15], "Hit")
+    assert engine.state()["party"]["members"][0]["hp"] == 3
+    combat = engine.state()["combat"]
+    assert (combat["round"], combat["phase"], combat["waiting"]) == (1, "party", [])
+
+
+def test_a_referee_driven_attack_uses_ascending_ac(tmp_path):
+    campaign, engine, _ = ose_fight(tmp_path, MONSTERS_FIRST + [1], rules=["ascending_ac"])
+
+    [result] = run_turn(engine, campaign, Call(MONSTER_ACTION, {
+        "monster": "m1", "kind": "attack", "action": "stabs", "target": "Brannoc", "reason": "It attacks."}))
+
+    attack = next(e for e in result["events"] if e.get("procedure") == "monster_attack")
+    assert "ascending AC" in attack["target"]["source"]
+
+
+def test_a_monster_takes_an_obvious_action_with_no_procedure_and_no_roll(tmp_path):
+    campaign, engine, _ = ose_fight(tmp_path, MONSTERS_FIRST)
+
+    [result] = run_turn(engine, campaign, Call(MONSTER_ACTION, {
+        "monster": "m1", "kind": "flee", "action": "runs for the door", "target": "",
+        "reason": "Its friends are dead and it is terrified."}))
+
+    assert result["ok"], result.get("error")
+    card = result["events"][0]
+    assert (card["type"], card["dice"], card["rolls"]) == ("mechanics", "", [])
+    assert card["reason"] == "Its friends are dead and it is terrified."
+    assert "monster_fled" in [e["type"] for e in result["events"]]
+    assert engine.state()["combat"] is None
+
+
+def test_the_referee_cannot_act_for_a_monster_that_is_not_waiting(tmp_path):
+    campaign, engine, _ = ose_fight(tmp_path, PARTY_FIRST)
+
+    [result] = run_turn(engine, campaign, Call(MONSTER_ACTION, {
+        "monster": "m1", "kind": "flee", "action": "runs", "target": "", "reason": "Scared."}))
+
+    assert result["ok"] is False
+    assert engine.state()["combat"]["monsters"][0]["status"] == "alive"
+
+
+def test_the_referee_has_no_tool_that_rolls_or_takes_a_die_result(tmp_path):
+    campaign, engine, _ = ose_fight(tmp_path, MONSTERS_FIRST + [2])
+    tools = RefereeTools(engine, CampaignPaths(campaign))
+
+    assert not [name for name in tools.engine_tools if "roll" in name or "dice" in name]
+    [result] = run_turn(engine, campaign, Call(MONSTER_ACTION, {
+        "monster": "m1", "kind": "attack", "action": "stabs", "target": "Brannoc", "reason": "It attacks.",
+        "roll": 20, "rolls": [20]}))
+    attack = next(e for e in result["events"] if e.get("procedure") == "monster_attack")
+    assert (attack["rolls"], attack["result"]) == ([2], "Miss")
+
+
+def test_an_hp_edit_that_takes_a_waiting_monster_to_zero_kills_it_and_ends_the_fight(tmp_path):
+    campaign, engine, _ = ose_fight(tmp_path, MONSTERS_FIRST)
+
+    [result] = run_turn(engine, campaign, Call(EDIT, {
+        "who": "m1", "change": "hp", "value": "-4", "reason": "The rotten floor gives way under it."}))
+
+    assert [e["type"] for e in result["events"]][-3:] == ["hp_changed", "monster_down", "combat_ended"]
+    assert engine.state()["combat"] is None
