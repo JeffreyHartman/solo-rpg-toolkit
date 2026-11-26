@@ -10,7 +10,8 @@ solo-roll = "solo_roll.cli:main"
 solo-campaign = "solo_roll.campaign:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=7"]
+dev = ["pytest>=7", "httpx2>=2"]
+harness = ["fastapi>=0.115", "uvicorn[standard]>=0.30"]
 
 [build-system]
 requires = ["hatchling"]
