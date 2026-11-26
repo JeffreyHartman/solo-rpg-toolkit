@@ -111,3 +111,17 @@ Worktrees go in `.worktrees/<feature>` (gitignored).
 ## Current sub-project status
 
 See `docs/ROADMAP.md`. As of `v0.2.0`: sub-projects 1 (core CLI), 2 (mythic skill rewrite), 3 (campaign bootstrap) shipped. Next: PDF→markdown pipeline, enhanced journaling, additional systems, distribution.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in this repo's GitHub Issues and are managed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default triage labels, each label string equal to its role name. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `GLOSSARY.md` and one `docs/adr/` at the repo root. See `docs/agents/domain.md`.
