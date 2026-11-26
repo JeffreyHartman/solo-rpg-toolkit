@@ -224,8 +224,6 @@ def _decision_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) 
     if combat is None:
         return []
     monster = _monster(combat, event["monster"])
-    if monster["status"] != "alive":
-        return []
     if event["kind"] == "flee":
         monster["status"] = "fled"
         return [{"type": "monster_fled", "monster": monster["id"], "text": f"{monster['name']} {monster['id']} flees."},
