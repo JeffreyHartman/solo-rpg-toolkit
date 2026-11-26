@@ -8,6 +8,7 @@ from typing import Any
 
 from ....character import ABILITIES
 from ...errors import IllegalActionError
+from ... import party
 from ...registry import CONFIRM, CommandContext, Event, Registry, Target
 from ..ose.checks import SAVES
 
@@ -42,11 +43,9 @@ def open_challenge(state: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def _score(state: dict[str, Any], inputs: dict[str, Any]) -> tuple[dict[str, Any], int | None]:
-    member = next((m for m in state["party"]["members"] if m["name"] == inputs["member"]), None)
-    if member is None:
-        raise IllegalActionError(f"no party member named '{inputs['member']}'")
+    found = party.member(state, inputs["member"])
     field = "abilities" if inputs["against"] in ABILITIES else "saves"
-    return member, member.get(field, {}).get(inputs["against"])
+    return found, found.get(field, {}).get(inputs["against"])
 
 
 def _dc_target(state: dict[str, Any], inputs: dict[str, Any]) -> Target | None:
