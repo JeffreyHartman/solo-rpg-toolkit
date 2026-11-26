@@ -13,6 +13,7 @@ from .demo import DEMO_MAP, DEMO_PARTY, DEMO_START
 from .engine import open_campaign
 from .errors import HarnessError
 from .library import Library
+from .. import OSE_DATA_DIR
 from ..flextale_import import default_output_dir
 from .plugins import builtin_plugins
 from .registry import PluginFactory
@@ -110,7 +111,8 @@ def main(
 
     try:
         if args.command == "serve":
-            plugins = builtin_plugins(default_output_dir(os.environ if env is None else env, home or Path.home()))
+            flextale_data = default_output_dir(os.environ if env is None else env, home or Path.home())
+            plugins = builtin_plugins(flextale_data, OSE_DATA_DIR)
             web_dist = Path(args.web_dist) if args.web_dist else Path(__file__).resolve().parents[3] / "web" / "dist"
             return _serve(args, run or _uvicorn_run, lan_ip, plugins, web_dist)
         return _demo(args)

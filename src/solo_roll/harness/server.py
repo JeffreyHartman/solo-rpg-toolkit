@@ -63,6 +63,7 @@ from .engine import Engine
 from .errors import HarnessError
 from .library import Library
 from .referee.base import Referee, end_session_request
+from .playerview import player_events, player_state
 from .referee.tools import END_SESSION_TOOL
 from .vault import session_note
 
@@ -87,7 +88,7 @@ class _Hub:
 
     def snapshot(self) -> dict[str, Any]:
         assert self.engine is not None
-        return {"state": self.engine.state(), "actions": self.engine.available_actions()}
+        return {"state": player_state(self.engine.state()), "actions": self.engine.available_actions()}
 
     def snapshot_message(self) -> dict[str, Any]:
         assert self.engine is not None
@@ -165,6 +166,9 @@ class _Hub:
         except HarnessError as exc:
             await ws.send_json({"type": "error", "message": str(exc)})
             return
+        except Exception as exc:  # noqa: BLE001 - a plugin bug must not close the socket
+            await ws.send_json({"type": "error", "message": f"{type(exc).__name__}: {exc}"})
+            return
         await self._broadcast_events(events)
         if self.referee is not None and events:
             self._start_turn(_narration_request(lead, events))
@@ -220,7 +224,7 @@ class _Hub:
         narration: list[str] = []
         try:
             async for event in self.referee.turn(player_input):
-                await self._broadcast({"type": "referee", "event": event})
+                await self._broadcast({"type": "referee", "event": _player_referee_event(event)})
                 if event["type"] == "text":
                     narration.append(event["text"])
                 elif event["type"] == "tool_start":
@@ -313,7 +317,7 @@ class _Hub:
         await self._broadcast({"type": "session", "session": self.engine.state()["session"], "note": note})
 
     async def _broadcast_events(self, events: list[dict[str, Any]]) -> None:
-        await self._broadcast({"type": "events", "events": events, **self.snapshot()})
+        await self._broadcast({"type": "events", "events": player_events(events), **self.snapshot()})
 
     async def _broadcast(self, payload: dict[str, Any]) -> None:
         for socket in list(self.sockets):
@@ -334,6 +338,13 @@ async def _send(ws: WebSocket, payload: dict[str, Any]) -> None:
         await ws.send_json(payload)
     except (WebSocketDisconnect, RuntimeError):
         pass
+
+
+def _player_referee_event(event: dict[str, Any]) -> dict[str, Any]:
+    """A Referee stream event for the browser: a tool result loses its output and its hidden events."""
+    if event["type"] != "tool_result":
+        return event
+    return {**{k: v for k, v in event.items() if k != "output"}, "events": player_events(event.get("events", []))}
 
 
 def _narration_request(lead: str, events: list[dict[str, Any]]) -> str:

@@ -29,22 +29,23 @@ class FlextalePlugin:
     name = "flextale"
     kind = "generator"
 
-    def __init__(self, data_dir: Path, system: str = "osr"):
-        """`data_dir` holds the imported tables. `system` is the importer's suffix for per-system tables."""
+    def __init__(self, data_dir: Path, ruleset: str = "osr"):
+        """`data_dir` holds the imported tables. `ruleset` is the importer's suffix for per-ruleset tables."""
         self._data_dir = Path(data_dir)
-        self._system = system
+        self._ruleset = ruleset
 
     def register(self, registry: Registry) -> None:
         registry.add_command("explore", self._explore)
         registry.add_action_provider(_explore_actions)
         registry.add_referee_guide(REFEREE_GUIDE)
         checks.register(registry)
-        treasure.register(registry, self._data_dir, self._system)
+        treasure.register(registry, self._data_dir, self._ruleset)
         simple_ai.register(registry, self._data_dir)
         registry.add_state_default("encounter", encounters.initial_encounter)
         registry.add_setting("difficulty", "context", "Difficulty context", CONTEXTS, "A")
-        registry.add_trigger("area_revealed", encounters.reveal_trigger(self._data_dir, self._system))
-        registry.add_trigger("moved", encounters.backtrack_trigger(self._data_dir, self._system))
+        registry.add_trigger("area_revealed", encounters.reveal_trigger(self._data_dir, self._ruleset))
+        registry.add_trigger("turn", encounters.rest_trigger(self._data_dir, self._ruleset))
+        registry.add_trigger("moved", encounters.backtrack_trigger(self._data_dir, self._ruleset))
 
     def _explore(
         self, state: dict[str, Any], command: dict[str, Any], ctx: CommandContext

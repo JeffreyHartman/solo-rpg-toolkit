@@ -1,7 +1,7 @@
 """OSE narrative combat: side initiative, attack throws and damage, with no grid.
 
 State lives in `state["combat"]`, which is None outside a fight:
-`{area, outcome, round, phase, first, acted, monsters}`. `phase` is "party" or "monsters".
+`{area, outcome, round, phase, first, acted, monsters}`. `outcome` is the index of the encounter outcome behind the fight, or None for a wandering encounter. `phase` is "party" or "monsters".
 `monsters` holds `{id, name, hp, max_hp, ac, thac0, damage, status, generic}` where `status` is
 "alive", "dead" or "fled".
 
@@ -18,9 +18,10 @@ import re
 from pathlib import Path
 from typing import Any
 
-from ....character import ability_modifier
+from ....character import UNARMORED_AC, ability_modifier
 from ....dice import parse_dice, roll_dice
 from ...errors import IllegalActionError
+from ... import party
 from ...registry import AUTO, CONFIRM, Action, CommandContext, Event, Registry, Target
 
 __all__ = ["combat_actions", "register"]
@@ -28,7 +29,6 @@ __all__ = ["combat_actions", "register"]
 GENERIC = {"hd": 1, "ac": 9, "thac0": 19, "damage": "1d6"}
 NUMBER_WORDS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
                 "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
-PARTY_AC = 9
 MEMBER_THAC0 = ((3, 19), (6, 17), (9, 14), (12, 12), (99, 10))
 """Attack value by level for every class, a simplification of the per-class OSE tables."""
 
@@ -48,7 +48,9 @@ def register(registry: Registry, data_dir: Path) -> None:
                 "description": {"type": "string", "label": "What the character does"}},
     )
     registry.add_trigger("combat_encounter", _start_trigger(Path(data_dir)))
+    registry.add_trigger("wandering_encounter", _wandering_trigger(Path(data_dir)))
     registry.add_trigger("phase_changed", _phase_trigger)
+    registry.add_trigger("monsters_done", _monsters_done_trigger)
     registry.add_trigger("round_ended", _round_trigger)
     registry.add_trigger("monster_decision", _decision_trigger)
     registry.add_action_provider(combat_actions)
@@ -60,15 +62,23 @@ def _start_trigger(data_dir: Path):
     def trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> list[Event]:
         if state.get("combat"):
             return []
-        outcomes = state["encounter"]["current"]["outcomes"]
-        outcome = outcomes[event["outcome"]]
         monsters = _monsters(event["monsters"], _bestiary(data_dir), ctx)
-        outcome["status"] = "started"
-        state["combat"] = {"area": event["area"], "outcome": event["outcome"], "round": 0,
+        if event.get("outcome") is not None:
+            state["encounter"]["current"]["outcomes"][event["outcome"]]["status"] = "started"
+        state["combat"] = {"area": event["area"], "outcome": event.get("outcome"), "round": 0,
                            "phase": "party", "first": "party", "acted": [], "monsters": monsters}
         names = ", ".join(f"{m['name']} ({m['hp']} HP)" for m in monsters)
         return [{"type": "combat_started", "monsters": monsters, "text": f"Combat begins against {names}."},
                 *_initiative(state, ctx)]
+    return trigger
+
+
+def _wandering_trigger(data_dir: Path):
+    """A wandering encounter starts a fight in the party's area, with no encounter outcome behind it."""
+    start = _start_trigger(data_dir)
+
+    def trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> list[Event]:
+        return start(state, {"area": state["party"]["area"], "outcome": None, "monsters": event["monster"]}, ctx)
     return trigger
 
 
@@ -128,8 +138,13 @@ def _phase_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> 
         {"type": "monster_turn", "monster": m["id"], "text": f"{m['name']} {m['id']} acts."}
         for m in combat["monsters"] if m["status"] == "alive"
     ]
-    out.append(_side_done(combat, "monsters"))
+    out.append({"type": "monsters_done", "text": "The monsters have acted."})
     return out
+
+
+def _monsters_done_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> list[Event]:
+    combat = state.get("combat")
+    return [] if combat is None else [_side_done(combat, "monsters")]
 
 
 def _round_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> list[Event]:
@@ -153,7 +168,7 @@ def attack(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) 
     """A melee attack throw: d20 plus the STR modifier at or over THAC0 minus the target's AC. A natural 20 hits and a 1 misses."""
     combat = _require_party_turn(state)
     inputs, target = command["inputs"], command["target"]
-    member = _ready_member(state, combat, inputs["member"])
+    member = _readymember(state, combat, inputs["member"])
     monster = _monster(combat, inputs["monster"])
     strength = ability_modifier(member.get("abilities", {}).get("STR", 10), "STR")
     natural = ctx.dice.roll(1, 20)
@@ -172,7 +187,7 @@ def attack(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) 
 def special_action(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) -> list[Event]:
     """A non-attack action that takes the member's turn. Any effect runs through other procedures."""
     combat = _require_party_turn(state)
-    member = _ready_member(state, combat, command["inputs"]["member"])
+    member = _readymember(state, combat, command["inputs"]["member"])
     what = command["inputs"]["description"]
     event: Event = {"type": "special_action", "member": member["name"], "description": what,
                     "text": f"{member['name']}: {what}"}
@@ -184,14 +199,14 @@ def _finish_party_action(state: dict[str, Any], combat: dict[str, Any], member: 
     ended = _end_if_over(state)
     if ended:
         return ended
-    waiting = [m for m in _standing(state) if m["name"] not in combat["acted"]]
+    waiting = [m for m in party.standing(state) if m["name"] not in combat["acted"]]
     return [] if waiting else [_side_done(combat, "party")]
 
 
 def _attack_target(state: dict[str, Any], inputs: dict[str, Any]) -> Target | None:
     combat = _require_combat(state)
     monster = _monster(combat, inputs["monster"])
-    member = _member(state, inputs["member"])
+    member = party.member(state, inputs["member"])
     thac0 = _thac0(member)
     return {"value": thac0 - monster["ac"], "source": f"OSE attack throw: THAC0 {thac0} vs AC {monster['ac']}"}
 
@@ -205,7 +220,7 @@ def combat_actions(state: dict[str, Any]) -> list[Action]:
          "label": f"{member['name']} attacks {monster['name']} {monster['id']} ({monster['hp']} HP)",
          "command": {"type": "procedure", "name": "attack",
                      "inputs": {"member": member["name"], "monster": monster["id"]}}}
-        for member in _standing(state) if member["name"] not in combat["acted"]
+        for member in party.standing(state) if member["name"] not in combat["acted"]
         for monster in combat["monsters"] if monster["status"] == "alive"
     ]
 
@@ -217,8 +232,6 @@ def _decision_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) 
     if combat is None:
         return []
     monster = _monster(combat, event["monster"])
-    if monster["status"] != "alive":
-        return []
     if event["kind"] == "flee":
         monster["status"] = "fled"
         return [{"type": "monster_fled", "monster": monster["id"], "text": f"{monster['name']} {monster['id']} flees."},
@@ -226,14 +239,15 @@ def _decision_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) 
     if event["kind"] != "attack":
         return [{"type": "monster_acted", "monster": monster["id"], "action": event["action"],
                  "text": f"{monster['name']} {monster['id']}: {event['action']}."}]
-    member = _member(state, event["target"])
-    need = monster["thac0"] - member.get("ac", PARTY_AC)
+    member = party.member(state, event["target"])
+    ac = member.get("ac", UNARMORED_AC)
+    need = monster["thac0"] - ac
     natural = ctx.dice.roll(1, 20)
     hit = natural == 20 or (natural != 1 and natural >= need)
     result = "Hit" if hit else "Miss"
     card = _card("monster_attack", "d20", [natural], natural, result, "OSE",
                  f"{monster['name']} {monster['id']} attacks {member['name']}: rolled {natural}, needs {need}. {result}.")
-    card["target"] = {"value": need, "source": f"OSE attack throw: THAC0 {monster['thac0']} vs AC {member.get('ac', PARTY_AC)}"}
+    card["target"] = {"value": need, "source": f"OSE attack throw: THAC0 {monster['thac0']} vs {member['name']}'s AC {ac}"}
     events = [card]
     if hit:
         events += _damage(member, monster["damage"], 0, ctx, "member")
@@ -266,13 +280,14 @@ def _damage(victim: dict[str, Any], notation: str, bonus: int, ctx: CommandConte
 def _end_if_over(state: dict[str, Any]) -> list[Event]:
     """Close the fight when no monster is alive (victory) or no member is standing (defeat)."""
     combat = state["combat"]
-    if not _standing(state):
+    if not party.standing(state):
         result = "defeat"
     elif not any(m["status"] == "alive" for m in combat["monsters"]):
         result = "victory"
     else:
         return []
-    state["encounter"]["current"]["outcomes"][combat["outcome"]]["status"] = "resolved"
+    if combat["outcome"] is not None:
+        state["encounter"]["current"]["outcomes"][combat["outcome"]]["status"] = "resolved"
     state["combat"] = None
     return [{"type": "combat_ended", "result": result, "text": f"Combat ends: {result}."}]
 
@@ -293,15 +308,8 @@ def _require_party_turn(state: dict[str, Any]) -> dict[str, Any]:
     return combat
 
 
-def _member(state: dict[str, Any], name: str) -> dict[str, Any]:
-    for member in state["party"]["members"]:
-        if member["name"] == name:
-            return member
-    raise IllegalActionError(f"no party member named '{name}'")
-
-
-def _ready_member(state: dict[str, Any], combat: dict[str, Any], name: str) -> dict[str, Any]:
-    member = _member(state, name)
+def _readymember(state: dict[str, Any], combat: dict[str, Any], name: str) -> dict[str, Any]:
+    member = party.member(state, name)
     if member.get("hp", 1) <= 0:
         raise IllegalActionError(f"{name} is down")
     if name in combat["acted"]:
@@ -316,10 +324,6 @@ def _monster(combat: dict[str, Any], monster_id: str) -> dict[str, Any]:
                 raise IllegalActionError(f"monster {monster_id} is {monster['status']}")
             return monster
     raise IllegalActionError(f"no monster '{monster_id}' in this fight")
-
-
-def _standing(state: dict[str, Any]) -> list[dict[str, Any]]:
-    return [m for m in state["party"]["members"] if m.get("hp", 1) > 0]
 
 
 def _thac0(member: dict[str, Any]) -> int:

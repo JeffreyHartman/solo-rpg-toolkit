@@ -12,7 +12,7 @@ def encounter(engine):
 def test_exploring_a_hall_rolls_the_hallway_table_and_stores_no_encounter(tmp_path):
     engine = make_engine(tmp_path, [1, 3])  # map: hall, encounter: none
     events = explore(engine)
-    assert [e["type"] for e in events] == ["mechanics", "area_revealed", "mechanics", "encounter", "moved"]
+    assert [e["type"] for e in events] == ["mechanics", "area_revealed", "mechanics", "encounter", "moved", "turn"]
     current = encounter(engine)
     assert current["area"] == "area-2"
     assert current["table"] == "quickstart/hallway-encounter-a"
@@ -219,11 +219,29 @@ def test_no_treasure_and_contact_poison_reroll(tmp_path):
     assert "contact poison" in next(e for e in events if e["type"] == "treasure")["text"].lower()
 
 
-def test_additional_treasure_applies_both_rolls_and_favorable_keeps_the_higher(tmp_path):
+def test_additional_treasure_applies_both_rolls(tmp_path):
     engine = make_engine(tmp_path, [11, 9, 7, 1])  # scroll and potion
     treasure(engine)
     assert inventory(engine)["items"] == {"Scroll": 1, "Fake Healing": 1}
-    engine = make_engine(tmp_path / "b", [13, 9, 7, 1])  # scroll (9) against potion (7): keeps the 9
+
+
+def test_favorable_treasure_asks_the_player_to_pick_a_draw(tmp_path):
+    engine = make_engine(tmp_path, [13, 9, 7, 1])  # draws: scroll (9) and potion (7)
+    events = treasure(engine)
+    assert inventory(engine)["items"] == {}
+    card = engine.state()["judgments"]["pending"][0]
+    assert card["category"] == "treasure"
+    assert card["options"] == ["First draw: Scroll", "Second draw: Fake Healing"]
+    assert card["suggestion"] == "First draw: Scroll"  # the higher first roll
+    assert not any(e["type"] == "treasure" for e in events)
+    engine.act({"type": "answer_judgment", "id": card["id"], "answer": "Second draw: Fake Healing"})
+    assert inventory(engine)["items"] == {"Fake Healing": 1}
+    assert engine.state()["judgments"]["pending"] == []
+
+
+def test_the_referee_owning_treasure_picks_its_suggestion(tmp_path):
+    engine = make_engine(tmp_path, [13, 9, 7, 1])
+    engine.change_setting("judgment", "treasure", "referee")
     treasure(engine)
     assert inventory(engine)["items"] == {"Scroll": 1}
 
@@ -308,3 +326,69 @@ def test_the_settings_list_the_difficulty_context_as_an_option(tmp_path):
     engine.change_setting("difficulty", "context", "D")
     row = engine.settings()["options"][0]
     assert (row["section"], row["choices"], row["value"], row["default"]) == ("difficulty", ["A", "B", "C", "D"], "D", "A")
+
+
+def _visible(engine):
+    from solo_roll.harness.playerview import player_state
+    return player_state(engine.state())
+
+
+def test_an_unfound_trap_and_a_secret_stay_out_of_state_note_and_player_view(tmp_path):
+    engine = make_engine(tmp_path, [1, 9, 1, 3])  # trap with a DC
+    events = explore(engine)
+    assert encounter(engine)["outcomes"][0]["kind"] == "trap"
+    note = (tmp_path / "campaign" / "vault" / "State.md").read_text()
+    assert "trap" not in note.lower() and "Dart" not in note and "Pit" not in note
+    assert _visible(engine)["encounter"]["current"]["outcomes"] == []
+    hidden = [e for e in events if e.get("hidden")]
+    assert hidden and all(e["type"] == "mechanics" for e in hidden)
+    text = next(e for e in events if e["type"] == "encounter")["text"]
+    assert "trap" not in text.lower()
+
+    engine = make_engine(tmp_path / "b", [1, 13, 1])
+    explore(engine)
+    assert "hidden latch" not in (tmp_path / "b" / "campaign" / "vault" / "State.md").read_text()
+    assert _visible(engine)["encounter"]["current"]["outcomes"] == []
+
+
+def test_a_trap_shows_after_its_check_is_made(tmp_path):
+    engine = make_engine(tmp_path, [1, 9, 1, 3, 5])  # trap with DC +2, then a save roll
+    explore(engine)
+    check(engine, "breath")
+    assert [o["kind"] for o in _visible(engine)["encounter"]["current"]["outcomes"]] == ["trap"]
+    assert "trap (" in (tmp_path / "campaign" / "vault" / "State.md").read_text()
+
+
+def test_the_player_view_drops_unknown_areas_with_their_links_and_exits():
+    from solo_roll.harness.playerview import player_state
+    state = {"map": {
+        "areas": {"a": {"known": True}, "b": {"known": False}},
+        "connections": [{"a": "a", "b": "b"}],
+        "open_exits": [{"id": "x", "area": "a"}, {"id": "y", "area": "b"}],
+    }}
+    seen = player_state(state)["map"]
+    assert list(seen["areas"]) == ["a"] and seen["connections"] == []
+    assert [e["id"] for e in seen["open_exits"]] == ["x"]
+    assert len(state["map"]["areas"]) == 2
+
+
+def test_resting_rolls_the_current_areas_encounter_table_after_the_turn(tmp_path):
+    engine = make_engine(tmp_path, [1, 1, 11, 1, 3])  # explore a hall with no encounter; rest rolls an obstacle with DC +2
+    explore(engine)
+    events = engine.act({"type": "procedure", "name": "rest"})
+    assert [e["type"] for e in events if e["type"] in ("turn", "encounter")] == ["turn", "encounter"]
+    current = encounter(engine)
+    assert (current["area"], current["source"]) == ("area-2", "rest")
+    assert current["table"] == "quickstart/hallway-encounter-a"
+    assert [o["kind"] for o in current["outcomes"]] == ["obstacle"]
+
+
+
+def test_a_check_against_a_save_takes_the_names_from_the_character(tmp_path):
+    party = [{"name": "Brannoc", "abilities": {"STR": 14}, "saves": {"doom": 15}}]
+    engine = make_engine(tmp_path, [1, 9, 1, 3, 15], party=party)  # trap with DC +2
+    explore(engine)
+    with pytest.raises(IllegalActionError, match="breath"):
+        check(engine, "breath")
+    events = check(engine, "doom")
+    assert next(e for e in events if e["type"] == "mechanics")["target"]["value"] == 13

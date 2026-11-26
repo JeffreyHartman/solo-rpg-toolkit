@@ -5,13 +5,11 @@ state when the character has them; otherwise it is a proposal input.
 """
 from typing import Any
 
-from ....character import ABILITIES
-from ...errors import IllegalActionError
+from ....character import ABILITIES, SAVES
+from ... import party
 from ...registry import CONFIRM, CommandContext, Event, Registry, Target
 
 __all__ = ["SAVES", "register"]
-
-SAVES = ("death", "wands", "paralysis", "breath", "spells")
 
 MEMBER = {"type": "string", "label": "Character"}
 MODIFIER = {"type": "integer", "label": "Modifier added to the d20", "default": 0}
@@ -43,7 +41,7 @@ def register(registry: Registry) -> None:
 def ability_check(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) -> list[Event]:
     """OSE optional rule: d20 plus modifier at or under the score succeeds; a natural 1 always succeeds and a 20 always fails."""
     inputs, target = command["inputs"], command["target"]
-    member = _member(state, inputs["member"])
+    member = party.member(state, inputs["member"])
     natural = ctx.dice.roll(1, 20)
     total = natural + inputs["modifier"]
     success = natural == 1 or (natural != 20 and total <= target["value"])
@@ -55,7 +53,7 @@ def ability_check(state: dict[str, Any], command: dict[str, Any], ctx: CommandCo
 def saving_throw(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) -> list[Event]:
     """d20 plus modifier at or over the save target succeeds."""
     inputs, target = command["inputs"], command["target"]
-    member = _member(state, inputs["member"])
+    member = party.member(state, inputs["member"])
     natural = ctx.dice.roll(1, 20)
     total = natural + inputs["modifier"]
     result = "Success" if total >= target["value"] else "Failure"
@@ -65,7 +63,7 @@ def saving_throw(state: dict[str, Any], command: dict[str, Any], ctx: CommandCon
 
 def _score_target(field: str, input_name: str, source: str):
     def find(state: dict[str, Any], inputs: dict[str, Any]) -> Target | None:
-        member = _member(state, inputs["member"])
+        member = party.member(state, inputs["member"])
         key = inputs[input_name]
         value = member.get(field, {}).get(key)
         if value is None:
@@ -73,13 +71,6 @@ def _score_target(field: str, input_name: str, source: str):
         return {"value": value, "source": source.format(name=member["name"], key=key)}
 
     return find
-
-
-def _member(state: dict[str, Any], name: str) -> dict[str, Any]:
-    for member in state["party"]["members"]:
-        if member["name"] == name:
-            return member
-    raise IllegalActionError(f"no party member named '{name}'")
 
 
 def _card(procedure: str, natural: int, total: int, result: str, text: str) -> Event:

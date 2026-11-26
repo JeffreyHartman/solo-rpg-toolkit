@@ -5,10 +5,12 @@ from pathlib import Path
 import pytest
 from harness_fixtures import BUILTIN_PLUGINS
 
+from solo_roll import OSE_DATA_DIR
 from solo_roll.harness.campaign import create_campaign
 from solo_roll.harness.engine import open_campaign
 from solo_roll.harness.errors import FlextaleDataError, IllegalActionError
 from solo_roll.harness.plugins import builtin_plugins
+from solo_roll.harness.plugins.ose import OsePlugin
 from solo_roll.harness.plugins.flextale import FlextalePlugin
 from solo_roll.rng import ScriptedDice
 
@@ -51,7 +53,7 @@ def make_engine(tmp_path: Path, rolls: list[int], data_dir: Path | None = None):
     root = create_campaign(
         tmp_path / "campaign", ["ose", "flextale"], MAP, "start", [{"name": "Brannoc"}]
     )
-    factories = {**BUILTIN_PLUGINS, "flextale": lambda: FlextalePlugin(data)}
+    factories = {**BUILTIN_PLUGINS, "ose": lambda: OsePlugin(OSE_DATA_DIR, wandering=None), "flextale": lambda: FlextalePlugin(data)}
     return open_campaign(root, ScriptedDice(rolls), factories)
 
 
@@ -140,5 +142,5 @@ def test_explore_of_an_exit_elsewhere_is_illegal(tmp_path):
 
 
 def test_the_builtin_flextale_factory_makes_the_generator_plugin(tmp_path):
-    plugin = builtin_plugins(tmp_path)["flextale"]()
+    plugin = builtin_plugins(tmp_path, OSE_DATA_DIR)["flextale"]()
     assert plugin.name == "flextale" and plugin.kind == "generator"

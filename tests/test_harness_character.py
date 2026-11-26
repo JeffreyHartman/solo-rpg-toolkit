@@ -2,6 +2,7 @@
 import pytest
 from harness_fixtures import HAND_MADE_MAP, open_engine
 
+from solo_roll.character import CLASS_HIT_DICE
 from solo_roll.harness.campaign import CampaignPaths, create_campaign
 from solo_roll.harness.errors import IllegalActionError
 from solo_roll.rng import ScriptedDice
@@ -90,3 +91,20 @@ def test_the_referee_can_create_the_character_the_player_agreed_on(tmp_path):
 
     assert result["ok"]
     assert engine.state()["party"]["members"][0]["description"] == "A scarred gate guard."
+
+
+def test_a_new_character_stores_class_saves_and_unarmored_armor_class(tmp_path):
+    engine = open_engine(empty_party_campaign(tmp_path), ScriptedDice(FIGHTER_ROLLS))
+
+    engine.act(create())
+
+    (member,) = engine.state()["party"]["members"]
+    assert member["saves"] == {"death": 12, "wands": 13, "paralysis": 14, "breath": 15, "spells": 16}
+    assert member["ac"] == 9
+
+
+def test_every_class_has_all_five_saves():
+    from solo_roll.character import CLASS_SAVES, SAVES
+
+    assert set(CLASS_SAVES) == set(CLASS_HIT_DICE)
+    assert all(tuple(row) == SAVES for row in CLASS_SAVES.values())

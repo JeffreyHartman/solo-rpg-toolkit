@@ -217,7 +217,7 @@ def test_streamed_text_and_a_tool_call_become_referee_events(engine, paths):
 
     assert [e["type"] for e in events] == ["text", "tool_start", "tool_result", "text", "done"]
     assert events[1]["label"] == "Moving to Long Hall"
-    assert [e["type"] for e in events[2]["events"]] == ["moved", "area_revealed"]
+    assert [e["type"] for e in events[2]["events"]] == ["area_revealed", "moved", "turn"]
     assert engine.state()["party"]["area"] == "hall"
     assert clients[0].queries[0].endswith("I look around.")
     assert '"area": "gate"' in clients[0].queries[0]

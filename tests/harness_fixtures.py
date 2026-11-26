@@ -1,12 +1,14 @@
 """A small hand-made map and a campaign built from it, for harness tests."""
 from pathlib import Path
 
+from solo_roll import OSE_DATA_DIR
 from solo_roll.harness.campaign import create_campaign
 from solo_roll.harness.engine import Engine, open_campaign
 from solo_roll.harness.plugins import builtin_plugins
+from solo_roll.harness.plugins.ose import OsePlugin
 from solo_roll.rng import DiceSource, ScriptedDice
 
-BUILTIN_PLUGINS = builtin_plugins(Path("/nonexistent/flextale-data"))
+BUILTIN_PLUGINS = builtin_plugins(Path("/nonexistent/flextale-data"), OSE_DATA_DIR)
 """The shipped plugins, with a FlexTale data folder that does not exist. Tests that roll FlexTale tables replace it."""
 
 HAND_MADE_MAP = {
@@ -21,6 +23,9 @@ HAND_MADE_MAP = {
     ],
 }
 
+NO_WANDERING_PLUGINS = {**BUILTIN_PLUGINS, "ose": lambda: OsePlugin(OSE_DATA_DIR, wandering=None)}
+"""The built-in plugins with no wandering checks, so a move consumes no dice."""
+
 
 def make_campaign(root: Path) -> Path:
     return create_campaign(
@@ -33,4 +38,4 @@ def make_campaign(root: Path) -> Path:
 
 
 def open_engine(campaign_dir: Path, dice: DiceSource | None = None) -> Engine:
-    return open_campaign(campaign_dir, dice or ScriptedDice([]), BUILTIN_PLUGINS)
+    return open_campaign(campaign_dir, dice or ScriptedDice([]), NO_WANDERING_PLUGINS)
