@@ -3,6 +3,11 @@
   import MapView from './lib/MapView.svelte'
   import { act, game } from './lib/socket.svelte'
 
+  let light = $derived(
+    game.state?.dungeon
+      ? game.state.dungeon.light.map((l) => `${l.kind} ${l.turns_left}`).join(', ') || 'darkness'
+      : '',
+  )
   let here = $derived(game.state ? game.state.map.areas[game.state.party.area] : null)
 </script>
 
@@ -11,10 +16,13 @@
   <div class="panel party">
     <b>{game.state.party.members.map((m) => m.name).join(', ')}</b>
     <div class="dim">{here?.name} · session {game.state.session}</div>
+    {#if game.state.dungeon}
+      <div class="dim">Turn {game.state.dungeon.turn} · Light: {light}</div>
+    {/if}
   </div>
   <section class="panel log">
     {#each game.log.slice(-30) as line}
-      <div class:error={line.kind === 'error'}>{line.text}</div>
+      <div class:error={line.kind === 'error'} class:mechanics={line.kind === 'mechanics'}>{line.text}</div>
     {:else}
       <div class="dim">Click an exit or an area to move.</div>
     {/each}
@@ -36,6 +44,7 @@
   .log { left: 12px; bottom: 12px; width: min(420px, calc(100vw - 24px)); max-height: 35vh; overflow-y: auto; font-size: 14px; }
   .log > div { padding: 1px 0; }
   .error { color: var(--bad); }
+  .mechanics { border-left: 3px solid var(--edge); padding-left: 6px; }
   .actions { right: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px; max-width: min(480px, calc(100vw - 24px)); }
   .offline { top: 12px; right: 12px; color: var(--warn); }
   .waiting { padding: 24px; }

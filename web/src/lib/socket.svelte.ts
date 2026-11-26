@@ -1,7 +1,7 @@
 import type { Action, ClientMessage, Command, EngineState, ServerMessage } from './protocol'
 
 export interface LogLine {
-  kind: 'event' | 'error'
+  kind: 'event' | 'mechanics' | 'error'
   text: string
 }
 
@@ -33,7 +33,7 @@ function receive(message: ServerMessage): void {
   game.state = message.state
   game.actions = message.actions
   if (message.type === 'events') {
-    for (const event of message.events) game.log.push({ kind: 'event', text: event.text ?? event.type })
+    for (const event of message.events) game.log.push({ kind: event.type === 'mechanics' ? 'mechanics' : 'event', text: event.text ?? event.type })
   }
 }
 
