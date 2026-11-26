@@ -3,6 +3,8 @@ import pytest
 from harness_fixtures import HAND_MADE_MAP, make_campaign, open_engine
 
 from solo_roll.harness.campaign import create_campaign
+from solo_roll.harness.engine import open_campaign
+from solo_roll.harness.plugins import BUILTIN_PLUGINS
 
 from solo_roll.harness.errors import IllegalActionError
 
@@ -161,3 +163,32 @@ def test_a_natural_1_or_20_decides_an_ability_check(tmp_path, natural, result):
     card = answer(engine, proposal[0]["proposal"]["id"], "confirm")[1]
 
     assert card["result"] == result
+
+
+def test_a_proposed_auto_procedure_runs_at_once_and_shows_its_card(tmp_path):
+    engine = open_engine(make_campaign(tmp_path), ScriptedDice([1]))
+
+    events = propose(engine, "search", {}, reason="Brannoc checks the walls.")
+
+    assert [e["type"] for e in events][:2] == ["mechanics", "turn"]
+    assert events[0]["procedure"] == "search"
+    assert engine.state()["proposals"]["pending"] == []
+
+
+class FixedDcPlugin:
+    """A generator that gives ability checks a target number from its own data."""
+
+    name = "dcs"
+    kind = "generator"
+
+    def register(self, registry):
+        registry.add_target_source("ability_check", lambda state, inputs: {"value": 11, "source": "DC table: tricky"})
+
+
+def test_another_plugin_can_supply_the_target_of_a_procedure(tmp_path):
+    root = create_campaign(tmp_path / "dc", ["ose", "dcs"], HAND_MADE_MAP, "gate", [{"name": "Brannoc"}])
+    engine = open_campaign(root, ScriptedDice([]), {**BUILTIN_PLUGINS, "dcs": FixedDcPlugin})
+
+    proposal = propose(engine, "ability_check", {"member": "Brannoc", "ability": "WIS"})[0]["proposal"]
+
+    assert proposal["target"] == {"value": 11, "source": "DC table: tricky", "editable": False}
