@@ -52,7 +52,7 @@ def _serve(args, run: Callable, find_ip: Callable[[], str]) -> int:
 
 def _demo(args) -> int:
     root = create_campaign(
-        Path(args.campaign), plugins=["ose"], map_data=DEMO_MAP, start=DEMO_START, party=DEMO_PARTY
+        Path(args.campaign), plugins=["ose", "flextale"], map_data=DEMO_MAP, start=DEMO_START, party=DEMO_PARTY
     )
     print(f"Demo campaign created at {root}. Run: solo-harness serve {root}")
     return 0

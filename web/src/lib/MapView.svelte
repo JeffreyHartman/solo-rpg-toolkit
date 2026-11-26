@@ -1,7 +1,7 @@
 <!-- Full-screen map layer: known areas, exits, and the party token. Drag pans, the wheel zooms. -->
 <script lang="ts">
   import type { Area, EngineState } from './protocol'
-  import { act, moveActionTo } from './socket.svelte'
+  import { act, exploreActionFor, moveActionTo } from './socket.svelte'
 
   let { snapshot }: { snapshot: EngineState } = $props()
 
@@ -42,6 +42,24 @@
       return [{ id: c.id, from: centre(near), to: centre(far), wall, marker, open: far.known, target: farId }]
     }),
   )
+
+  const SIDE: Record<string, [number, number]> = { n: [0, -1], s: [0, 1], e: [1, 0], w: [-1, 0] }
+  let openExits = $derived(
+    (snapshot.map.open_exits ?? []).flatMap((e) => {
+      const near = snapshot.map.areas[e.area]
+      if (!near?.known) return []
+      const [dx, dy] = SIDE[e.side]
+      const c = centre(near)
+      const wall = { x: c.x + (dx * near.w * CELL) / 2, y: c.y + (dy * near.h * CELL) / 2 }
+      return [{ id: e.id, wall, marker: { x: wall.x + dx * EXIT_OFFSET, y: wall.y + dy * EXIT_OFFSET } }]
+    }),
+  )
+
+  function explore(exit: string) {
+    if (drag?.moved) return
+    const action = exploreActionFor(exit)
+    if (action) act(action.command)
+  }
 
   $effect(() => {
     if (fitted || !svg || known.length === 0) return
@@ -99,6 +117,13 @@
         <line x1={l.wall.x} y1={l.wall.y} x2={l.marker.x} y2={l.marker.y} class="link dashed" />
         <circle cx={l.marker.x} cy={l.marker.y} r="10" />
         <text x={l.marker.x} y={l.marker.y + 4}>?</text>
+      </g>
+    {/each}
+    {#each openExits as o (o.id)}
+      <g class="exit" class:reach={!!exploreActionFor(o.id)} onclick={() => explore(o.id)} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && explore(o.id)}>
+        <line x1={o.wall.x} y1={o.wall.y} x2={o.marker.x} y2={o.marker.y} class="link dashed" />
+        <circle cx={o.marker.x} cy={o.marker.y} r="10" />
+        <text x={o.marker.x} y={o.marker.y + 4}>?</text>
       </g>
     {/each}
     {#if here}

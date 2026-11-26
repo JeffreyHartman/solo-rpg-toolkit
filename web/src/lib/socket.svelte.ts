@@ -1,7 +1,16 @@
 import type { Action, ClientMessage, Command, EngineState, RefereeEvent, ServerMessage } from './protocol'
 
+export interface MechanicsCard {
+  dice: string
+  rolls: number[]
+  total: number
+  result: string
+  source: string
+}
+
 export type ChatEntry =
   | { kind: 'player' | 'narration' | 'status' | 'event' | 'error'; text: string }
+  | { kind: 'mechanics'; text: string; card: MechanicsCard }
   | { kind: 'tool'; id: string; label: string; outcome: 'running' | 'ok' | 'failed' | 'denied'; error?: string }
 
 export const game = $state({
@@ -40,7 +49,14 @@ function receive(message: ServerMessage): void {
       onReferee(message.event)
       return
     case 'events':
-      for (const event of message.events) game.chat.push({ kind: 'event', text: event.text ?? event.type })
+      for (const event of message.events) {
+        if (event.type === 'mechanics') {
+          const { dice, rolls, total, result, source } = event as unknown as MechanicsCard
+          game.chat.push({ kind: 'mechanics', text: event.text ?? event.type, card: { dice, rolls, total, result, source } })
+        } else {
+          game.chat.push({ kind: 'event', text: event.text ?? event.type })
+        }
+      }
       openText = -1
       break
   }
@@ -87,6 +103,10 @@ export function act(command: Command): void {
 
 export function say(text: string): void {
   if (text.trim()) send({ type: 'say', text: text.trim() })
+}
+
+export function exploreActionFor(exit: string): Action | undefined {
+  return game.actions.find((a) => a.command.type === 'explore' && a.command.exit === exit)
 }
 
 export function moveActionTo(area: string): Action | undefined {

@@ -26,6 +26,12 @@
           {#if entry.outcome === 'denied'}<span class="tag">denied</span>{/if}
           {#if entry.outcome === 'failed'}<span class="tag">failed</span>{/if}
         </div>
+      {:else if entry.kind === 'mechanics'}
+        <div class="card">
+          <b>{entry.card.dice}</b> [{entry.card.rolls.join(', ')}] = {entry.card.total}
+          <div>{entry.card.result}</div>
+          <div class="dim">{entry.card.source}</div>
+        </div>
       {:else}
         <div class={entry.kind}>{entry.text}</div>
       {/if}
@@ -49,6 +55,7 @@
   .status { font-style: italic; }
   .tool::before { content: '⚙ '; }
   .tool.denied, .tool.failed, .error { color: var(--bad); }
+  .card { border: 1px solid #c9a25e66; border-radius: 4px; padding: 4px 6px; font-size: 13px; }
   .tag { margin-left: 6px; font-variant: small-caps; }
   form { display: flex; gap: 6px; }
   input { flex: 1; min-width: 0; }

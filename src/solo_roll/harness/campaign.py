@@ -89,7 +89,11 @@ def create_campaign(
         {
             "session": 1,
             "party": {"members": list(party), "area": start},
-            "map": {"areas": areas, "connections": list(map_data.get("connections", []))},
+            "map": {
+                "areas": areas,
+                "connections": list(map_data.get("connections", [])),
+                "open_exits": list(map_data.get("open_exits", [])),
+            },
         },
     )
     return paths.root

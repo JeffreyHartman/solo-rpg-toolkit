@@ -42,7 +42,7 @@ def test_available_actions_offer_one_move_per_exit_of_the_current_area(tmp_path)
     engine = open_engine(make_campaign(tmp_path))
     engine.act({"type": "move", "to": "hall"})
 
-    actions = {a["id"]: a for a in engine.available_actions()}
+    actions = {a["id"]: a for a in engine.available_actions() if a["command"]["type"] == "move"}
 
     assert set(actions) == {"move:gate", "move:crypt"}
     assert actions["move:gate"]["label"] == "Go to Gatehouse"
@@ -52,7 +52,7 @@ def test_available_actions_offer_one_move_per_exit_of_the_current_area(tmp_path)
 
 def test_running_an_available_action_command_moves_the_party(tmp_path):
     engine = open_engine(make_campaign(tmp_path))
-    [action] = engine.available_actions()
+    [action] = [a for a in engine.available_actions() if a["command"]["type"] == "move"]
 
     engine.act(action["command"])
 

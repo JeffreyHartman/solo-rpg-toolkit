@@ -6,6 +6,7 @@ __all__ = [
     "PluginError",
     "UnknownCommandError",
     "IllegalActionError",
+    "FlextaleDataError",
 ]
 
 
@@ -27,3 +28,7 @@ class UnknownCommandError(HarnessError):
 
 class IllegalActionError(HarnessError):
     """The command is known but the current state does not allow it."""
+
+
+class FlextaleDataError(HarnessError):
+    """The FlexTale tables are missing from the data folder."""
