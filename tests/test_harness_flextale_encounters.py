@@ -172,3 +172,82 @@ def test_roll_twice_resolves_two_more_results_and_skips_further_roll_twice(tmp_p
     engine = make_engine(tmp_path, [1, 18, 18, 3, 13, 1])  # twice; (twice again ignored); none; secret
     explore(engine)
     assert [o["kind"] for o in encounter(engine)["outcomes"]] == ["none", "secret"]
+
+
+def treasure(engine):
+    return engine.act({"type": "procedure", "name": "treasure"})
+
+
+def inventory(engine):
+    return engine.state()["inventory"]
+
+
+def test_inventory_starts_empty(tmp_path):
+    assert inventory(make_engine(tmp_path, [])) == {"gp": 0, "gems": {}, "items": {}}
+
+
+def test_coin_treasure_rolls_the_amount_of_the_contexts_column(tmp_path):
+    engine = make_engine(tmp_path, [3, 1, 3])  # low coin, sub-table, 1d4 = 3
+    events = treasure(engine)
+    assert inventory(engine)["gp"] == 3
+    assert any(e["type"] == "treasure" for e in events)
+
+
+def test_gem_treasure_counts_gems_by_name(tmp_path):
+    engine = make_engine(tmp_path, [5, 1, 2])  # low gems, sub-table, 1d4x = 2
+    treasure(engine)
+    assert inventory(engine)["gems"] == {"Agate": 2}
+
+
+def test_item_treasure_rolls_its_table_and_counts_the_item(tmp_path):
+    engine = make_engine(tmp_path, [7, 1])
+    treasure(engine)
+    assert inventory(engine)["items"] == {"Fake Healing": 1}
+    engine = make_engine(tmp_path / "b", [9])  # a scroll has no sub-table here
+    treasure(engine)
+    assert inventory(engine)["items"] == {"Scroll": 1}
+
+
+def test_no_treasure_and_contact_poison_reroll(tmp_path):
+    engine = make_engine(tmp_path, [2])
+    treasure(engine)
+    assert inventory(engine) == {"gp": 0, "gems": {}, "items": {}}
+    engine = make_engine(tmp_path / "b", [1, 9])  # poison: reroll into a scroll
+    events = treasure(engine)
+    assert inventory(engine)["items"] == {"Scroll": 1}
+    assert "contact poison" in next(e for e in events if e["type"] == "treasure")["text"].lower()
+
+
+def test_additional_treasure_applies_both_rolls_and_favorable_keeps_the_higher(tmp_path):
+    engine = make_engine(tmp_path, [11, 9, 7, 1])  # scroll and potion
+    treasure(engine)
+    assert inventory(engine)["items"] == {"Scroll": 1, "Fake Healing": 1}
+    engine = make_engine(tmp_path / "b", [13, 9, 7, 1])  # scroll (9) against potion (7): keeps the 9
+    treasure(engine)
+    assert inventory(engine)["items"] == {"Scroll": 1}
+
+
+def test_the_difficulty_context_picks_the_coin_column_and_tables(tmp_path):
+    from flextale_fakes import DEFAULT_TABLES
+
+    tables = {n.replace("-a", "-b") if n.startswith("treasure") else n: r for n, r in DEFAULT_TABLES.items()}
+    engine = make_engine(tmp_path, [3, 1, 2, 4], tables=tables)  # 2d4 = 2 + 4
+    engine.change_setting("difficulty", "context", "B")
+    treasure(engine)
+    assert inventory(engine)["gp"] == 6
+
+
+def test_a_missing_treasure_table_raises_the_typed_error_and_keeps_the_inventory(tmp_path):
+    engine = make_engine(tmp_path, [3], drop=("treasure-low-coin-a-osr",))
+    with pytest.raises(FlextaleDataError, match="treasure-low-coin-a-osr"):
+        treasure(engine)
+    assert inventory(engine)["gp"] == 0
+
+
+def test_pending_treasure_is_taken_once_and_not_offered_while_combat_is_pending(tmp_path):
+    engine = make_engine(tmp_path, [1, 19, 11, 3, 1, 4])
+    explore(engine)
+    assert "treasure" not in [a["command"].get("name") for a in engine.available_actions()]
+    treasure(engine)
+    assert inventory(engine)["gp"] == 4
+    assert encounter(engine)["outcomes"][1]["status"] == "resolved"

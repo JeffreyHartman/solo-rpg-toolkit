@@ -6,7 +6,7 @@ from ....tables import TableNotFoundError, roll_table
 from ...errors import FlextaleDataError, IllegalActionError
 from ...mapstate import area
 from ...registry import Action, CommandContext, Event, Registry
-from . import checks, encounters
+from . import checks, encounters, treasure
 from .tabledata import CONTEXTS
 
 __all__ = ["FlextalePlugin"]
@@ -29,6 +29,7 @@ class FlextalePlugin:
         registry.add_command("explore", self._explore)
         registry.add_action_provider(_explore_actions)
         checks.register(registry)
+        treasure.register(registry, self._data_dir, self._system)
         registry.add_state_default("encounter", encounters.initial_encounter)
         registry.add_setting("difficulty", "context", "Difficulty context", CONTEXTS, "A")
         registry.add_trigger("area_revealed", encounters.reveal_trigger(self._data_dir, self._system))
