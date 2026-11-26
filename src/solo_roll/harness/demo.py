@@ -17,6 +17,10 @@ DEMO_MAP = {
         {"id": "hall-cells", "a": "hall", "b": "cells", "label": "south passage"},
         {"id": "well-crypt", "a": "well", "b": "crypt", "label": "narrow crawl"},
     ],
+    "open_exits": [
+        {"id": "gate-n", "area": "gate", "side": "n", "label": "north gate"},
+        {"id": "gate-s", "area": "gate", "side": "s", "label": "south gate"},
+    ],
 }
 DEMO_START = "gate"
 DEMO_PARTY = [{"name": "Brannoc"}]

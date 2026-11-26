@@ -16,6 +16,13 @@ export interface Connection {
   label?: string
 }
 
+export interface OpenExit {
+  id: string
+  area: string
+  side: 'n' | 'e' | 's' | 'w'
+  label: string
+}
+
 export interface Member {
   name: string
 }
@@ -35,7 +42,7 @@ export interface Dungeon {
 export interface EngineState {
   session: number
   party: { members: Member[]; area: string }
-  map: { areas: Record<string, Area>; connections: Connection[] }
+  map: { areas: Record<string, Area>; connections: Connection[]; open_exits?: OpenExit[] }
   dungeon?: Dungeon
 }
 

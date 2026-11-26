@@ -22,7 +22,15 @@
   </div>
   <section class="panel log">
     {#each game.log.slice(-30) as line}
-      <div class:error={line.kind === 'error'} class:mechanics={line.kind === 'mechanics'}>{line.text}</div>
+      {#if line.card}
+        <div class="card">
+          <b>{line.card.dice}</b> [{line.card.rolls.join(', ')}] = {line.card.total}
+          <div>{line.card.result}</div>
+          <div class="dim">{line.card.source}</div>
+        </div>
+      {:else}
+        <div class:error={line.kind === 'error'}>{line.text}</div>
+      {/if}
     {:else}
       <div class="dim">Click an exit or an area to move.</div>
     {/each}
@@ -43,8 +51,8 @@
   .party { top: 12px; left: 12px; }
   .log { left: 12px; bottom: 12px; width: min(420px, calc(100vw - 24px)); max-height: 35vh; overflow-y: auto; font-size: 14px; }
   .log > div { padding: 1px 0; }
+  .card { border: 1px solid #c9a25e66; border-radius: 4px; padding: 4px 6px; margin: 3px 0; }
   .error { color: var(--bad); }
-  .mechanics { border-left: 3px solid var(--edge); padding-left: 6px; }
   .actions { right: 12px; bottom: 12px; display: flex; flex-wrap: wrap; gap: 6px; max-width: min(480px, calc(100vw - 24px)); }
   .offline { top: 12px; right: 12px; color: var(--warn); }
   .waiting { padding: 24px; }
