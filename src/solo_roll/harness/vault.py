@@ -66,7 +66,25 @@ def write_state_note(paths: "CampaignPaths", state: dict[str, Any]) -> None:
         f"Position: {area_name}\n\n"
         f"## Party\n\n{members}\n"
         f"{dungeon}"
+        f"{_inventory_section(state['inventory']) if 'inventory' in state else ''}"
+        f"{_encounter_section(state['encounter']) if 'encounter' in state else ''}"
     )
+
+
+def _inventory_section(inventory: dict[str, Any]) -> str:
+    lines = [f"Coins: {inventory['gp']} gp"]
+    for label, key in (("Gems", "gems"), ("Items", "items")):
+        counts = inventory[key]
+        lines.append(f"{label}: " + (", ".join(f"{name} x{n}" for name, n in counts.items()) or "none"))
+    return "\n## Inventory\n\n" + "\n".join(lines) + "\n"
+
+
+def _encounter_section(encounter: dict[str, Any]) -> str:
+    current = encounter.get("current")
+    if not current:
+        return ""
+    lines = [f"{o['kind']} ({o['status']}): {(o['detail'] or {}).get('result') or o['result']}" for o in current["outcomes"]]
+    return "\n## Encounter\n\n" + "\n".join(f"- {line}" for line in lines) + "\n"
 
 
 def _dungeon_section(dungeon: dict[str, Any]) -> str:

@@ -251,3 +251,59 @@ def test_pending_treasure_is_taken_once_and_not_offered_while_combat_is_pending(
     treasure(engine)
     assert inventory(engine)["gp"] == 4
     assert encounter(engine)["outcomes"][1]["status"] == "resolved"
+
+
+def shuttle(engine, times):
+    events = []
+    for i in range(times):
+        events += engine.act({"type": "move", "to": "start" if i % 2 == 0 else "area-2"})
+    return events
+
+
+def test_backtracking_rolls_a_random_encounter_on_every_fourth_known_area(tmp_path):
+    engine = make_engine(tmp_path, [1, 1, 15, 1])  # explore (hall, none); fourth move: combat
+    explore(engine)
+    quiet = shuttle(engine, 3)  # exhausts ScriptedDice if any of these rolled
+    assert not [e for e in quiet if e["type"] == "encounter"]
+    events = engine.act({"type": "move", "to": "area-2"})
+    card = next(e for e in events if e["type"] == "encounter")
+    assert (card["source"], card["area"]) == ("backtracking", "area-2")
+    assert encounter(engine)["outcomes"][0]["kind"] == "combat"
+    assert any(e["type"] == "combat_encounter" for e in events)
+
+
+def test_the_backtrack_count_continues_after_a_roll(tmp_path):
+    engine = make_engine(tmp_path, [1, 1, 3, 3])
+    explore(engine)
+    shuttle(engine, 4)
+    shuttle(engine, 3)
+    events = engine.act({"type": "move", "to": "area-2"})
+    assert [e["source"] for e in events if e["type"] == "encounter"] == ["backtracking"]
+    assert engine.state()["encounter"]["backtracks"] == 8
+
+
+def test_a_missing_table_on_the_backtrack_roll_rolls_the_move_back(tmp_path):
+    engine = make_engine(tmp_path, [1, 1])
+    explore(engine)
+    shuttle(engine, 3)
+    import os
+    os.remove(tmp_path / "data/tables/quickstart/hallway-encounter-a.json")
+    with pytest.raises(FlextaleDataError):
+        engine.act({"type": "move", "to": "area-2"})
+    assert engine.state()["party"]["area"] == "start"
+
+
+def test_state_note_lists_the_inventory_and_the_current_encounter(tmp_path):
+    engine = make_engine(tmp_path, [1, 11, 1, 3, 3, 1, 3])  # obstacle with DC +2; then low coin 3
+    explore(engine)
+    treasure(engine)
+    note = (tmp_path / "campaign" / "vault" / "State.md").read_text()
+    assert "Coins: 3 gp" in note
+    assert "obstacle (open): Rubble: Strength check" in note
+
+
+def test_the_settings_list_the_difficulty_context_as_an_option(tmp_path):
+    engine = make_engine(tmp_path, [])
+    engine.change_setting("difficulty", "context", "D")
+    row = engine.settings()["options"][0]
+    assert (row["section"], row["choices"], row["value"], row["default"]) == ("difficulty", ["A", "B", "C", "D"], "D", "A")

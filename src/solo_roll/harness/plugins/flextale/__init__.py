@@ -16,6 +16,14 @@ AREA_W, AREA_H, GAP = 4, 3, 2
 OPPOSITE = {"n": "s", "s": "n", "e": "w", "w": "e"}
 
 
+REFEREE_GUIDE = """## Generator: FlexTale
+
+- When the party explores a new area, the engine rolls what it holds. Read `encounter.current` in the state and describe exactly that: do not add traps, obstacles, secrets or monsters.
+- A trap or obstacle with status `open` waits for a check. Propose `encounter_check` for the character; the engine sets the target number from the DC table.
+- Treasure comes only from the `treasure` procedure, and it changes the inventory in the state.
+"""
+
+
 class FlextalePlugin:
     name = "flextale"
     kind = "generator"
@@ -28,6 +36,7 @@ class FlextalePlugin:
     def register(self, registry: Registry) -> None:
         registry.add_command("explore", self._explore)
         registry.add_action_provider(_explore_actions)
+        registry.add_referee_guide(REFEREE_GUIDE)
         checks.register(registry)
         treasure.register(registry, self._data_dir, self._system)
         registry.add_state_default("encounter", encounters.initial_encounter)
