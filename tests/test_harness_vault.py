@@ -1,12 +1,15 @@
 """Tests for the campaign vault: the layout `create_campaign` writes, the engine's
 mechanical block in character notes, and the Referee's records through `ScriptedReferee`.
 """
+import asyncio
 import re
 from pathlib import Path
 
+import pytest
 from harness_fixtures import HAND_MADE_MAP, make_campaign, open_engine
 
 from solo_roll.harness.campaign import CampaignPaths, create_campaign
+from solo_roll.harness.referee import Call, ScriptedReferee
 from solo_roll.harness.vault import create_vault
 
 FOLDERS = ["Characters", "NPCs", "Locations", "Threads", "Lore & World", "Sessions", "Sessions/Raw"]
@@ -99,3 +102,65 @@ def test_the_mechanical_block_follows_the_engine_and_the_story_around_it_stays(t
     assert "Position: Long Hall" in mechanical_block(note)
     assert "Position: Gatehouse" not in note.read_text()
     assert "Brannoc swore an oath at the gate." in note.read_text()
+
+
+def run_turn(referee, text="I look around."):
+    async def collect():
+        return [event async for event in referee.turn(text)]
+
+    return asyncio.run(collect())
+
+
+def results_of(campaign, *calls):
+    referee = ScriptedReferee(open_engine(campaign), CampaignPaths(campaign), turns=[list(calls)])
+    return [e for e in run_turn(referee) if e["type"] == "tool_result"]
+
+
+def edit(old, new, **extra):
+    return Call("Edit", {"file_path": "Characters/Brannoc.md", "old_string": old, "new_string": new, **extra})
+
+
+def write(content, file_path="Characters/Brannoc.md"):
+    return Call("Write", {"file_path": file_path, "content": content})
+
+
+BLOCK_CHANGES = {
+    "edit inside the block": lambda text: edit("Hp: 6", "Hp: 60"),
+    "edit across a marker": lambda text: edit("# Brannoc\n\n%% engine:begin %%", "# Brannoc"),
+    "edit that adds a marker": lambda text: edit("## Goals", "## Goals\n%% engine:end %%"),
+    "replace_all that reaches the block": lambda text: edit("6", "60", replace_all=True),
+    "write without the block": lambda text: write("# Brannoc\n\nA new life.\n"),
+    "write with a changed block": lambda text: write(text.replace("Hp: 6", "Hp: 60")),
+    "write a second block": lambda text: write(text + "\n%% engine:begin %%\nHp: 60\n%% engine:end %%\n"),
+    "write a forged block in a new note": lambda text: write(
+        "%% engine:begin %%\nHp: 60\n%% engine:end %%\n", file_path="Characters/Twin.md"
+    ),
+}
+
+
+@pytest.mark.parametrize("change", BLOCK_CHANGES.values(), ids=BLOCK_CHANGES.keys())
+def test_the_referee_cannot_change_the_mechanical_block(tmp_path, change):
+    campaign = make_fighter_campaign(tmp_path)
+    note = CampaignPaths(campaign).vault / "Characters" / "Brannoc.md"
+    before = note.read_text()
+
+    [result] = results_of(campaign, change(before))
+
+    assert result["denied"] is True
+    assert "engine" in result["error"]
+    assert note.read_text() == before
+    assert not (note.parent / "Twin.md").exists()
+
+
+def test_the_referee_can_edit_the_story_around_the_mechanical_block(tmp_path):
+    campaign = make_fighter_campaign(tmp_path)
+    note = CampaignPaths(campaign).vault / "Characters" / "Brannoc.md"
+    block = mechanical_block(note)
+
+    [edited] = results_of(campaign, edit("## Backstory\n", "## Backstory\n\nA miller's son from the hills.\n"))
+    [written] = results_of(campaign, write(note.read_text().replace("## Goals\n", "## Goals\n\nFind his brother.\n")))
+
+    assert edited["ok"] is True and written["ok"] is True
+    assert "A miller's son from the hills." in note.read_text()
+    assert "Find his brother." in note.read_text()
+    assert mechanical_block(note) == block
