@@ -36,7 +36,7 @@ def decide(state: dict[str, Any], monster_id: str, data_dir: Path, ctx: CommandC
     monster = next((m for m in (combat or {}).get("monsters", []) if m["id"] == monster_id), None)
     if monster is None or monster["status"] != "alive":
         return []
-    who = f"{monster['name']} {monster['id']}"
+    who = party.monster_label(monster)
     action = roll(data_dir, ACTION_TABLE, ctx.dice)
     events = [card("simple-ai-action", action, who)]
     text = action["result"]

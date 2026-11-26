@@ -18,6 +18,7 @@ import re
 from typing import Any
 
 from ..dice import DiceError, parse_dice, roll_dice
+from . import party
 from .errors import IllegalActionError
 from .registry import CommandContext, Event
 
@@ -75,7 +76,7 @@ def _subject(state: dict[str, Any], who: str) -> tuple[dict[str, Any], str, str]
             return member, "member", who
     for monster in (state.get("combat") or {}).get("monsters", []):
         if monster["id"] == who:
-            return monster, "monster", f"{monster['name']} {monster['id']}"
+            return monster, "monster", party.monster_label(monster)
     raise IllegalActionError(f"no party member or monster '{who}'")
 
 

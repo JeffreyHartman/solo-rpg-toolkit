@@ -41,6 +41,7 @@ OPTIONAL_RULES = (ASCENDING_AC, VARIABLE_WEAPON_DAMAGE)
 """The optional rules a campaign can choose. Each is a campaign setting in section `ose`, "on" or "off"."""
 RULE_LABELS = {ASCENDING_AC: "Ascending Armour Class", VARIABLE_WEAPON_DAMAGE: "Variable Weapon Damage"}
 DEFAULT_DAMAGE = "1d6"
+MONSTERS_DONE = "monsters_done"
 MEMBER_THAC0 = ((3, 19), (6, 17), (9, 14), (12, 12), (99, 10))
 """Attack value by level for every class, a simplification of the per-class OSE tables."""
 
@@ -66,7 +67,7 @@ def register(registry: Registry, data_dir: Path) -> None:
     registry.add_trigger("phase_changed", _phase_trigger(registry))
     registry.add_command("monster_action", monster_action)
     registry.add_trigger("hp_changed", _hp_trigger)
-    registry.add_trigger("monsters_done", _monsters_done_trigger)
+    registry.add_trigger(MONSTERS_DONE, _monsters_done_trigger)
     registry.add_trigger("round_ended", _round_trigger)
     registry.add_trigger("monster_decision", _decision_trigger)
     registry.add_action_provider(combat_actions)
@@ -154,13 +155,13 @@ def _phase_trigger(registry: Registry):
         living = [m for m in combat["monsters"] if m["status"] == "alive"]
         if registry.triggers.get("monster_turn"):
             out: list[Event] = [
-                {"type": "monster_turn", "monster": m["id"], "text": f"{m['name']} {m['id']} acts."} for m in living
+                {"type": "monster_turn", "monster": m["id"], "text": f"{party.monster_label(m)} acts."} for m in living
             ]
-            return [*out, {"type": "monsters_done", "text": "The monsters have acted."}]
+            return [*out, _monsters_done()]
         combat["waiting"] = [m["id"] for m in living]
         return [
             {"type": "monster_turn", "monster": m["id"], "referee": True,
-             "text": f"{m['name']} {m['id']} acts: the Referee picks its action with monster_action."}
+             "text": f"{party.monster_label(m)} acts: the Referee picks its action with monster_action."}
             for m in living
         ]
     return trigger
@@ -185,7 +186,7 @@ def monster_action(state: dict[str, Any], command: dict[str, Any], ctx: CommandC
         raise IllegalActionError(f"kind must be attack, flee or other, got {kind!r}")
     action = str(command.get("action") or "").strip() or str(kind)
     target = str(command.get("target") or "") if kind == "attack" else None
-    who = f"{monster['name']} {monster['id']}"
+    who = party.monster_label(monster)
     if target is not None:
         member = party.member(state, target)
         if member.get("hp", 1) <= 0:
@@ -205,7 +206,11 @@ def _waiting_done(combat: dict[str, Any]) -> list[Event]:
     combat["waiting"] = [m for m in combat.get("waiting", []) if m in alive]
     if combat["phase"] != "monsters" or combat["waiting"]:
         return []
-    return [{"type": "monsters_done", "text": "The monsters have acted."}]
+    return [_monsters_done()]
+
+
+def _monsters_done() -> Event:
+    return {"type": MONSTERS_DONE, "text": "The monsters have acted."}
 
 
 def _hp_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> list[Event]:
@@ -216,7 +221,7 @@ def _hp_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> lis
     if event["side"] == "monster":
         monster = _monster(combat, event["who"])
         monster["status"] = "dead"
-        label = f"{monster['name']} {monster['id']}"
+        label = party.monster_label(monster)
         events: list[Event] = [{"type": "monster_down", "monster": monster["id"], "text": f"{label} is dead."}]
     else:
         events = [{"type": "member_down", "member": event["who"], "text": f"{event['who']} falls."}]
@@ -262,7 +267,7 @@ def attack(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) 
     natural, total, result = throw["natural"], throw["total"], "Hit" if throw["hit"] else "Miss"
     events: list[Event] = [_card(
         "attack", "d20", [natural], total, result, attack_source(rules),
-        f"{member['name']} attacks {monster['name']} {monster['id']}: rolled {total}, "
+        f"{member['name']} attacks {party.monster_label(monster)}: rolled {total}, "
         f"needs {target['value']}. {result}.")]
     if throw["hit"]:
         notation, is_default = weapon_damage(rules, member)
@@ -360,7 +365,7 @@ def combat_actions(state: dict[str, Any]) -> list[Action]:
         return []
     return [
         {"id": f"attack:{member['name']}:{monster['id']}",
-         "label": f"{member['name']} attacks {monster['name']} {monster['id']} ({monster['hp']} HP)",
+         "label": f"{member['name']} attacks {party.monster_label(monster)} ({monster['hp']} HP)",
          "command": {"type": "procedure", "name": "attack",
                      "inputs": {"member": member["name"], "monster": monster["id"]}}}
         for member in party.standing(state) if member["name"] not in combat["acted"]
@@ -377,11 +382,11 @@ def _decision_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) 
     monster = _monster(combat, event["monster"])
     if event["kind"] == "flee":
         monster["status"] = "fled"
-        return [{"type": "monster_fled", "monster": monster["id"], "text": f"{monster['name']} {monster['id']} flees."},
+        return [{"type": "monster_fled", "monster": monster["id"], "text": f"{party.monster_label(monster)} flees."},
                 *_end_if_over(state)]
     if event["kind"] != "attack":
         return [{"type": "monster_acted", "monster": monster["id"], "action": event["action"],
-                 "text": f"{monster['name']} {monster['id']}: {event['action']}."}]
+                 "text": f"{party.monster_label(monster)}: {event['action']}."}]
     member = party.member(state, event["target"])
     ac = member.get("ac", UNARMORED_AC)
     rules = optional_rules(ctx)
@@ -389,7 +394,7 @@ def _decision_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) 
     natural, need, hit = throw["natural"], throw["need"], throw["hit"]
     result = "Hit" if hit else "Miss"
     card = _card("monster_attack", "d20", [natural], throw["total"], result, attack_source(rules),
-                 f"{monster['name']} {monster['id']} attacks {member['name']}: rolled {throw['total']}, needs {need}. {result}.")
+                 f"{party.monster_label(monster)} attacks {member['name']}: rolled {throw['total']}, needs {need}. {result}.")
     card["target"] = attack_target(rules, monster["thac0"], ac, f"{member['name']}'s AC {ac}")
     events = [card]
     if hit:
@@ -406,7 +411,7 @@ def _damage(victim: dict[str, Any], notation: str, bonus: int, ctx: CommandConte
     victim["hp"] = max(0, victim["hp"] - amount)
     name = victim.get("name")
     default = ", default die, no weapon data" if is_default else ""
-    label = f"{name} {victim['id']}" if side == "monster" else name
+    label = party.monster_label(victim) if side == "monster" else name
     events: list[Event] = [
         _card("damage", rolled["dice"], rolled["rolls"], amount, f"{amount} damage", "OSE",
               f"{label} takes {amount} damage ({notation}{bonus:+d}{default})." if bonus else f"{label} takes {amount} damage ({notation}{default})."),
