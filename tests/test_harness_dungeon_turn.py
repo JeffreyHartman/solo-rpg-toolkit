@@ -198,10 +198,11 @@ def test_an_unknown_procedure_is_refused(tmp_path, data_dir):
 
 
 def test_the_default_wandering_table_ships_with_the_ose_data():
-    from solo_roll.harness.plugins.ose.dungeon_turn import DEFAULT_DATA_DIR, DEFAULT_WANDERING
+    from solo_roll import OSE_DATA_DIR
+    from solo_roll.harness.plugins.ose.dungeon_turn import DEFAULT_WANDERING
     from solo_roll.tables import load_table
 
-    assert load_table(DEFAULT_WANDERING["table"], DEFAULT_DATA_DIR)["entries"]
+    assert load_table(DEFAULT_WANDERING["table"], OSE_DATA_DIR)["entries"]
 
 
 class _PingPlugin:

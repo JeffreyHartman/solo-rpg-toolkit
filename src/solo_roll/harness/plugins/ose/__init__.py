@@ -25,7 +25,7 @@ class OsePlugin:
 
     def __init__(
         self,
-        data_dir: Path = dungeon_turn.DEFAULT_DATA_DIR,
+        data_dir: Path,
         wandering: dict[str, Any] | None = dungeon_turn.DEFAULT_WANDERING,
     ):
         """`data_dir` holds `tables/ose/`. `wandering` is the starting wandering config, or None for no checks."""

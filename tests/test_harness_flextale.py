@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from solo_roll import OSE_DATA_DIR
 from solo_roll.harness.campaign import create_campaign
 from solo_roll.harness.engine import open_campaign
 from solo_roll.harness.errors import FlextaleDataError, IllegalActionError
@@ -51,7 +52,7 @@ def make_engine(tmp_path: Path, rolls: list[int], data_dir: Path | None = None):
     root = create_campaign(
         tmp_path / "campaign", ["ose", "flextale"], MAP, "start", [{"name": "Brannoc"}]
     )
-    factories = {**BUILTIN_PLUGINS, "ose": lambda: OsePlugin(wandering=None), "flextale": lambda: FlextalePlugin(data)}
+    factories = {**BUILTIN_PLUGINS, "ose": lambda: OsePlugin(OSE_DATA_DIR, wandering=None), "flextale": lambda: FlextalePlugin(data)}
     return open_campaign(root, ScriptedDice(rolls), factories)
 
 

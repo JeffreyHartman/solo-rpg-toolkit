@@ -12,7 +12,6 @@ from ...errors import PluginError
 from ...registry import Action, CommandContext, Event
 
 __all__ = [
-    "DEFAULT_DATA_DIR",
     "DEFAULT_WANDERING",
     "dungeon_actions",
     "initial_dungeon",
@@ -23,7 +22,6 @@ __all__ = [
     "wandering_trigger",
 ]
 
-DEFAULT_DATA_DIR = Path(__file__).resolve().parents[5] / "templates" / "ose" / "data"
 DEFAULT_WANDERING = {"table": "ose/wandering-generic", "interval": 2, "die": 6, "chance": 1}
 TORCH_TURNS = 6  # OSE: a torch burns for 1 hour, which is 6 turns
 

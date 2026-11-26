@@ -1,6 +1,7 @@
 """A small hand-made map and a campaign built from it, for harness tests."""
 from pathlib import Path
 
+from solo_roll import OSE_DATA_DIR
 from solo_roll.harness.campaign import create_campaign
 from solo_roll.harness.engine import Engine, open_campaign
 from solo_roll.harness.plugins import BUILTIN_PLUGINS
@@ -19,7 +20,7 @@ HAND_MADE_MAP = {
     ],
 }
 
-NO_WANDERING_PLUGINS = {**BUILTIN_PLUGINS, "ose": lambda: OsePlugin(wandering=None)}
+NO_WANDERING_PLUGINS = {**BUILTIN_PLUGINS, "ose": lambda: OsePlugin(OSE_DATA_DIR, wandering=None)}
 """The built-in plugins with no wandering checks, so a move consumes no dice."""
 
 

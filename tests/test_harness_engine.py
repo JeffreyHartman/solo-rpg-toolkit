@@ -4,6 +4,7 @@ from harness_fixtures import make_campaign, open_engine
 
 from solo_roll.harness.engine import open_campaign
 from solo_roll.harness.errors import IllegalActionError, PluginError, UnknownCommandError
+from solo_roll import OSE_DATA_DIR
 from solo_roll.harness.plugins.ose import OsePlugin
 from solo_roll.rng import ScriptedDice
 
@@ -85,7 +86,7 @@ def test_two_plugins_cannot_claim_the_same_command(tmp_path):
     (campaign / "campaign.json").write_text('{"plugins": ["ose", "ose-again"]}')
 
     with pytest.raises(PluginError):
-        open_campaign(campaign, ScriptedDice([]), {"ose": OsePlugin, "ose-again": OsePlugin})
+        open_campaign(campaign, ScriptedDice([]), {"ose": lambda: OsePlugin(OSE_DATA_DIR), "ose-again": lambda: OsePlugin(OSE_DATA_DIR)})
 
 
 def test_a_move_appends_its_event_text_to_the_session_raw_log(tmp_path):
@@ -147,7 +148,7 @@ def test_command_handlers_roll_with_the_injected_dice(tmp_path):
     campaign = make_campaign(tmp_path)
     (campaign / "campaign.json").write_text('{"plugins": ["ose", "dice-test"]}')
     engine = open_campaign(
-        campaign, ScriptedDice([4]), {"ose": OsePlugin, "dice-test": DicePlugin}
+        campaign, ScriptedDice([4]), {"ose": lambda: OsePlugin(OSE_DATA_DIR), "dice-test": DicePlugin}
     )
 
     assert engine.act({"type": "roll"})[0]["value"] == 4
