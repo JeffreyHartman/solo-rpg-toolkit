@@ -4,11 +4,14 @@ The dice are scripted; a test that must not roll gets no dice, so any roll fails
 """
 import asyncio
 
+import pytest
+
 from harness_fixtures import HAND_MADE_MAP, make_campaign, open_engine
 
 from solo_roll import OSE_DATA_DIR
 from solo_roll.harness.campaign import CampaignPaths, create_campaign, load_json, write_json
 from solo_roll.harness.engine import open_campaign
+from solo_roll.harness.errors import IllegalActionError
 from solo_roll.harness.plugins.ose import OsePlugin
 from solo_roll.harness.referee import Call, ScriptedReferee
 from solo_roll.harness.referee.tools import RefereeTools
@@ -45,6 +48,27 @@ def test_the_referee_lights_a_torch_for_a_character_and_the_light_burns(tmp_path
     events = engine.act({"type": "procedure", "name": "rest"})
     assert "darkness" not in [e["type"] for e in events]
     assert engine.state()["dungeon"]["light"][0]["turns_left"] == 5
+    assert [e["type"] for e in result["events"]] == ["mechanics", "light_requested", "light_lit"]
+
+
+def test_the_referee_cannot_light_a_torch_for_a_monster(tmp_path):
+    root, engine, _ = ose_fight(tmp_path, PARTY_FIRST)
+    light = engine.state()["dungeon"]["light"]
+
+    [result] = run_turn(engine, root, Call(EDIT, {
+        "who": "m1", "change": "light", "value": "torch", "reason": "The goblin grabs a torch."}))
+
+    assert result["ok"] is False
+    assert "party member" in result["error"]
+    assert engine.state()["dungeon"]["light"] == light
+
+
+def test_a_light_edit_is_refused_when_no_plugin_keeps_the_light(tmp_path):
+    root = create_campaign(tmp_path / "campaign", [], HAND_MADE_MAP, "gate", [dict(BRANNOC)])
+    engine = open_campaign(root, ScriptedDice([]), {})
+
+    with pytest.raises(IllegalActionError, match="light"):
+        engine.act({"type": "edit", "who": "Brannoc", "change": "light", "value": "torch", "reason": "Found one."})
 
 
 def test_each_edit_shows_a_mechanics_card_with_what_changed_and_the_reason(tmp_path):
@@ -105,12 +129,12 @@ PARTY_FIRST = [5, 2]
 
 def ose_fight(tmp_path, rolls, rules=()):
     """An OSE campaign with no FlexTale, in a fight with one goblin, after an initiative roll."""
-    root = create_campaign(tmp_path / "campaign", ["ose"], HAND_MADE_MAP, "gate", [dict(BRANNOC)])
+    root = create_campaign(tmp_path / "campaign", ["ose"], HAND_MADE_MAP, "gate", [dict(BRANNOC)],
+                           settings={"ose": {rule: "on" for rule in rules}})
     paths = CampaignPaths(root)
     state = load_json(paths.state)
     state["combat"] = {"area": "gate", "outcome": None, "round": 0, "phase": "party", "first": "party",
                        "acted": [], "monsters": [dict(GOBLIN)]}
-    state["ose_rules"] = list(rules)
     write_json(paths.state, state)
     factories = {"ose": lambda: OsePlugin(OSE_DATA_DIR, wandering=None)}
     engine = open_campaign(root, ScriptedDice(rolls), factories)

@@ -10,7 +10,7 @@ from typing import Any
 
 from ..rng import DiceSource
 from .campaign import CampaignPaths, load_json, write_json
-from .edits import edit
+from .edits import LIGHT_REQUESTED, edit
 from .errors import IllegalActionError, PluginError, SettingError, UnknownCommandError
 from .judgment import ASK, JUDGMENT_OWNERS, OWNER_LABELS, REFEREE, empty_judgments, judgment_text
 from .proposals import ANSWER_VERBS, ANSWERS, empty_proposals, prepare, proposal_text
@@ -72,7 +72,7 @@ class Engine:
         kind = command.get("type")
         if kind == "procedure":
             procedure = self._procedure(command.get("name"))
-            inputs, target = prepare(self._registry, procedure, working, command.get("inputs") or {}, "player")
+            inputs, target = prepare(self._registry, procedure, working, command.get("inputs") or {}, "player", self._context)
             return self._run_procedure(working, procedure, inputs, target)
         if kind == "propose":
             return self._propose(working, command)
@@ -83,6 +83,8 @@ class Engine:
         if kind == "answer_judgment":
             return self._answer_judgment(working, command)
         if kind == "edit":
+            if command.get("change") == "light" and not self._registry.triggers.get(LIGHT_REQUESTED):
+                raise IllegalActionError("no plugin in this campaign keeps track of light")
             return edit(working, command, self._context)
         handler = self._registry.commands.get(command.get("type", ""))
         if handler is None:
@@ -205,7 +207,7 @@ class Engine:
     def _propose(self, working: dict[str, Any], command: dict[str, Any]) -> list[Event]:
         """Run an Auto procedure at once, or keep a Confirm one as a pending proposal."""
         procedure = self._procedure(command.get("procedure"))
-        inputs, target = prepare(self._registry, procedure, working, command.get("inputs") or {}, "referee")
+        inputs, target = prepare(self._registry, procedure, working, command.get("inputs") or {}, "referee", self._context)
         if self.confirm_level(procedure.name) == AUTO:
             return self._run_procedure(working, procedure, inputs, target)
         proposals = working["proposals"]
@@ -247,7 +249,7 @@ class Engine:
             if fallback and str(changes.get("target")) == str(fallback["value"]):
                 del changes["target"]
             inputs, target = prepare(
-                self._registry, procedure, working, {**inputs, **changes}, "player", fallback
+                self._registry, procedure, working, {**inputs, **changes}, "player", self._context, fallback
             )
         return [answered, *self._run_procedure(working, procedure, inputs, target)]
 

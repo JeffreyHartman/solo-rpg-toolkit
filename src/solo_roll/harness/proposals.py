@@ -8,7 +8,7 @@ the target number, so the target is a proposal input the player can change.
 from typing import Any
 
 from .errors import IllegalActionError
-from .registry import Procedure, Registry, Target
+from .registry import CommandContext, Procedure, Registry, Target
 
 __all__ = ["ANSWER_VERBS", "ANSWERS", "empty_proposals", "prepare", "proposal_text"]
 
@@ -28,6 +28,7 @@ def prepare(
     state: dict[str, Any],
     raw: dict[str, Any],
     set_by: str,
+    ctx: CommandContext,
     fallback: Target | None = None,
 ) -> tuple[dict[str, Any], Target | None]:
     """Check the inputs of a procedure and find its target number.
@@ -45,7 +46,7 @@ def prepare(
             raise IllegalActionError(f"{procedure.name} rolls against no target number")
         return inputs, None
     for source in registry.target_sources.get(procedure.name, []):
-        found = source(state, inputs)
+        found = source(state, inputs, ctx)
         if found is not None:
             if given is not None:
                 raise IllegalActionError(

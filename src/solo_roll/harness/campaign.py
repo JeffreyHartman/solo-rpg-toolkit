@@ -80,10 +80,12 @@ def create_campaign(
     start: str,
     party: list[dict[str, Any]],
     name: str | None = None,
+    settings: dict[str, dict[str, Any]] | None = None,
 ) -> Path:
     """Write a new campaign folder with the party in `start`, the only known area.
 
     It also writes the vault and the referee folder. `name` defaults to the folder name.
+    `settings` is the starting `settings.json`, `section -> key -> value`; with none the file is not written.
     """
     paths = CampaignPaths(Path(root))
     if paths.settings.exists():
@@ -95,6 +97,8 @@ def create_campaign(
     if start not in areas:
         raise CampaignFileError(f"start area '{start}' is not on the map")
     write_json(paths.settings, {"plugins": list(plugins), "name": name or paths.root.name})
+    if settings:
+        write_json(paths.campaign_settings, settings)
     state = {
         "session": 1,
         "party": {"members": list(party), "area": start},

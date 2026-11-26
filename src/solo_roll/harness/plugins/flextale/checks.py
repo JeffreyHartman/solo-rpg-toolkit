@@ -47,7 +47,7 @@ def _score(state: dict[str, Any], inputs: dict[str, Any]) -> tuple[dict[str, Any
     return found, found.get(field, {}).get(inputs["against"])
 
 
-def _dc_target(state: dict[str, Any], inputs: dict[str, Any]) -> Target | None:
+def _dc_target(state: dict[str, Any], inputs: dict[str, Any], ctx: CommandContext) -> Target | None:
     challenge = open_challenge(state)
     if challenge is None:
         return None

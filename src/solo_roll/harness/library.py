@@ -81,8 +81,13 @@ class Library:
             if plugin not in installed[kind]:
                 raise PluginError(f"'{plugin}' is not an installed {kind} (installed: {', '.join(installed[kind]) or 'none'})")
         map_data = {**START_MAP, "open_exits": GENERATOR_EXITS if generators else []}
+        settings: dict[str, dict[str, Any]] = {}
+        for plugin, _ in chosen:
+            for section, values in getattr(self._factories[plugin](), "campaign_settings", {}).items():
+                settings.setdefault(section, {}).update(values)
         create_campaign(
-            self.root / campaign_id, [name_ for name_, _ in chosen], map_data, "start", party=[], name=name
+            self.root / campaign_id, [name_ for name_, _ in chosen], map_data, "start", party=[], name=name,
+            settings=settings,
         )
         return campaign_id
 

@@ -179,7 +179,7 @@ class FixedDcPlugin:
     kind = "generator"
 
     def register(self, registry):
-        registry.add_target_source("ability_check", lambda state, inputs: {"value": 11, "source": "DC table: tricky"})
+        registry.add_target_source("ability_check", lambda state, inputs, ctx: {"value": 11, "source": "DC table: tricky"})
 
 
 def test_another_plugin_can_supply_the_target_of_a_procedure(tmp_path):

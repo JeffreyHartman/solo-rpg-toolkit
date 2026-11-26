@@ -92,14 +92,18 @@ def _create_character(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
         }, events=events)
 
 
+EDIT_INPUT = {"who": str, "change": str, "value": str, "reason": str}
+MONSTER_ACTION_INPUT = {"monster": str, "kind": str, "action": str, "target": str, "reason": str}
+
+
 def _edit(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
-    command = {"type": "edit", **{key: args.get(key) for key in ("who", "change", "value", "reason")}}
+    command = {"type": "edit", **{key: args.get(key) for key in EDIT_INPUT}}
     events = engine.act(command)
     return ToolOutcome(output={"events": events}, events=events)
 
 
 def _monster_action(engine: Engine, args: dict[str, Any]) -> ToolOutcome:
-    command = {"type": "monster_action", **{k: args.get(k) for k in ("monster", "kind", "action", "target", "reason")}}
+    command = {"type": "monster_action", **{key: args.get(key) for key in MONSTER_ACTION_INPUT}}
     events = engine.act(command)
     return ToolOutcome(output={"events": events, "combat": engine.state().get("combat")}, events=events)
 
@@ -184,11 +188,11 @@ ENGINE_TOOLS: tuple[EngineTool, ...] = (
         name="edit",
         description=(
             "Change a party member or a monster when no procedure fits, with a one-line reason the player sees. "
-            "`who` is a member's name or a monster id. `change` is add_item, remove_item, light (a lit torch or "
+            "`who` is a member's name or a monster id. `change` is add_item, remove_item, light (a member lights a torch or "
             "lantern that joins the party's light), hp, condition, or clear_condition. `value` is the item, the "
             "condition, or for hp a signed change such as -3 or -1d6: the engine rolls any dice. Never pass a die result."
         ),
-        input_schema={"who": str, "change": str, "value": str, "reason": str},
+        input_schema=EDIT_INPUT,
         label=lambda engine, args: f"Changing {args.get('who') or 'the state'}",
         run=_edit,
     ),
@@ -199,7 +203,7 @@ ENGINE_TOOLS: tuple[EngineTool, ...] = (
             "attack (name the party member in `target`), flee, or other (pass target \"\"). `action` says what it "
             "does, and `reason` why. The engine rolls any attack and damage with the campaign's rules."
         ),
-        input_schema={"monster": str, "kind": str, "action": str, "target": str, "reason": str},
+        input_schema=MONSTER_ACTION_INPUT,
         label=lambda engine, args: f"Acting for monster {args.get('monster') or ''}".strip(),
         run=_monster_action,
     ),

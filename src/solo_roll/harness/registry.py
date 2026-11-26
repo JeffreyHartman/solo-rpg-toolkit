@@ -60,8 +60,8 @@ CONFIRM_LEVELS = (AUTO, CONFIRM)
 Target = dict[str, Any]
 """A target number: `{"value": int, "source": str}`, where `source` names where it came from."""
 
-TargetSource = Callable[[dict[str, Any], dict[str, Any]], "Target | None"]
-"""Takes the state and the checked inputs of a procedure, and returns a target from plugin data or None."""
+TargetSource = Callable[[dict[str, Any], dict[str, Any], CommandContext], "Target | None"]
+"""Takes the state, the checked inputs of a procedure and the context, and returns a target from plugin data or None."""
 
 Trigger = Callable[[dict[str, Any], Event, CommandContext], list[Event]]
 """Runs after an engine event of the type it was registered for.
@@ -95,6 +95,8 @@ class Procedure:
 
 
 class Plugin(Protocol):
+    """A plugin may also have `campaign_settings`, `section -> key -> value`, which a new campaign starts with."""
+
     name: str
     kind: str  # "ruleset", "generator" or "module"
 

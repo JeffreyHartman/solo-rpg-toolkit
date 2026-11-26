@@ -4,26 +4,29 @@ An edit command is `{"type": "edit", "who", "change", "value", "reason"}`. `who`
 member's name or a monster id in the current fight. `change` is one of `CHANGES`:
 
   add_item, remove_item   one of the item `value` in `items`, a list of `{name, quantity}`
-  light                   a lit light source `value`; a ruleset plugin moves it into its light state
+  light                   a party member lights the light source `value`; a ruleset plugin answers the
+                          `light_requested` event and keeps the light. Refused for a monster.
   hp                      a change to `hp` such as "-3", "+2" or "-1d6"; the engine rolls any dice
   condition               add the condition `value` to `conditions`, a list of names
   clear_condition         remove the condition `value`
 
 Each edit returns a mechanics card with the change and the reason, then one event that names the
-change, for plugin triggers: `item_added`, `item_removed`, `hp_changed`, `condition_set` or
-`condition_cleared`.
+change, for plugin triggers: `item_added`, `item_removed`, `light_requested`, `hp_changed`,
+`condition_set` or `condition_cleared`.
 """
 import re
 from typing import Any
 
 from ..dice import DiceError, parse_dice, roll_dice
+from . import party
 from .errors import IllegalActionError
 from .registry import CommandContext, Event
 
-__all__ = ["CHANGES", "edit", "edit_card"]
+__all__ = ["CHANGES", "LIGHT_REQUESTED", "edit", "edit_card", "remove_item"]
 
 CHANGES = ("add_item", "remove_item", "light", "hp", "condition", "clear_condition")
 EDIT_SOURCE = "Referee edit"
+LIGHT_REQUESTED = "light_requested"
 HP_CHANGE = re.compile(r"^([+-])\s*(\S+)$")
 
 
@@ -41,13 +44,17 @@ def edit(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) ->
     base = {"who": command["who"], "side": side}
     if change == "hp":
         return _hp(who, label, value, reason, base, ctx)
-    if change in ("add_item", "light"):
-        lit = change == "light"
+    if change == "light":
+        if side != "member":
+            raise IllegalActionError(f"only a party member can light a light source, not {label}")
+        did = f"{label} lights a {value}"
+        return [edit_card(did, reason), {"type": LIGHT_REQUESTED, **base, "item": value, "text": f"{did}."}]
+    if change == "add_item":
         _add_item(who, value)
-        did = f"{label} lights a {value}" if lit else f"{label} gains {value}"
-        return [edit_card(did, reason), {"type": "item_added", **base, "item": value, "lit": lit, "text": f"{did}."}]
+        did = f"{label} gains {value}"
+        return [edit_card(did, reason), {"type": "item_added", **base, "item": value, "text": f"{did}."}]
     if change == "remove_item":
-        _remove_item(who, label, value)
+        remove_item(who, label, value)
         did = f"{label} loses {value}"
         return [edit_card(did, reason), {"type": "item_removed", **base, "item": value, "text": f"{did}."}]
     conditions = who.setdefault("conditions", [])
@@ -69,7 +76,7 @@ def _subject(state: dict[str, Any], who: str) -> tuple[dict[str, Any], str, str]
             return member, "member", who
     for monster in (state.get("combat") or {}).get("monsters", []):
         if monster["id"] == who:
-            return monster, "monster", f"{monster['name']} {monster['id']}"
+            return monster, "monster", party.monster_label(monster)
     raise IllegalActionError(f"no party member or monster '{who}'")
 
 
@@ -82,7 +89,8 @@ def _add_item(who: dict[str, Any], name: str) -> None:
         items.append({"name": name, "quantity": 1})
 
 
-def _remove_item(who: dict[str, Any], label: str, name: str) -> None:
+def remove_item(who: dict[str, Any], label: str, name: str) -> None:
+    """Take one `name` from `who["items"]`, dropping the entry at 0. `label` names `who` in the error when none is held."""
     items = who.get("items", [])
     held = next((i for i in items if i["name"] == name), None)
     if held is None:
@@ -98,17 +106,17 @@ def _hp(who: dict[str, Any], label: str, value: str, reason: str, base: Event, c
         raise IllegalActionError(f"an hp change is a signed number or dice, such as -3 or +1d6, got {value!r}")
     sign = -1 if match.group(1) == "-" else 1
     amount_text = match.group(2)
-    card: Event
+    rolled = None
     if amount_text.isdigit():
         amount = int(amount_text)
-        card = edit_card(f"{label} {'loses' if sign < 0 else 'gains'} {amount} HP", reason)
     else:
         try:
             rolled = roll_dice(parse_dice(amount_text), ctx.dice)
         except DiceError as exc:
             raise IllegalActionError(str(exc)) from exc
         amount = rolled["total"]
-        card = edit_card(f"{label} {'loses' if sign < 0 else 'gains'} {amount} HP", reason)
+    card = edit_card(f"{label} {'loses' if sign < 0 else 'gains'} {amount} HP", reason)
+    if rolled is not None:
         card.update(dice=rolled["dice"], rolls=rolled["rolls"], total=amount)
     hp = who.get("hp", 0) + sign * amount
     top = who.get("max_hp")

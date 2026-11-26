@@ -40,6 +40,13 @@ def test_demo_creates_a_campaign_the_engine_can_walk(tmp_path):
     assert engine.state()["party"]["area"] == first["command"]["to"]
 
 
+def test_the_demo_campaign_turns_on_both_ose_optional_rules(tmp_path):
+    main(["demo", str(tmp_path / "demo")])
+
+    rules = {r["key"]: r["value"] for r in open_engine(tmp_path / "demo").settings()["options"] if r["section"] == "ose"}
+    assert rules == {"ascending_ac": "on", "variable_weapon_damage": "on"}
+
+
 @pytest.fixture
 def referee_args(monkeypatch):
     pytest.importorskip("claude_agent_sdk")
