@@ -8,7 +8,7 @@ from solo_roll.harness.campaign import CampaignPaths
 from solo_roll.harness.referee import Call, Say, ScriptedReferee
 
 ARGS = {
-    "category": "ruling",
+    "category": "rules",
     "question": "Does the rope hold the whole party?",
     "suggestion": "yes",
     "reason": "The rope is new and the party is small.",
@@ -39,7 +39,7 @@ def test_the_referee_tool_leaves_a_card_for_the_player_when_the_player_owns_the_
 def test_the_referee_tool_reports_its_logged_decision_when_the_referee_owns_the_category(tmp_path):
     campaign = make_campaign(tmp_path)
     engine = open_engine(campaign)
-    engine.change_setting("judgment", "ruling", "referee")
+    engine.change_setting("judgment", "rules", "referee")
 
     _, result, _ = run_turn(engine, campaign, Call("mcp__engine__judgment_call", ARGS))
 
@@ -59,7 +59,7 @@ def test_an_unknown_category_is_a_failed_tool_result_and_the_state_tool_lists_th
     )
 
     assert bad["ok"] is False
-    assert state["output"]["judgment_categories"][0]["category"] == "ruling"
+    assert state["output"]["judgment_categories"][0]["category"] == "rules"
     assert state["output"]["judgment_categories"][0]["owner"] == "ask"
 
 
@@ -99,7 +99,7 @@ def test_a_judgment_answer_reaches_the_engine_and_is_narrated_and_an_owner_chang
         messages = receive_until_done(ws)
         assert any(m["type"] == "events" and m["events"][0]["type"] == "judgment_answered" for m in messages)
 
-        ws.send_json({"type": "set_setting", "section": "judgment", "key": "ruling", "value": "referee"})
+        ws.send_json({"type": "set_setting", "section": "judgment", "key": "rules", "value": "referee"})
         changed = ws.receive_json()
         while changed["type"] == "context":
             changed = ws.receive_json()
