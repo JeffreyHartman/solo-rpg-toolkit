@@ -10,8 +10,8 @@ from typing import Any
 
 from ..rng import DiceSource
 from .campaign import CampaignPaths, load_json, write_json
-from .errors import PluginError, UnknownCommandError
-from .proposals import empty_proposals, prepare, proposal_text
+from .errors import IllegalActionError, PluginError, UnknownCommandError
+from .proposals import ANSWER_VERBS, ANSWERS, empty_proposals, prepare, proposal_text
 from .registry import AUTO, Action, CommandContext, Event, PluginFactory, Procedure, Registry, Target, build_registry
 from .settings import CampaignSettings
 from .vault import append_raw_log, write_state_note
@@ -60,6 +60,8 @@ class Engine:
             return self._run_procedure(working, procedure, inputs, target)
         if kind == "propose":
             return self._propose(working, command)
+        if kind == "answer_proposal":
+            return self._answer(working, command)
         handler = self._registry.commands.get(command.get("type", ""))
         if handler is None:
             raise UnknownCommandError(f"no plugin handles command '{command.get('type')}'")
@@ -103,6 +105,36 @@ class Engine:
         proposals["next_id"] += 1
         proposals["pending"].append(proposal)
         return [{"type": "proposal", "proposal": proposal, "text": proposal_text(proposal)}]
+
+    def _answer(self, working: dict[str, Any], command: dict[str, Any]) -> list[Event]:
+        pending = working["proposals"]["pending"]
+        proposal = next((p for p in pending if p["id"] == command.get("id")), None)
+        if proposal is None:
+            raise IllegalActionError(f"no pending proposal '{command.get('id')}'")
+        reply = command.get("answer")
+        if reply not in ANSWERS:
+            raise IllegalActionError(f"answer must be one of {', '.join(ANSWERS)}, got {reply!r}")
+        pending.remove(proposal)
+        procedure = self._procedure(proposal["procedure"])
+        answered: Event = {
+            "type": "proposal_answered",
+            "id": proposal["id"],
+            "answer": reply,
+            "text": f"The player {ANSWER_VERBS[reply]} the proposal: {proposal['label']}.",
+        }
+        if reply == "reject":
+            return [answered]
+        inputs, target = proposal["inputs"], proposal["target"]
+        if reply == "change":
+            changes = dict(command.get("inputs") or {})
+            fallback = target if target and target["editable"] else None
+            # The card sends every field back, so an unchanged target keeps its source.
+            if fallback and str(changes.get("target")) == str(fallback["value"]):
+                del changes["target"]
+            inputs, target = prepare(
+                self._registry, procedure, working, {**inputs, **changes}, "player", fallback
+            )
+        return [answered, *self._run_procedure(working, procedure, inputs, target)]
 
     def confirm_level(self, procedure: str) -> str:
         """The confirm level from the campaign settings, or the procedure's default."""

@@ -10,9 +10,10 @@ from typing import Any
 from .errors import IllegalActionError
 from .registry import Procedure, Registry, Target
 
-__all__ = ["ANSWERS", "empty_proposals", "prepare", "proposal_text"]
+__all__ = ["ANSWER_VERBS", "ANSWERS", "empty_proposals", "prepare", "proposal_text"]
 
 ANSWERS = ("confirm", "change", "reject")
+ANSWER_VERBS = {"confirm": "confirms", "change": "changes", "reject": "rejects"}
 
 SET_BY = {"referee": "the Referee", "player": "the player"}
 
@@ -22,13 +23,19 @@ def empty_proposals() -> dict[str, Any]:
 
 
 def prepare(
-    registry: Registry, procedure: Procedure, state: dict[str, Any], raw: dict[str, Any], set_by: str
+    registry: Registry,
+    procedure: Procedure,
+    state: dict[str, Any],
+    raw: dict[str, Any],
+    set_by: str,
+    fallback: Target | None = None,
 ) -> tuple[dict[str, Any], Target | None]:
     """Check the inputs of a procedure and find its target number.
 
     `set_by` ("referee" or "player") names who gave a `target` input, for the
-    target source. Raises `IllegalActionError` for a bad input, for a `target`
-    input when plugin data gives the target, and for a missing target.
+    target source. `fallback` is the target to keep when no plugin data gives
+    one and `raw` has no `target`. Raises `IllegalActionError` for a bad input,
+    for a `target` input when plugin data gives the target, and for a missing target.
     """
     raw = dict(raw)
     given = raw.pop("target", None)
@@ -45,6 +52,8 @@ def prepare(
                     f"the target number of {procedure.name} comes from {found['source']}, not from an input"
                 )
             return inputs, {"value": found["value"], "source": found["source"], "editable": False}
+    if given is None and fallback is not None:
+        return inputs, dict(fallback)
     if given is None:
         raise IllegalActionError(
             f"{procedure.name} needs a target number: no plugin data gives one, so pass a 'target' input"
