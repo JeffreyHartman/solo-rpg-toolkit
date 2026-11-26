@@ -24,11 +24,19 @@ from ...errors import IllegalActionError
 from ... import party
 from ...registry import AUTO, CONFIRM, Action, CommandContext, Event, Registry, Target
 
-__all__ = ["combat_actions", "register"]
+__all__ = [
+    "ASCENDING_AC", "DEFAULT_DAMAGE", "OPTIONAL_RULES", "VARIABLE_WEAPON_DAMAGE", "attack_bonus",
+    "attack_target", "attack_throw", "combat_actions", "register", "weapon_damage",
+]
 
 GENERIC = {"hd": 1, "ac": 9, "thac0": 19, "damage": "1d6"}
 NUMBER_WORDS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
                 "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
+ASCENDING_AC = "ascending_ac"
+VARIABLE_WEAPON_DAMAGE = "variable_weapon_damage"
+OPTIONAL_RULES = (ASCENDING_AC, VARIABLE_WEAPON_DAMAGE)
+"""The optional rules a campaign can choose, stored as a list in `state["ose_rules"]`."""
+DEFAULT_DAMAGE = "1d6"
 MEMBER_THAC0 = ((3, 19), (6, 17), (9, 14), (12, 12), (99, 10))
 """Attack value by level for every class, a simplification of the per-class OSE tables."""
 
@@ -171,15 +179,16 @@ def attack(state: dict[str, Any], command: dict[str, Any], ctx: CommandContext) 
     member = _readymember(state, combat, inputs["member"])
     monster = _monster(combat, inputs["monster"])
     strength = ability_modifier(member.get("abilities", {}).get("STR", 10), "STR")
-    natural = ctx.dice.roll(1, 20)
-    hit = natural == 20 or (natural != 1 and natural + strength >= target["value"])
-    result = "Hit" if hit else "Miss"
+    thac0 = _thac0(member)
+    throw = attack_throw(state, thac0, monster["ac"], strength, ctx)
+    natural, total, result = throw["natural"], throw["total"], "Hit" if throw["hit"] else "Miss"
     events: list[Event] = [_card(
-        "attack", "d20", [natural], natural + strength, result, "OSE",
-        f"{member['name']} attacks {monster['name']} {monster['id']}: rolled {natural + strength}, "
+        "attack", "d20", [natural], total, result, "OSE",
+        f"{member['name']} attacks {monster['name']} {monster['id']}: rolled {total}, "
         f"needs {target['value']}. {result}.")]
-    if hit:
-        events += _damage(monster, member.get("damage", "1d6"), strength, ctx, "monster")
+    if throw["hit"]:
+        notation, is_default = weapon_damage(state, member)
+        events += _damage(monster, notation, strength, ctx, "monster", is_default)
     events += _finish_party_action(state, combat, member)
     return events
 
@@ -207,8 +216,56 @@ def _attack_target(state: dict[str, Any], inputs: dict[str, Any]) -> Target | No
     combat = _require_combat(state)
     monster = _monster(combat, inputs["monster"])
     member = party.member(state, inputs["member"])
-    thac0 = _thac0(member)
-    return {"value": thac0 - monster["ac"], "source": f"OSE attack throw: THAC0 {thac0} vs AC {monster['ac']}"}
+    return attack_target(state, _thac0(member), monster["ac"], f"AC {monster['ac']}")
+
+
+def optional_rules(state: dict[str, Any]) -> frozenset[str]:
+    return frozenset(state.get("ose_rules", ()))
+
+
+def attack_bonus(state: dict[str, Any], thac0: int) -> int:
+    """The attack bonus of an attacker with this THAC0: 19 minus THAC0 under ascending AC, 0 otherwise."""
+    return 19 - thac0 if ASCENDING_AC in optional_rules(state) else 0
+
+
+def attack_target(state: dict[str, Any], thac0: int, ac: int, defender: str | None = None) -> Target:
+    """The number an attack throw must reach. Descending AC: THAC0 minus AC. Ascending AC: 19 minus AC.
+
+    `ac` is the defender's descending AC, which is how every stat block and character stores it.
+    Any attacker can use it, so a Referee-driven monster attack shares the rule. `defender` names
+    the defender in the descending source text; the ascending source names the bonus and the AC.
+    """
+    if ASCENDING_AC in optional_rules(state):
+        bonus = attack_bonus(state, thac0)
+        return {"value": 19 - ac,
+                "source": f"OSE attack throw, ascending AC: attack bonus {bonus:+d} vs ascending AC {19 - ac}"}
+    return {"value": thac0 - ac,
+            "source": f"OSE attack throw: THAC0 {thac0} vs {defender or f'AC {ac}'}"}
+
+
+def attack_throw(state: dict[str, Any], thac0: int, ac: int, modifier: int, ctx: CommandContext) -> dict[str, Any]:
+    """Roll a d20 attack throw. `modifier` is the ability modifier. A natural 20 hits and a natural 1 misses.
+
+    Returns `{natural, total, need, hit}`; `total` includes the attack bonus under ascending AC.
+    """
+    natural = ctx.dice.roll(1, 20)
+    total = natural + modifier + attack_bonus(state, thac0)
+    need = attack_target(state, thac0, ac)["value"]
+    return {"natural": natural, "total": total, "need": need,
+            "hit": natural == 20 or (natural != 1 and total >= need)}
+
+
+def weapon_damage(state: dict[str, Any], member: dict[str, Any]) -> tuple[str, bool]:
+    """The damage die of a character's attack and whether it is the default.
+
+    Under variable weapon damage the die comes from `member["weapon"]["damage"]`; with no weapon
+    data, or without the rule, the attack uses `DEFAULT_DAMAGE`. The flag is True only when the
+    rule asked for a weapon die and none was found.
+    """
+    if VARIABLE_WEAPON_DAMAGE not in optional_rules(state):
+        return DEFAULT_DAMAGE, False
+    die = (member.get("weapon") or {}).get("damage")
+    return (die, False) if die else (DEFAULT_DAMAGE, True)
 
 
 def combat_actions(state: dict[str, Any]) -> list[Action]:
@@ -241,13 +298,12 @@ def _decision_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) 
                  "text": f"{monster['name']} {monster['id']}: {event['action']}."}]
     member = party.member(state, event["target"])
     ac = member.get("ac", UNARMORED_AC)
-    need = monster["thac0"] - ac
-    natural = ctx.dice.roll(1, 20)
-    hit = natural == 20 or (natural != 1 and natural >= need)
+    throw = attack_throw(state, monster["thac0"], ac, 0, ctx)
+    natural, need, hit = throw["natural"], throw["need"], throw["hit"]
     result = "Hit" if hit else "Miss"
-    card = _card("monster_attack", "d20", [natural], natural, result, "OSE",
-                 f"{monster['name']} {monster['id']} attacks {member['name']}: rolled {natural}, needs {need}. {result}.")
-    card["target"] = {"value": need, "source": f"OSE attack throw: THAC0 {monster['thac0']} vs {member['name']}'s AC {ac}"}
+    card = _card("monster_attack", "d20", [natural], throw["total"], result, "OSE",
+                 f"{monster['name']} {monster['id']} attacks {member['name']}: rolled {throw['total']}, needs {need}. {result}.")
+    card["target"] = attack_target(state, monster["thac0"], ac, f"{member['name']}'s AC {ac}")
     events = [card]
     if hit:
         events += _damage(member, monster["damage"], 0, ctx, "member")
@@ -256,15 +312,17 @@ def _decision_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) 
 
 # Damage and the end of the fight
 
-def _damage(victim: dict[str, Any], notation: str, bonus: int, ctx: CommandContext, side: str) -> list[Event]:
+def _damage(victim: dict[str, Any], notation: str, bonus: int, ctx: CommandContext, side: str,
+            is_default: bool = False) -> list[Event]:
     rolled = roll_dice(parse_dice(notation), ctx.dice)
     amount = max(1, rolled["total"] + bonus)
     victim["hp"] = max(0, victim["hp"] - amount)
     name = victim.get("name")
+    default = ", default die, no weapon data" if is_default else ""
     label = f"{name} {victim['id']}" if side == "monster" else name
     events: list[Event] = [
         _card("damage", rolled["dice"], rolled["rolls"], amount, f"{amount} damage", "OSE",
-              f"{label} takes {amount} damage ({notation}{bonus:+d})." if bonus else f"{label} takes {amount} damage ({notation})."),
+              f"{label} takes {amount} damage ({notation}{bonus:+d}{default})." if bonus else f"{label} takes {amount} damage ({notation}{default})."),
         {"type": "damage", "target": victim["id"] if side == "monster" else name, "amount": amount,
          "hp": victim["hp"], "text": f"{label} has {victim['hp']} HP left."},
     ]

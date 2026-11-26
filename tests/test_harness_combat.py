@@ -32,17 +32,17 @@ PARTY_FIRST = [5, 2]
 MONSTERS_FIRST = [2, 5]
 
 
-def make(tmp_path, rolls, drop=(), party=None):
+def make(tmp_path, rolls, drop=(), party=None, rules=frozenset()):
     data = tmp_path / "data"
     write_tables(data, TABLES, drop)
     (data / "bestiary.json").write_text(json.dumps(BESTIARY))
     root = create_campaign(tmp_path / "campaign", ["ose", "flextale"], MAP, "start", [dict(BRANNOC)] if party is None else party)
-    factories = {"ose": lambda: OsePlugin(data_dir=data, wandering=None), "flextale": lambda: FlextalePlugin(data)}
+    factories = {"ose": lambda: OsePlugin(data_dir=data, wandering=None, optional_rules=rules), "flextale": lambda: FlextalePlugin(data)}
     return open_campaign(root, ScriptedDice(rolls), factories)
 
 
-def start(tmp_path, tail, drop=()):
-    engine = make(tmp_path, TO_COMBAT + GOBLIN_HP + tail, drop=drop)
+def start(tmp_path, tail, drop=(), party=None, rules=frozenset()):
+    engine = make(tmp_path, TO_COMBAT + GOBLIN_HP + tail, drop=drop, party=party, rules=rules)
     events = engine.act({"type": "explore", "exit": "e1"})
     return engine, events
 
@@ -236,3 +236,68 @@ def test_a_monster_attack_uses_the_targets_armor_class_and_names_it(tmp_path):
     card = next(e for e in events if e.get("procedure") == "monster_attack")
     assert card["target"]["value"] == 16
     assert "Brannoc's AC 3" in card["target"]["source"]
+
+
+ASCENDING = frozenset({"ascending_ac"})
+VARIABLE = frozenset({"variable_weapon_damage"})
+# Goblin AC 6 is ascending AC 13; a level 1 attacker has attack bonus +0 and STR 14 adds 1.
+
+
+def test_ascending_ac_hits_at_the_ascending_target_and_names_the_rule(tmp_path):
+    engine, _ = start(tmp_path, PARTY_FIRST + [12, 4, 1, 1, 10, 5, 2], rules=ASCENDING)
+    card = next(e for e in attack(engine) if e.get("procedure") == "attack")
+    assert card["target"]["value"] == 13
+    assert card["result"] == "Hit"
+    assert card["total"] == 13
+    assert "ascending AC 13" in card["target"]["source"]
+    assert "attack bonus +0" in card["target"]["source"]
+
+
+def test_ascending_ac_misses_one_below_the_target(tmp_path):
+    engine, _ = start(tmp_path, PARTY_FIRST + [11, 1, 1, 10, 1, 1, 10, 5, 2], rules=ASCENDING)
+    card = next(e for e in attack(engine) if e.get("procedure") == "attack")
+    assert card["result"] == "Miss"
+    assert card["total"] == 12
+
+
+def test_ascending_attack_bonus_comes_from_thac0(tmp_path):
+    party = [{**BRANNOC, "thac0": 17}]
+    engine, _ = start(tmp_path, PARTY_FIRST + [10, 4, 1, 1, 10, 5, 2], party=party, rules=ASCENDING)
+    card = next(e for e in attack(engine) if e.get("procedure") == "attack")
+    assert card["total"] == 13
+    assert card["result"] == "Hit"
+    assert "attack bonus +2" in card["target"]["source"]
+
+
+def test_a_monster_attack_uses_the_ascending_ac_of_the_target(tmp_path):
+    party = [{**BRANNOC, "ac": 3}]
+    engine = make(tmp_path, TO_COMBAT + GOBLIN_HP + MONSTERS_FIRST + [1, 1, 16, 1, 1, 1, 3], party=party, rules=ASCENDING)
+    events = engine.act({"type": "explore", "exit": "e1"})
+    card = next(e for e in events if e.get("procedure") == "monster_attack")
+    assert card["target"]["value"] == 16
+    assert "ascending AC 16" in card["target"]["source"]
+    assert card["result"] == "Hit"
+
+
+def test_a_weapon_die_is_rolled_with_variable_weapon_damage(tmp_path):
+    party = [{**BRANNOC, "weapon": {"name": "sword", "damage": "1d8"}}]
+    engine, _ = start(tmp_path, PARTY_FIRST + [15, 8, 1, 1, 10, 5, 2], party=party, rules=VARIABLE)
+    events = attack(engine)
+    card = next(e for e in events if e.get("procedure") == "damage")
+    assert card["dice"] == "1d8"
+    assert card["rolls"] == [8]
+    assert "default" not in card["text"]
+
+
+def test_no_weapon_data_rolls_the_default_die_and_the_card_says_so(tmp_path):
+    engine, _ = start(tmp_path, PARTY_FIRST + [15, 4, 1, 1, 10, 5, 2], rules=VARIABLE)
+    card = next(e for e in attack(engine) if e.get("procedure") == "damage")
+    assert card["dice"] == "1d6"
+    assert "default" in card["text"]
+
+
+def test_without_the_rule_a_weapon_die_is_ignored(tmp_path):
+    party = [{**BRANNOC, "weapon": {"name": "sword", "damage": "1d8"}}]
+    engine, _ = start(tmp_path, PARTY_FIRST + [15, 4, 1, 1, 10, 5, 2], party=party)
+    card = next(e for e in attack(engine) if e.get("procedure") == "damage")
+    assert card["dice"] == "1d6"
