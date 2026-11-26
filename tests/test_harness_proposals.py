@@ -1,6 +1,8 @@
 """Tests for proposals, target numbers and confirm levels through `Engine.act`."""
 import pytest
-from harness_fixtures import make_campaign, open_engine
+from harness_fixtures import HAND_MADE_MAP, make_campaign, open_engine
+
+from solo_roll.harness.campaign import create_campaign
 
 from solo_roll.harness.errors import IllegalActionError
 
@@ -99,3 +101,63 @@ def test_a_change_that_sends_the_same_target_back_keeps_the_referees_source(tmp_
     events = answer(engine, proposal["id"], "change", {"ability": "DEX", "target": "12"})
 
     assert events[1]["target"] == {"value": 12, "source": "proposal input, set by the Referee"}
+
+
+def campaign_with_scores(tmp_path):
+    member = {"name": "Brannoc", "abilities": {"STR": 14, "DEX": 8}, "saves": {"breath": 15}}
+    return create_campaign(tmp_path / "scored", ["ose"], HAND_MADE_MAP, "gate", [member])
+
+
+def test_a_target_from_character_data_is_not_an_input_and_the_card_names_it(tmp_path):
+    engine = open_engine(campaign_with_scores(tmp_path), ScriptedDice([14]))
+
+    proposal = propose(engine, "ability_check", {"member": "Brannoc", "ability": "STR"})[0]["proposal"]
+    card = answer(engine, proposal["id"], "confirm")[1]
+
+    assert proposal["target"] == {"value": 14, "source": "Brannoc's STR score", "editable": False}
+    assert (card["result"], card["target"]) == ("Success", {"value": 14, "source": "Brannoc's STR score"})
+
+
+def test_the_referee_cannot_set_a_target_that_character_data_gives(tmp_path):
+    engine = open_engine(campaign_with_scores(tmp_path), ScriptedDice([]))
+
+    with pytest.raises(IllegalActionError, match="Brannoc's STR score"):
+        propose(engine, "ability_check", {"member": "Brannoc", "ability": "STR", "target": 18})
+
+    assert engine.state()["proposals"]["pending"] == []
+
+
+def test_changing_the_ability_finds_the_new_score(tmp_path):
+    engine = open_engine(campaign_with_scores(tmp_path), ScriptedDice([9]))
+    proposal = propose(engine, "ability_check", {"member": "Brannoc", "ability": "STR"})[0]["proposal"]
+
+    card = answer(engine, proposal["id"], "change", {"ability": "DEX"})[1]
+
+    assert (card["result"], card["target"]) == ("Failure", {"value": 8, "source": "Brannoc's DEX score"})
+
+
+def test_a_proposal_with_no_target_from_data_or_input_is_refused(tmp_path):
+    engine = open_engine(make_campaign(tmp_path), ScriptedDice([]))
+
+    with pytest.raises(IllegalActionError, match="target"):
+        propose(engine, "ability_check", {"member": "Brannoc", "ability": "STR"})
+
+
+def test_a_saving_throw_succeeds_at_or_over_the_save_from_character_data(tmp_path):
+    engine = open_engine(campaign_with_scores(tmp_path), ScriptedDice([13]))
+    proposal = propose(engine, "saving_throw", {"member": "Brannoc", "save": "breath", "modifier": 2})[0]["proposal"]
+
+    card = answer(engine, proposal["id"], "confirm")[1]
+
+    assert (card["procedure"], card["total"], card["result"]) == ("saving_throw", 15, "Success")
+    assert card["target"] == {"value": 15, "source": "Brannoc's save vs breath"}
+
+
+@pytest.mark.parametrize("natural, result", [(1, "Success"), (20, "Failure")])
+def test_a_natural_1_or_20_decides_an_ability_check(tmp_path, natural, result):
+    engine = open_engine(make_campaign(tmp_path), ScriptedDice([natural]))
+    proposal = propose(engine, "ability_check",
+                       {"member": "Brannoc", "ability": "STR", "target": 10, "modifier": 15 if natural == 1 else -15})
+    card = answer(engine, proposal[0]["proposal"]["id"], "confirm")[1]
+
+    assert card["result"] == result
