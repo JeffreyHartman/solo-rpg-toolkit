@@ -44,6 +44,7 @@ class FlextalePlugin:
         registry.add_state_default("encounter", encounters.initial_encounter)
         registry.add_setting("difficulty", "context", "Difficulty context", CONTEXTS, "A")
         registry.add_trigger("area_revealed", encounters.reveal_trigger(self._data_dir, self._system))
+        registry.add_trigger("turn", encounters.rest_trigger(self._data_dir, self._system))
         registry.add_trigger("moved", encounters.backtrack_trigger(self._data_dir, self._system))
 
     def _explore(

@@ -24,6 +24,7 @@ __all__ = [
     "initial_encounter",
     "pending_combat",
     "reveal_trigger",
+    "rest_trigger",
 ]
 
 BACKTRACK_INTERVAL = 4
@@ -81,6 +82,16 @@ def backtrack_trigger(data_dir: Path, system: str):
         if enc["backtracks"] % BACKTRACK_INTERVAL:
             return []
         return roll_encounter(state, event["to"], data_dir, system, ctx, "backtracking")
+
+    return trigger
+
+
+def rest_trigger(data_dir: Path, system: str):
+    """The QuickStart rest rule: a rest rolls the encounter table of the area the party is in."""
+    def trigger(state: dict[str, Any], event: Event, ctx) -> list[Event]:
+        if not event.get("rested"):
+            return []
+        return roll_encounter(state, state["party"]["area"], data_dir, system, ctx, "rest")
 
     return trigger
 

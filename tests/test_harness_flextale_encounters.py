@@ -352,3 +352,15 @@ def test_the_player_view_drops_unknown_areas_with_their_links_and_exits():
     assert list(seen["areas"]) == ["a"] and seen["connections"] == []
     assert [e["id"] for e in seen["open_exits"]] == ["x"]
     assert len(state["map"]["areas"]) == 2
+
+
+def test_resting_rolls_the_current_areas_encounter_table_after_the_turn(tmp_path):
+    engine = make_engine(tmp_path, [1, 1, 11, 1, 3])  # explore a hall with no encounter; rest rolls an obstacle with DC +2
+    explore(engine)
+    events = engine.act({"type": "procedure", "name": "rest"})
+    assert [e["type"] for e in events if e["type"] in ("turn", "encounter")] == ["turn", "encounter"]
+    current = encounter(engine)
+    assert (current["area"], current["source"]) == ("area-2", "rest")
+    assert current["table"] == "quickstart/hallway-encounter-a"
+    assert [o["kind"] for o in current["outcomes"]] == ["obstacle"]
+
