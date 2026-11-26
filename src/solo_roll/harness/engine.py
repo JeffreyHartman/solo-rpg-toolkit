@@ -24,7 +24,7 @@ from .registry import (
     Target,
     build_registry,
 )
-from .settings import CampaignSettings
+from .settings import REFEREE_DEFAULTS, REFEREE_EFFORTS, REFEREE_MODELS, CampaignSettings
 from .vault import append_raw_log, write_character_notes, write_state_note
 
 __all__ = ["Engine", "open_campaign"]
@@ -172,11 +172,16 @@ class Engine:
             "confirm": [
                 {"procedure": p.name, "label": p.label, "default": p.confirm, "level": self.confirm_level(p.name)}
                 for p in self._registry.procedures.values()
-            ]
+            ],
+            "referee": {key: self._settings.get("referee", key, default) for key, default in REFEREE_DEFAULTS.items()},
         }
 
     def change_setting(self, section: str, key: str, value: Any) -> None:
         """Check and save one campaign setting. Raises `SettingError` and saves nothing for a bad one."""
+        if section == "referee":
+            _check_referee_setting(key, value)
+            self._settings.set(section, key, value)
+            return
         if section != "confirm":
             raise SettingError(f"no campaign setting section '{section}'")
         if key not in self._registry.procedures:
@@ -224,6 +229,17 @@ class Engine:
     def available_actions(self) -> list[Action]:
         snapshot = self.state()
         return [a for provider in self._registry.action_providers for a in provider(snapshot)]
+
+
+def _check_referee_setting(key: str, value: Any) -> None:
+    if key == "model" and value not in REFEREE_MODELS:
+        raise SettingError(f"model must be one of {', '.join(REFEREE_MODELS)}, got {value!r}")
+    if key == "effort" and value not in REFEREE_EFFORTS:
+        raise SettingError(f"effort must be one of {', '.join(REFEREE_EFFORTS)}, got {value!r}")
+    if key == "budget" and (type(value) is not int or value <= 0):
+        raise SettingError(f"budget must be a positive whole number of tokens, got {value!r}")
+    if key not in REFEREE_DEFAULTS:
+        raise SettingError(f"no Referee setting '{key}'")
 
 
 def open_campaign(

@@ -8,6 +8,7 @@ import pytest
 from harness_fixtures import make_campaign, open_engine
 
 from solo_roll.harness.campaign import CampaignPaths
+from solo_roll.harness.errors import SettingError
 from solo_roll.harness.referee import Call, ScriptedReferee
 
 
@@ -83,3 +84,31 @@ def test_the_scripted_turn_context_lists_the_prompt_parts_and_tool_results(engin
     parts = referee.turn_context()
     assert [p["label"] for p in parts] == ["Session opening", "State snapshot", "Player input", "Moving to Long Hall"]
     assert '"area": "hall"' in parts[3]["text"]
+
+
+def test_a_new_campaign_runs_the_referee_on_sonnet_at_low_effort_with_a_budget(engine):
+    referee = engine.settings()["referee"]
+
+    assert (referee["model"], referee["effort"]) == ("sonnet", "low")
+    assert referee["budget"] > 0
+
+
+def test_referee_settings_change_and_persist(engine, paths):
+    engine.change_setting("referee", "model", "opus")
+    engine.change_setting("referee", "effort", "high")
+    engine.change_setting("referee", "budget", 80000)
+
+    assert open_engine(paths.root).settings()["referee"] == {"model": "opus", "effort": "high", "budget": 80000}
+
+
+@pytest.mark.parametrize(
+    "key, value",
+    [("model", "gpt"), ("effort", "extreme"), ("budget", 0), ("budget", "lots"), ("budget", True), ("voice", "x")],
+)
+def test_a_bad_referee_setting_is_refused_and_saves_nothing(engine, key, value):
+    before = engine.settings()["referee"]
+
+    with pytest.raises(SettingError):
+        engine.change_setting("referee", key, value)
+
+    assert engine.settings()["referee"] == before
