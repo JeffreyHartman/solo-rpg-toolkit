@@ -45,7 +45,21 @@ def _uvicorn_run(app, host: str, port: int) -> None:
 def _load_script(args) -> dict:
     if not args.script:
         raise HarnessError("--referee scripted needs --script FILE")
-    return json.loads(Path(args.script).read_text())
+    path = Path(args.script)
+    try:
+        script = json.loads(path.read_text())
+    except OSError as exc:
+        raise HarnessError(f"cannot read script file {path}: {exc}") from exc
+    except json.JSONDecodeError as exc:
+        raise HarnessError(f"script file {path} is not valid JSON: {exc}") from exc
+    if not isinstance(script, dict):
+        raise HarnessError(f"script file {path} must be a JSON object")
+    dice = script.get("dice")
+    if dice is not None and not (isinstance(dice, list) and all(type(d) is int for d in dice)):
+        raise HarnessError(f"script file {path}: 'dice' must be a list of integers")
+    if not isinstance(script.get("referee", []), list):
+        raise HarnessError(f"script file {path}: 'referee' must be a list of turns")
+    return script
 
 
 def _serve(

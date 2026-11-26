@@ -191,3 +191,28 @@ def test_a_script_file_sets_the_dice_and_the_scripted_referee_turns(tmp_path):
 def test_scripted_referee_needs_a_script(tmp_path, capsys):
     assert main(["serve", "--campaigns", str(tmp_path), "--referee", "scripted"], run=lambda *a, **k: None) == 1
     assert "--script" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "content, expected",
+    [
+        (None, "cannot read"),
+        ("{not json", "not valid JSON"),
+        ("[]", "JSON object"),
+        ('{"dice": "abc"}', "dice"),
+        ('{"dice": [1, "x"]}', "dice"),
+        ('{"referee": {}}', "referee"),
+    ],
+)
+def test_a_bad_script_file_exits_one_with_a_message(tmp_path, capsys, content, expected):
+    script = tmp_path / "script.json"
+    if content is not None:
+        script.write_text(content)
+
+    code = main(
+        ["serve", "--campaigns", str(tmp_path / "c"), "--referee", "scripted", "--script", str(script)],
+        run=lambda *a, **k: None, env={}, home=tmp_path,
+    )
+
+    assert code == 1
+    assert expected in capsys.readouterr().err
