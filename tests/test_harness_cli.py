@@ -153,3 +153,41 @@ def test_each_campaign_the_library_opens_gets_its_own_dice(tmp_path):
             abilities.append(ws.receive_json()["state"]["party"]["members"][0]["abilities"])
 
     assert abilities[0] != abilities[1]
+
+
+def test_a_script_file_sets_the_dice_and_the_scripted_referee_turns(tmp_path):
+    import json
+
+    from fastapi.testclient import TestClient
+
+    script = tmp_path / "script.json"
+    script.write_text(json.dumps({
+        "dice": [3] * 18 + [4],
+        "referee": [[{"say": "Welcome."}, {"call": {"tool": "mcp__engine__state", "input": {}}}]],
+    }))
+    apps = []
+    main(
+        ["serve", "--campaigns", str(tmp_path / "campaigns"), "--referee", "scripted", "--script", str(script)],
+        run=lambda app, host, port: apps.append(app),
+        lan_ip=lambda: "10.0.0.2",
+        env={},
+        home=tmp_path / "home",
+    )
+    with TestClient(apps[0]).websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "new_campaign", "name": "Scripted", "ruleset": "ose", "generators": []})
+        ws.receive_json()
+        ws.send_json({"type": "act", "command": {
+            "type": "procedure", "name": "create_character",
+            "inputs": {"class": "Fighter", "character_name": "Brannoc"}}})
+        member = ws.receive_json()["state"]["party"]["members"][0]
+        seen = [ws.receive_json() for _ in range(5)]
+
+    assert member["abilities"]["STR"] == 9
+    texts = [m["event"]["text"] for m in seen if m["type"] == "referee" and m["event"]["type"] == "text"]
+    assert texts == ["Welcome."]
+
+
+def test_scripted_referee_needs_a_script(tmp_path, capsys):
+    assert main(["serve", "--campaigns", str(tmp_path), "--referee", "scripted"], run=lambda *a, **k: None) == 1
+    assert "--script" in capsys.readouterr().err
