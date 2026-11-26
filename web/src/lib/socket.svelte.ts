@@ -1,8 +1,9 @@
 import type { Action, ClientMessage, Command, EngineState, ServerMessage } from './protocol'
 
 export interface LogLine {
-  kind: 'event' | 'error'
+  kind: 'event' | 'error' | 'mechanics'
   text: string
+  card?: { dice: string; rolls: number[]; total: number; result: string; source: string }
 }
 
 export const game = $state({
@@ -33,7 +34,14 @@ function receive(message: ServerMessage): void {
   game.state = message.state
   game.actions = message.actions
   if (message.type === 'events') {
-    for (const event of message.events) game.log.push({ kind: 'event', text: event.text ?? event.type })
+    for (const event of message.events) {
+      if (event.type === 'mechanics') {
+        const { dice, rolls, total, result, source } = event as unknown as NonNullable<LogLine['card']>
+        game.log.push({ kind: 'mechanics', text: event.text ?? event.type, card: { dice, rolls, total, result, source } })
+      } else {
+        game.log.push({ kind: 'event', text: event.text ?? event.type })
+      }
+    }
   }
 }
 
@@ -43,6 +51,10 @@ function send(message: ClientMessage): void {
 
 export function act(command: Command): void {
   send({ type: 'act', command })
+}
+
+export function exploreActionFor(exit: string): Action | undefined {
+  return game.actions.find((a) => a.command.type === 'explore' && a.command.exit === exit)
 }
 
 export function moveActionTo(area: string): Action | undefined {
