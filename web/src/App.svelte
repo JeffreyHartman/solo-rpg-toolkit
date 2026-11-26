@@ -73,7 +73,7 @@
   .map { position: fixed; inset: 0; }
   .panel { position: fixed; background: #17120ddd; border: 1px solid var(--edge); border-radius: 10px; padding: 8px 12px; }
   .party { top: 12px; left: 12px; }
-  .combat { top: 12px; left: 50%; transform: translateX(-50%); min-width: 220px; max-width: calc(100vw - 24px); }
+  .combat { top: 64px; left: 50%; transform: translateX(-50%); min-width: 220px; max-width: calc(100vw - 24px); }
   .log { left: 12px; bottom: 12px; width: min(460px, calc(100vw - 24px)); height: 45vh; font-size: 14px; }
   .dock { position: fixed; right: 12px; bottom: 12px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-width: calc(100vw - 24px); }
   .dock > .panel { position: static; }

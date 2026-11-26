@@ -104,6 +104,17 @@ test('a short delve from a new campaign to the session note', async ({ page, lau
   await expect(combat).toContainText('HP 4/4')
   await expect(combat).toContainText('goblin m2')
   await expect(combat).toContainText('HP 3/3')
+  for (const size of [{ width: 1280, height: 800 }, { width: 1024, height: 700 }]) {
+    await page.setViewportSize(size)
+    for (const part of [combat.locator('b'), combat.locator('li').first()]) {
+      const covered = await part.evaluate((el) => {
+        const r = el.getBoundingClientRect()
+        return !el.contains(el.ownerDocument.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2))
+      })
+      expect(covered, `combat panel part covered at ${size.width}x${size.height}`).toBe(false)
+    }
+  }
+  await page.setViewportSize({ width: 1280, height: 800 })
 
   await page.getByRole('button', { name: /^Tess attacks goblin m1/ }).click()
   await expect(combat).toContainText('dead')
