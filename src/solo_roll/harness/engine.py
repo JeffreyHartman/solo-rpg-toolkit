@@ -26,7 +26,7 @@ from .registry import (
     build_registry,
 )
 from .settings import REFEREE_DEFAULTS, REFEREE_EFFORTS, REFEREE_MODELS, CampaignSettings
-from .vault import append_raw_log, write_character_notes, write_state_note
+from .vault import append_raw_log, append_raw_text, write_character_notes, write_state_note
 
 __all__ = ["Engine", "open_campaign"]
 
@@ -349,6 +349,10 @@ class Engine:
         write_json(self._paths.state, self._state)
         write_state_note(self._paths, self._state)
         return events
+
+    def log_chat(self, speaker: str, text: str) -> None:
+        """Add a chat message, the player's text or the Referee's narration, to the current session's raw log."""
+        append_raw_text(self._paths, self._state["session"], speaker, text)
 
     def referee_guides(self) -> list[str]:
         return list(self._registry.referee_guides)

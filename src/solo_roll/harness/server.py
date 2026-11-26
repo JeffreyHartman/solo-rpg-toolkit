@@ -26,7 +26,8 @@ a proposal include a `proposal` event.
 
 Messages from the browser:
   act       {command}                 run one engine command; the Referee then narrates it
-  say       {text}                    free text for the Referee
+  say       {text}                    free text for the Referee; the text and the Referee's
+                                      narration go into the session's raw log
   answer    {id, answer, inputs?}     answer a proposal: confirm, change (with the
                                       changed inputs) or reject; the Referee then narrates it
   answer_judgment {id, answer}        answer a judgment call card; the Referee then narrates it
@@ -181,6 +182,8 @@ class _Hub:
         if self.referee is None:
             await ws.send_json({"type": "error", "message": "No Referee is running for this campaign."})
             return
+        assert self.engine is not None
+        self.engine.log_chat("Player", text)
         await self._broadcast({"type": "player", "text": text})
         self._start_turn(text)
 
@@ -194,22 +197,30 @@ class _Hub:
 
     async def _run_turn(self, player_input: str) -> None:
         async with self._turn_lock:
-            await self._stream_turn(player_input)
+            await self._stream_turn(player_input, log=True)
 
-    async def _stream_turn(self, player_input: str) -> bool:
+    async def _stream_turn(self, player_input: str, log: bool = False) -> bool:
         """Run one Referee turn and send the context reading after it. Call with the turn lock held.
 
-        Returns False if the turn ended with an error.
+        With `log`, the narration goes into the raw log: the text after the turn's last tool call,
+        since text before a tool call is a status line. Returns False if the turn ended with an error.
         """
         assert self.referee is not None
         ok = True
+        narration: list[str] = []
         try:
             async for event in self.referee.turn(player_input):
                 await self._broadcast({"type": "referee", "event": event})
+                if event["type"] == "text":
+                    narration.append(event["text"])
+                elif event["type"] == "tool_start":
+                    narration.clear()
                 if event["type"] == "tool_result" and event.get("events"):
                     await self._broadcast_events(event["events"])
                 if event["type"] == "done" and event.get("error"):
                     ok = False
+            if log:
+                self.engine.log_chat("Referee", "".join(narration))
             await self._send_context(self.referee.turn_context())
         # Any adapter failure (a lost CLI, an auth error) must end the turn for the UI.
         except Exception as exc:  # noqa: BLE001

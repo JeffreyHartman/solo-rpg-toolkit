@@ -196,3 +196,26 @@ def test_a_budget_change_sends_the_reading_against_the_new_budget(tmp_path):
         context = receive_until(ws, "context")[-1]
 
     assert (context["tokens"], context["budget"], context["over"]) == (4200, 4000, True)
+
+
+def test_the_raw_log_holds_the_player_text_and_the_narration_so_a_chat_only_session_can_end(tmp_path):
+    write_note = Call("Write", {"file_path": NOTE, "content": "---\ntype: session\nsession: 1\n---\n# The Gate\n"})
+    client, referee, engine = referee_client(
+        tmp_path,
+        [Say("Checking."), Call("mcp__engine__state"), Say("Dust "), Say("swirls.\n\nA crow calls.")],
+        [Say("Writing it up."), write_note, Say("Wrote the note.")],
+    )
+    raw_log = engine.paths.raw_log(1)
+    with client.websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "say", "text": "I look around."})
+        receive_until(ws, "context")
+        logged = raw_log.read_text()
+        ws.send_json({"type": "end_session"})
+        messages = receive_until(ws, "session")
+
+    assert "- Player: I look around.\n" in logged
+    assert "- Referee: Dust swirls.\n\n  A crow calls.\n" in logged
+    assert "Checking." not in logged
+    assert "Wrote the note." not in raw_log.read_text()
+    assert messages[-1] == {"type": "session", "session": 2, "note": NOTE}
