@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from ....coins import parse_coin_slot
 from ....rng import DiceSource
 from ...errors import FlextaleDataError
 from ...judgment import judgment_request
@@ -159,11 +160,10 @@ def _name(text: str) -> str:
 
 
 def _coins(result: str, index: int, dice: DiceSource, table: str) -> int:
-    slots = [s.strip() for s in result.split("/")]
-    match = re.fullmatch(r"(\d+)d(\d+)(?:\s*x\s*(\d+))?\s*gp", slots[index]) if index < len(slots) else None
-    if match is None:
+    slot = parse_coin_slot(result, index)
+    if slot is None:
         raise FlextaleDataError(f"cannot read the coin amount for this difficulty context in table {table}")
-    count, sides, factor = int(match.group(1)), int(match.group(2)), int(match.group(3) or 1)
+    count, sides, factor = slot
     return sum(dice.roll(1, sides) for _ in range(count)) * factor
 
 
