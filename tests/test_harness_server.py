@@ -33,7 +33,7 @@ def test_a_move_command_returns_its_events_with_the_new_state(client):
         reply = ws.receive_json()
 
     assert reply["type"] == "events"
-    assert [e["type"] for e in reply["events"]] == ["moved", "area_revealed"]
+    assert [e["type"] for e in reply["events"]] == ["area_revealed", "moved", "turn"]
     assert reply["state"]["party"]["area"] == "hall"
     assert {a["id"] for a in reply["actions"] if a["id"].startswith("move:")} == {"move:gate", "move:crypt"}
 
@@ -123,7 +123,7 @@ def test_an_engine_tool_in_a_turn_also_sends_the_engine_events_and_new_state(tmp
     kinds = [m["event"]["type"] if m["type"] == "referee" else m["type"] for m in messages]
     assert kinds == ["player", "text", "tool_start", "tool_result", "events", "done"]
     events = messages[4]
-    assert [e["type"] for e in events["events"]] == ["moved", "area_revealed"]
+    assert [e["type"] for e in events["events"]] == ["area_revealed", "moved", "turn"]
     assert events["state"]["party"]["area"] == "hall"
 
 
@@ -259,6 +259,30 @@ def test_act_with_no_campaign_open_returns_an_error(library_client):
         error = ws.receive_json()
 
     assert error["type"] == "error"
+
+
+def test_an_unexpected_error_in_a_command_returns_an_error_and_the_socket_stays_open(tmp_path):
+    engine = open_engine(make_campaign(tmp_path))
+    real_act = engine.act
+    calls = []
+
+    def act(command):
+        calls.append(command)
+        if len(calls) == 1:
+            raise RuntimeError("boom")
+        return real_act(command)
+
+    engine.act = act
+    with TestClient(create_app(engine)).websocket_connect("/ws") as ws:
+        ws.receive_json()
+        ws.send_json({"type": "act", "command": {"type": "move", "to": "hall"}})
+        error = ws.receive_json()
+        ws.send_json({"type": "act", "command": {"type": "move", "to": "hall"}})
+        reply = ws.receive_json()
+
+    assert error["type"] == "error"
+    assert "boom" in error["message"]
+    assert reply["type"] == "events"
 
 
 def test_the_snapshot_leaves_out_unknown_areas_and_hidden_outcomes(tmp_path):

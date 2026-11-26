@@ -90,6 +90,8 @@ class Procedure:
     """
     target: bool = False
     """True when the procedure rolls against a target number. The handler gets it as `command["target"]`."""
+    judgment_categories: tuple[str, ...] = ()
+    """The judgment call categories the procedure can raise."""
 
 
 class Plugin(Protocol):
@@ -115,6 +117,7 @@ class Registry:
     target_sources: dict[str, list[TargetSource]] = field(default_factory=dict)
     settings: dict[tuple[str, str], dict[str, Any]] = field(default_factory=dict)
     judgment_categories: dict[str, str] = field(default_factory=dict)
+    character_schema: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     def add_command(self, command_type: str, handler: CommandHandler) -> None:
         if command_type in self.commands:
@@ -137,13 +140,16 @@ class Registry:
         label: str = "",
         inputs: dict[str, dict[str, Any]] | None = None,
         target: bool = False,
+        judgment_categories: tuple[str, ...] = (),
     ) -> None:
-        """Register a procedure with its default confirm level, its inputs, and whether it needs a target number."""
+        """Register a procedure with its default confirm level, its inputs, whether it needs a target number, and the judgment call categories it can raise."""
         if name in self.procedures:
             raise PluginError(f"procedure '{name}' is already registered")
         if confirm not in CONFIRM_LEVELS:
             raise PluginError(f"procedure '{name}': confirm level '{confirm}' is not one of {CONFIRM_LEVELS}")
-        self.procedures[name] = Procedure(name, handler, confirm, label or name, dict(inputs or {}), target)
+        self.procedures[name] = Procedure(
+            name, handler, confirm, label or name, dict(inputs or {}), target, tuple(judgment_categories)
+        )
 
     def add_target_source(self, procedure: str, source: TargetSource) -> None:
         """Supply target numbers for a procedure from plugin data.
@@ -167,6 +173,12 @@ class Registry:
         if name in self.judgment_categories:
             raise PluginError(f"judgment category '{name}' is already registered")
         self.judgment_categories[name] = label
+
+    def add_character_schema(self, fields: dict[str, dict[str, Any]]) -> None:
+        """Describe the fields of a party member in this ruleset, each as a `type` and a `label`. One plugin sets it."""
+        if self.character_schema:
+            raise PluginError("a character schema is already registered")
+        self.character_schema = dict(fields)
 
     def add_trigger(self, event_type: str, trigger: Trigger) -> None:
         self.triggers.setdefault(event_type, []).append(trigger)

@@ -260,6 +260,7 @@ class Engine:
                 "label": p.label,
                 "inputs": p.inputs,
                 "target": p.target,
+                "judgment_categories": list(p.judgment_categories),
                 "confirm": self.confirm_level(p.name),
             }
             for p in self._registry.procedures.values()

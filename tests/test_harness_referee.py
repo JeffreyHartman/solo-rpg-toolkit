@@ -74,7 +74,7 @@ def test_the_move_tool_moves_the_party_through_the_engine(engine, paths):
     assert start["type"] == "tool_start"
     assert start["label"] == "Moving to Long Hall"
     assert result["type"] == "tool_result" and result["ok"] is True
-    assert [e["type"] for e in result["events"]] == ["moved", "area_revealed"]
+    assert [e["type"] for e in result["events"]] == ["area_revealed", "moved", "turn"]
     assert engine.state()["party"]["area"] == "hall"
 
 

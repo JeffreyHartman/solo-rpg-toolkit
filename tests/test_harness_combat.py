@@ -36,7 +36,7 @@ def make(tmp_path, rolls, drop=(), party=None):
     data = tmp_path / "data"
     write_tables(data, TABLES, drop)
     (data / "bestiary.json").write_text(json.dumps(BESTIARY))
-    root = create_campaign(tmp_path / "campaign", ["ose", "flextale"], MAP, "start", party or [dict(BRANNOC)])
+    root = create_campaign(tmp_path / "campaign", ["ose", "flextale"], MAP, "start", [dict(BRANNOC)] if party is None else party)
     factories = {"ose": lambda: OsePlugin(data_dir=data, wandering=None), "flextale": lambda: FlextalePlugin(data)}
     return open_campaign(root, ScriptedDice(rolls), factories)
 
@@ -205,3 +205,34 @@ def test_a_monster_ai_procedure_runs_as_auto(tmp_path):
     assert levels["simple_ai"] == "auto"
     assert levels["initiative"] == "auto"
     assert levels["attack"] == "confirm"
+
+
+def test_a_defeat_logs_combat_ended_after_the_monsters_act_and_nothing_after_it(tmp_path):
+    party = [{**BRANNOC, "hp": 3, "max_hp": 6}]
+    engine = make(tmp_path, TO_COMBAT + GOBLIN_HP + MONSTERS_FIRST + [1, 1, 20, 6], party=party)
+    events = engine.act({"type": "explore", "exit": "e1"})
+    ended = next(i for i, e in enumerate(events) if e["type"] == "combat_ended")
+    assert not any(e["type"] == "phase_changed" for e in events[ended:])
+
+
+def test_a_fight_with_no_standing_member_is_refused_and_changes_nothing(tmp_path):
+    engine = make(tmp_path, TO_COMBAT + GOBLIN_HP + MONSTERS_FIRST + [1, 1], party=[])
+    before = engine.state()
+    with pytest.raises(IllegalActionError, match="standing"):
+        engine.act({"type": "explore", "exit": "e1"})
+    assert engine.state() == before
+
+
+def test_exploring_takes_a_dungeon_turn(tmp_path):
+    engine, events = start(tmp_path, PARTY_FIRST)
+    assert "turn" in types(events)
+    assert engine.state()["dungeon"]["turn"] == 1
+
+
+def test_a_monster_attack_uses_the_targets_armor_class_and_names_it(tmp_path):
+    party = [{**BRANNOC, "ac": 3}]
+    engine = make(tmp_path, TO_COMBAT + GOBLIN_HP + MONSTERS_FIRST + [1, 1, 20, 1, 1, 1, 3], party=party)
+    events = engine.act({"type": "explore", "exit": "e1"})
+    card = next(e for e in events if e.get("procedure") == "monster_attack")
+    assert card["target"]["value"] == 16
+    assert "Brannoc's AC 3" in card["target"]["source"]

@@ -7,6 +7,7 @@ the target number shown to the player is the base score or save minus the DC mod
 from typing import Any
 
 from ....character import ABILITIES
+from ... import party
 from ...errors import IllegalActionError
 from ...registry import CONFIRM, CommandContext, Event, Registry, Target
 
@@ -39,13 +40,11 @@ def open_challenge(state: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def _score(state: dict[str, Any], inputs: dict[str, Any]) -> tuple[dict[str, Any], int | None]:
-    member = next((m for m in state["party"]["members"] if m["name"] == inputs["member"]), None)
-    if member is None:
-        raise IllegalActionError(f"no party member named '{inputs['member']}'")
+    found = party.member(state, inputs["member"])
     field = "abilities" if inputs["against"] in ABILITIES else "saves"
-    if inputs["against"] not in ABILITIES and inputs["against"] not in member.get("saves", {}):
-        raise IllegalActionError(f"{member['name']} has no ability or save named '{inputs['against']}'")
-    return member, member.get(field, {}).get(inputs["against"])
+    if inputs["against"] not in ABILITIES and inputs["against"] not in found.get("saves", {}):
+        raise IllegalActionError(f"{found['name']} has no ability or save named '{inputs['against']}'")
+    return found, found.get(field, {}).get(inputs["against"])
 
 
 def _dc_target(state: dict[str, Any], inputs: dict[str, Any]) -> Target | None:

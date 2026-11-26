@@ -9,3 +9,4 @@ __version__ = "0.1.0"
 _PACKAGE_DIR = Path(__file__).resolve().parent   # src/solo_roll/
 REPO_ROOT = _PACKAGE_DIR.parent.parent           # src/ → repo root
 DEFAULT_DATA_DIR = REPO_ROOT / "data"
+OSE_DATA_DIR = REPO_ROOT / "templates" / "ose" / "data"

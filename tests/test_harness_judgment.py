@@ -19,7 +19,7 @@ class ProgressPlugin:
     def register(self, registry):
         registry.add_judgment_category("progress", "Does an action mark progress?")
         registry.add_state_default("progress", lambda state: 0)
-        registry.add_procedure("scout", self._scout, label="Scout")
+        registry.add_procedure("scout", self._scout, label="Scout", judgment_categories=("progress",))
 
     @staticmethod
     def _scout(state, command, ctx):
@@ -164,3 +164,29 @@ def test_an_unknown_category_is_refused(tmp_path):
     engine = make_engine(tmp_path)
     with pytest.raises(IllegalActionError):
         engine.act({"type": "judgment", "category": "x", "question": "q", "suggestion": "s", "reason": "r"})
+
+
+def test_a_procedure_lists_the_judgment_categories_it_can_raise(tmp_path):
+    rows = {p["name"]: p for p in make_engine(tmp_path).procedures()}
+
+    assert rows["scout"]["judgment_categories"] == ["progress"]
+    assert rows["search"]["judgment_categories"] == []
+
+
+def test_the_ose_plugin_registers_a_character_schema(tmp_path):
+    from solo_roll.harness.registry import build_registry
+
+    schema = build_registry(["ose"], BUILTIN_PLUGINS).character_schema
+
+    assert {"name", "class", "level", "abilities", "saves", "ac", "hp", "max_hp"} <= set(schema)
+    assert schema["saves"]["type"] == "object"
+
+
+def test_two_plugins_cannot_both_register_a_character_schema():
+    from solo_roll.harness.errors import PluginError
+    from solo_roll.harness.registry import Registry
+
+    registry = Registry()
+    registry.add_character_schema({"name": {"type": "string"}})
+    with pytest.raises(PluginError):
+        registry.add_character_schema({"name": {"type": "string"}})
