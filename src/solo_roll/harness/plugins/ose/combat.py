@@ -50,6 +50,7 @@ def register(registry: Registry, data_dir: Path) -> None:
     )
     registry.add_trigger("combat_encounter", _start_trigger(Path(data_dir)))
     registry.add_trigger("phase_changed", _phase_trigger)
+    registry.add_trigger("monsters_done", _monsters_done_trigger)
     registry.add_trigger("round_ended", _round_trigger)
     registry.add_trigger("monster_decision", _decision_trigger)
     registry.add_action_provider(combat_actions)
@@ -129,8 +130,13 @@ def _phase_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> 
         {"type": "monster_turn", "monster": m["id"], "text": f"{m['name']} {m['id']} acts."}
         for m in combat["monsters"] if m["status"] == "alive"
     ]
-    out.append(_side_done(combat, "monsters"))
+    out.append({"type": "monsters_done", "text": "The monsters have acted."})
     return out
+
+
+def _monsters_done_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> list[Event]:
+    combat = state.get("combat")
+    return [] if combat is None else [_side_done(combat, "monsters")]
 
 
 def _round_trigger(state: dict[str, Any], event: Event, ctx: CommandContext) -> list[Event]:

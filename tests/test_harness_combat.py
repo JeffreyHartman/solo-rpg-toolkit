@@ -36,7 +36,7 @@ def make(tmp_path, rolls, drop=(), party=None):
     data = tmp_path / "data"
     write_tables(data, TABLES, drop)
     (data / "bestiary.json").write_text(json.dumps(BESTIARY))
-    root = create_campaign(tmp_path / "campaign", ["ose", "flextale"], MAP, "start", party or [dict(BRANNOC)])
+    root = create_campaign(tmp_path / "campaign", ["ose", "flextale"], MAP, "start", [dict(BRANNOC)] if party is None else party)
     factories = {"ose": lambda: OsePlugin(data_dir=data, wandering=None), "flextale": lambda: FlextalePlugin(data)}
     return open_campaign(root, ScriptedDice(rolls), factories)
 
@@ -205,3 +205,19 @@ def test_a_monster_ai_procedure_runs_as_auto(tmp_path):
     assert levels["simple_ai"] == "auto"
     assert levels["initiative"] == "auto"
     assert levels["attack"] == "confirm"
+
+
+def test_a_defeat_logs_combat_ended_after_the_monsters_act_and_nothing_after_it(tmp_path):
+    party = [{**BRANNOC, "hp": 3, "max_hp": 6}]
+    engine = make(tmp_path, TO_COMBAT + GOBLIN_HP + MONSTERS_FIRST + [1, 1, 20, 6], party=party)
+    events = engine.act({"type": "explore", "exit": "e1"})
+    ended = next(i for i, e in enumerate(events) if e["type"] == "combat_ended")
+    assert not any(e["type"] == "phase_changed" for e in events[ended:])
+
+
+def test_a_fight_with_no_standing_member_is_refused_and_changes_nothing(tmp_path):
+    engine = make(tmp_path, TO_COMBAT + GOBLIN_HP + MONSTERS_FIRST + [1, 1], party=[])
+    before = engine.state()
+    with pytest.raises(IllegalActionError, match="standing"):
+        engine.act({"type": "explore", "exit": "e1"})
+    assert engine.state() == before
