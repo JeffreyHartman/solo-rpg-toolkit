@@ -39,6 +39,7 @@ class OsePlugin:
         registry.add_judgment_category("rules", "Rules the OSE book leaves open")
         registry.add_character_schema(CHARACTER_SCHEMA)
         registry.add_state_default("dungeon", dungeon_turn.initial_dungeon(self._wandering))
+        registry.add_state_default("kept_roll", lambda _state: None)
         registry.add_procedure(
             "create_character", create_character, label="Create a character", inputs=CREATE_CHARACTER_INPUTS
         )

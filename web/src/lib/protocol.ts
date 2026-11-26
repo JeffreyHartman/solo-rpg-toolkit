@@ -107,6 +107,7 @@ export interface EngineState {
   map: { areas: Record<string, Area>; connections: Connection[]; open_exits?: OpenExit[] }
   dungeon?: Dungeon
   combat?: Combat | null
+  kept_roll?: { abilities: Record<string, number>; qualifies_for: string[] } | null
   proposals?: { pending: Proposal[] }
   judgments?: { pending: JudgmentCall[] }
 }
