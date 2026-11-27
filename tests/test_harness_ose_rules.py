@@ -52,6 +52,6 @@ def test_a_campaign_with_no_declaration_uses_descending_ac_and_the_default_die(t
 
     cards = attack_cards(engine)
 
-    assert cards["attack"]["target"]["source"] == "OSE attack throw: THAC0 19 vs AC 6"
+    assert cards["attack"]["target"]["source"] == "OSE attack throw: THAC0 19, STR +1 vs AC 6"
     assert cards["attack"]["result"] == "Hit"
     assert cards["damage"]["dice"] == "1d6" and "default" not in cards["damage"]["text"]
