@@ -108,8 +108,8 @@ class Engine:
         """Run a procedure. Its own mechanics card names the target number and the source.
 
         Only a mechanics card whose `procedure` is the name of this procedure gets the
-        target. Other cards, such as the damage card of an attack, get no target, and a
-        card that sets its own target keeps it.
+        target. Other cards from the same handler get no target, and a card that sets its
+        own target keeps it.
 
         A handler that ends with a `judgment_request` event raises a judgment call, which
         this method turns into a pending card or a Referee decision. `judgment` is the

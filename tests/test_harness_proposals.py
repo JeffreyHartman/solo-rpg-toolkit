@@ -240,7 +240,7 @@ def test_the_settings_list_each_procedure_with_its_default_and_current_level(tmp
 
 
 class AimPlugin:
-    """A generator whose targeted `aim` procedure returns its own card, a follow-up card and a card with its own target."""
+    """A generator whose targeted `aim` procedure returns three mechanics cards."""
 
     name = "aim"
     kind = "generator"
