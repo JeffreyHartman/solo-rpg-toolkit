@@ -69,8 +69,16 @@ The folder beside the vault, outside it, where the Referee keeps secrets the pla
 _Avoid_: GM notes, secrets vault
 
 **Map**:
-The areas of a campaign, the connections between them, and what the player knows about each one. Distance and position are narrative unless a ruleset adds tactical movement.
-_Avoid_: dungeon (when it means the map), level
+One set of areas, the connections between them, and what the player knows about each one, for example one dungeon level or one town. A campaign holds many maps. Distance and position are narrative unless a ruleset adds tactical movement.
+_Avoid_: scene (Mythic GME uses Scene for a narrative unit), dungeon (when it means the map), level
+
+**Active map**:
+The map that the party is on now. The harness shows it, and the Referee or a link (for example a staircase) changes it.
+_Avoid_: current scene, current level
+
+**Token**:
+The mark of a party member, a monster, or an NPC on a map. A token stands in one area. The player moves only the tokens of the party.
+_Avoid_: piece, mini, avatar
 
 **Area**:
 One place on a map that the player can be in, for example a room or a corridor.
