@@ -89,12 +89,16 @@ An action that the engine offers for the current state, for example "go through 
 _Avoid_: option, command
 
 **Direct action**:
-A change that the player makes to their own party through the engine with no Referee turn, for example an edit to the sheet, a move of gear, or a move of the token to a known area.
+A change that the player makes to their own party through the engine, for example an edit to the sheet, a move of gear, a check, or a move of the party token. It gets no Referee turn unless it raises a wake.
 _Avoid_: manual edit, override
 
 **Referee turn**:
 One reply of the Referee: narration, rulings, or moves of the world, after which it waits for the player.
 _Avoid_: GM turn, AI turn
+
+**Wake**:
+An event that tells the harness that the world must answer, so a Referee turn starts. For example, the party enters an unexplored area, or a wandering-monster check finds a monster.
+_Avoid_: trigger (a Trigger is plugin code), interrupt
 
 ## Plugins
 
