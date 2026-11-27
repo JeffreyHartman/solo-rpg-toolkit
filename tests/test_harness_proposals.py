@@ -237,3 +237,34 @@ def test_the_settings_list_each_procedure_with_its_default_and_current_level(tmp
     assert rows["listen"] == {"procedure": "listen", "label": "Listen at the door", "default": "auto", "level": "confirm"}
     assert rows["ability_check"]["label"] == "Ability check"
     assert rows["ability_check"]["level"] == "confirm"
+
+
+class AimPlugin:
+    """A generator whose targeted `aim` procedure returns its own card, a follow-up card and a card with its own target."""
+
+    name = "aim"
+    kind = "generator"
+
+    def register(self, registry):
+        registry.add_procedure("aim", self._aim, label="Aim", target=True)
+        registry.add_target_source("aim", lambda state, inputs, ctx: {"value": 13, "source": "the mark"})
+
+    @staticmethod
+    def _aim(state, command, ctx):
+        return [
+            {"type": "mechanics", "procedure": "aim", "text": "Aimed."},
+            {"type": "mechanics", "procedure": "follow_up", "text": "Followed up."},
+            {"type": "mechanics", "procedure": "counter", "target": {"value": 5, "source": "own"}, "text": "Countered."},
+        ]
+
+
+def test_the_target_goes_only_on_the_card_of_the_procedure_that_ran(tmp_path):
+    root = create_campaign(tmp_path / "aim", ["ose", "aim"], HAND_MADE_MAP, "gate", [{"name": "Brannoc"}])
+    engine = open_campaign(root, ScriptedDice([]), {**BUILTIN_PLUGINS, "aim": AimPlugin})
+
+    events = engine.act({"type": "procedure", "name": "aim", "inputs": {}})
+
+    cards = {e["procedure"]: e for e in events if e["type"] == "mechanics"}
+    assert cards["aim"]["target"] == {"value": 13, "source": "the mark"}
+    assert "target" not in cards["follow_up"]
+    assert cards["counter"]["target"] == {"value": 5, "source": "own"}

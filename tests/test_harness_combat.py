@@ -109,6 +109,12 @@ def test_the_attack_target_number_comes_from_thac0_and_armor_class(tmp_path):
     assert card["result"] == "Hit"
 
 
+def test_the_damage_card_of_a_hit_has_no_target_number(tmp_path):
+    engine, _ = start(tmp_path, PARTY_FIRST + [15, 4, 1, 1, 10, 5, 2])
+    card = next(e for e in attack(engine) if e.get("procedure") == "damage")
+    assert "target" not in card
+
+
 def test_a_miss_does_no_damage(tmp_path):
     engine, _ = start(tmp_path, PARTY_FIRST + [11, 1, 1, 10, 1, 1, 10, 5, 2])
     events = attack(engine)
