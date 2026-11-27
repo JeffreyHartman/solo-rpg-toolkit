@@ -97,6 +97,21 @@ npm run dev                                 # or Vite on 0.0.0.0:5199, proxies /
 
 After any change under `web/`, run `cd web && npm run screenshots`. It builds the app, starts `solo-harness serve --referee none --seed 7` on a free port against a temp demo campaign, and saves `map`, `proposal`, `judgment` and `combat` PNGs to `web/e2e-output/screenshots/` (gitignored). Open them with the Read tool and check them before you report. It is headless and uses no plan usage. `web/e2e/harness.ts` (`startHarness`) and `web/e2e/fixtures.ts` (`launch`) are the reusable server start and stop for other Playwright specs; `npm run e2e` runs all of them, including `e2e/smoke.spec.ts`, a whole short delve. That one uses `startScriptedHarness` and the `launchScripted` fixture: `solo-harness serve --campaigns DIR --referee scripted --script FILE`, where the JSON script holds the fixed `dice` and one list of Referee steps per turn, and `web/e2e/data/flextale` holds synthetic generator tables. When the engine asks for dice in a new order, the smoke test's `DICE` list needs the same edit.
 
+#### Screenshots on a PR
+
+A PR with a visible change shows before and after screenshots, made with the same seed and dice. Take the "before" from `origin/main` in a temporary worktree. GitHub has no upload API, so the images go on the long-running `pr-screenshots` branch, one folder per PR number. After `gh pr create`, commit them with git plumbing, which leaves every checkout alone:
+
+```zsh
+n=<pr number>; dir=<folder of PNGs>
+git fetch -q origin pr-screenshots
+sub=$(for f in $dir/*.png; do printf '100644 blob %s\t%s\n' $(git hash-object -w $f) $(basename $f); done | git mktree)
+tree=$( (git ls-tree origin/pr-screenshots; printf '040000 tree %s\t%s\n' $sub $n) | git mktree)
+commit=$(git commit-tree $tree -p origin/pr-screenshots -m "chore: add PR #$n screenshots" -m "Agent-Model: <model id>")
+git push -q origin "${commit}:refs/heads/pr-screenshots"   # braces: zsh reads $commit:r as a modifier
+```
+
+Then link each image in the PR body as `https://raw.githubusercontent.com/JeffreyHartman/solo-rpg-toolkit/pr-screenshots/<n>/<file>.png` and run `gh pr edit <n> --body-file`.
+
 ## Conventions
 
 - **TDD** + frequent commits (one logical change per commit)
