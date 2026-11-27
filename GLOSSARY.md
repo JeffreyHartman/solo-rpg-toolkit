@@ -76,6 +76,14 @@ _Avoid_: scene (Mythic GME uses Scene for a narrative unit), dungeon (when it me
 The map that the party is on now. The harness shows it, and the Referee or a link (for example a staircase) changes it.
 _Avoid_: current scene, current level
 
+**Link**:
+A way from an area of one map to an area of another map, for example a staircase or a dungeon entrance. A link goes one way. Taking it moves the party to the other map, which becomes the active map.
+_Avoid_: portal, exit (when it means a way to another map), teleport
+
+**Map fact**:
+A value that a map carries and that procedures read, for example the dungeon level or how often wandering monsters come.
+_Avoid_: map setting, map property, tag
+
 **Token**:
 The mark of a party member, a monster, or an NPC on a map. A token stands in one area. The player moves only the tokens of the party.
 _Avoid_: piece, mini, avatar
@@ -83,6 +91,10 @@ _Avoid_: piece, mini, avatar
 **Area**:
 One place on a map that the player can be in, for example a room or a corridor.
 _Avoid_: room (when it means any area), node, tile
+
+**Fog**:
+What the player knows of each area of a map. An area is hidden (the player sees nothing), known (the player knows that it exists, for example from a rumor), or explored (the party saw it). The area that holds the party is visible.
+_Avoid_: vision (a later system that decides what each token sees), reveal state
 
 **Available action**:
 An action that the engine offers for the current state, for example "go through the north door". The player can start it with a click. Free text is always available beside it.
