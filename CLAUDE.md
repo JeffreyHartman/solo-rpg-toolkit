@@ -87,7 +87,7 @@ Edit `data/charts/mythic-fate.json` — add to `likelihoods` array and `threshol
 the FastAPI server; `web/` holds the Svelte app. The server needs the `harness`
 extra, so `solo-roll` keeps zero runtime dependencies.
 ```bash
-uv venv && uv pip install -e '.[dev,harness]'
+uv sync --extra dev --extra harness
 solo-harness demo /tmp/demo && solo-harness serve /tmp/demo   # binds 0.0.0.0:8765
 cd web && npm install && npm run build      # the server serves web/dist
 npm run dev                                 # or Vite on 0.0.0.0:5199, proxies /ws to :8765
