@@ -105,7 +105,11 @@ class Engine:
         target: Target | None,
         judgment: dict[str, Any] | None = None,
     ) -> list[Event]:
-        """Run a procedure. Each of its mechanics cards names its target number and the source.
+        """Run a procedure. Its own mechanics card names the target number and the source.
+
+        Only a mechanics card whose `procedure` is the name of this procedure gets the
+        target. Other cards from the same handler get no target, and a card that sets its
+        own target keeps it.
 
         A handler that ends with a `judgment_request` event raises a judgment call, which
         this method turns into a pending card or a Referee decision. `judgment` is the
@@ -119,7 +123,7 @@ class Engine:
         events = procedure.handler(working, command, self._context)
         if target is not None:
             for event in events:
-                if event["type"] == "mechanics":
+                if event["type"] == "mechanics" and event.get("procedure") == procedure.name:
                     event.setdefault("target", dict(command["target"]))
         if events and events[-1]["type"] == "judgment_request":
             request = events.pop()
