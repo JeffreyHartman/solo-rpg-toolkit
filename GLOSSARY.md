@@ -49,8 +49,16 @@ A campaign setting of each procedure. An Auto procedure that the Referee propose
 _Avoid_: approval mode
 
 **Target number**:
-The number a roll must meet, for example an ability score, a save, a DC, or an AC. It comes from plugin data when the data exists; otherwise it is a proposal input. Every mechanics card names its source.
+The number a roll must meet, for example an ability score, a save, a DC, or an AC. It comes from plugin data when the data exists; otherwise it is a proposal input. Every mechanics card carries a citation.
 _Avoid_: difficulty (when it means the number)
+
+**Citation**:
+The rule that a mechanics card or the Referee points to: the book, the section, and the pages, or "no page" when the toolkit builds the procedure. A click on it opens the rule text.
+_Avoid_: source (when it means the rule), reference
+
+**Rule index**:
+The list of rules that a plugin can cite, each with its book, section, and pages. It holds no book text.
+_Avoid_: rules list, table of contents
 
 **Judgment call**:
 A step in a procedure that needs a human decision, for example "does this action mark progress?". The Referee suggests an answer, and the player decides.

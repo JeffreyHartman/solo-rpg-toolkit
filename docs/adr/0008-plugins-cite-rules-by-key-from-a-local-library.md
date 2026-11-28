@@ -1,0 +1,11 @@
+# Plugins cite rules by key, and the rules text lives in a local library
+
+Each plugin registers a rule index: a key for each rule, with its book, section, pages, and the `file` and `heading` of its text. A mechanics card and the Referee cite a rule only by its key, and the text comes from a rules library on the player's machine, outside the repo and outside every campaign. We chose this because the book text is copyrighted and cannot go into the public repo, but a test must still prove that every citation resolves. The index holds only names and page numbers, so it can go into git, and the text stays local. We rejected a rules folder in each campaign, which copies the same text many times, and front matter tags in the local files, which puts the mapping where no test can check it.
+
+## Consequences
+
+- **Cards.** A mechanics card carries `cite` (`rule`, `book`, `section`, `pages`) and `detail`, the numbers of this roll, for example `THAC0 17 vs AC 5`. The single free `source` string goes away from cards. The engine fills `book`, `section`, and `pages` from the index. Table JSON names an optional `rule` key.
+- **No page.** A procedure that the toolkit builds, for example the wandering check, has `pages: null` and an `about` text that the toolkit writes. That entry can name the book rules that it uses.
+- **The library.** The default path is `~/.local/share/solo-rpg-toolkit/rules/<plugin>/`, and `solo-harness serve --rules DIR` overrides it. If the file or the heading is missing, the panel shows the book, section, and pages with "No local text. See the book." A click never fails silently.
+- **The Referee.** The system prompt lists the keys and titles of the index. The Referee writes `[[rule:<key>]]` in narration, and the chat shows it as a citation link. An unknown key shows as plain text, with a folded harness note. The engine tool `read_rule(key)` returns the same section that the panel shows, so the Referee and the player read one text.
+- **The panel.** One read-only markdown panel shows rule text and vault records. It never shows the Referee folder or the raw log. Records open from `[[Record]]` links in chat, from wiki links inside a record (with Back), from a title search, and from the list of known maps through the optional map field `record`. A bare name with more than one match shows a list for the player to pick from.
