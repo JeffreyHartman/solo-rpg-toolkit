@@ -21,8 +21,12 @@ The player characters of a campaign. It can hold one character or several.
 _Avoid_: group, team, PC (when it means all of them)
 
 **Session**:
-One sitting of play. Each session starts a new Referee conversation from campaign state, and the player can end it and start a new one at any time.
-_Avoid_: game night, run
+The span of play between two End session actions. It is usually one sitting, but only the player ends it. The harness resumes one Referee conversation for it until End session.
+_Avoid_: game night, run, sitting
+
+**Recap**:
+The Referee's short retelling of the story so far, at the start of a session or after a long gap in play.
+_Avoid_: summary, previously-on
 
 **Campaign settings**:
 The choices for one campaign that the player can change at any time during play, for example the confirm level of a procedure or who decides a judgment call.
@@ -59,6 +63,14 @@ _Avoid_: memory, lore, note (when it means a record)
 **Vault**:
 The Obsidian folder that holds the records of one campaign. The player can open it in Obsidian outside the harness.
 _Avoid_: journal (when it means the folder), notes folder
+
+**Raw log**:
+The engine's record of everything in the play of one session, events and chat, in play order. Nobody edits it.
+_Avoid_: transcript, session log
+
+**Session note**:
+The Referee's short story of one session, written from the raw log at End session, with links to the records.
+_Avoid_: summary, write-up (when it means the note)
 
 **Mechanical block**:
 The part of a character note that the engine rewrites after every action, between the `%% engine:begin %%` and `%% engine:end %%` markers. It shows the character's mechanical state in Obsidian. The Referee cannot change it.
